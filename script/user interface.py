@@ -11,7 +11,7 @@ def menu_principal_screen():
     screen.blit(BG,(0,0))
     menu_mouse_pos = py.mouse.get_pos()
 
-    play_button =
+    play_button = ("nigga")
 
 def play_screen():
     l, L = 800, 600
