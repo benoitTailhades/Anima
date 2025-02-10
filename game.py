@@ -17,11 +17,20 @@ class Game:
         self.img_pos = [160, 260]
         self.movement = [False, False]
 
+        self.collision_area = pygame.Rect(50, 50, 300, 50) #Zone de collision
+
     def run(self):
         running = True
 
         while running: #Boucle qui sert à actualiser le jeu
             self.screen.fill((14, 219, 248)) #Couleur de fond et clear de l'écran
+            
+            img_r = pygame.Rect(self.img_pos[0],self.img_pos[1],self.img.get_width(),self.img.get_height()) 
+            if img_r.colliderect(self.collision_area): #Vérifie si la zone de collision de l'image touche celle de l'objet
+                pygame.draw.rect(self.screen,(0, 100, 255),self.collision_area)
+            else:
+                pygame.draw.rect(self.screen,(0, 50, 155),self.collision_area)
+
             self.img_pos[1] += (self.movement[1] - self.movement[0]) * 5 #Déplacement de l'image
             self.screen.blit(self.img,self.img_pos) #Affiche l'image à la position donnée
             
