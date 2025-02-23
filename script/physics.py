@@ -155,7 +155,7 @@ class Physics :
             return 0
 
     def collision_check(self):
-
+        pass
 
 
 class Game:
@@ -168,7 +168,7 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-        self.img = pygame.image.load('cloud_1.png')
+        self.img = pygame.image.load('../assets/images/debugasset.png')
         self.img.set_colorkey((0, 0, 0))
         self.img = pygame.transform.scale(self.img, (50,50))
 
@@ -242,3 +242,4 @@ class Game:
 
 if __name__ == "__main__":
     Game().run()
+
