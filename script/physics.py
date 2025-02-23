@@ -11,10 +11,11 @@ class Physics :
         self.vel_y = 0
         self.y = 0
         self.x = -100
+        self.stage = []
 
         self.SPEED = 6.5
         self.DASH_SPEED = 16
-        self.JUMP_VELOCITY = -35.0
+        self.JUMP_VELOCITY = -15.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
 
@@ -31,7 +32,7 @@ class Physics :
         self.tech_momentum_mult = 0
         self.dict_kb = {"key_right":0, "key_left":0, "key_up":0, "key_down":0, "key_jump":0, "key_dash":0}
 
-    def physics_process(self,framerate,dict_kb):
+    def physics_process(self,framerate,dict_kb,stage):
         """Input :
         framerate (int) : current framerate. Used for gravity
         dict_kb (dict) : (for each key in dict) whether this key is currently pressed. 1 if true, 0 if false."""
@@ -39,8 +40,9 @@ class Physics :
 
         #Turn dict.kb provided as arg into a class variable
         self.dict_kb = dict_kb
+        self.stage = stage
 
-        self.gravity()
+
 
         # Get the input direction and handle the movement.
         # Prevents being stuck when holding 2 directions.
@@ -49,11 +51,14 @@ class Physics :
             self.last_direction = self.direction
 
 
+
         if not self.dashtime_cur > 0:
             if self.vel_x != 0 and abs(self.vel_x) / self.vel_x != self.direction:
                 self.vel_x += self.direction * self.SPEED / 2
             elif abs(self.vel_x) <= abs(self.direction * self.SPEED):
                 self.vel_x = self.direction * self.SPEED
+
+        self.gravity()
 
         # Jump & Tech logic
         self.jump()
@@ -62,29 +67,29 @@ class Physics :
         self.dash()
         self.dash_momentum()
 
-        # TODO : make momentum do something
+        self.collision_check()
+
+
         return self.apply_momentum()
 
 
     def gravity(self):
         # Gravity (ignored during dashtime to not be annoying)
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            self.vel_y = 3.5
+            self.vel_y = min(10, self.vel_y+1)
 
         elif self.is_on_floor():
             if self.is_on_floor(self.y - 1):
                 self.y -= 1
             if self.vel_y > 0:
                 self.vel_y = 0
-            if self.dashtime_cur < 3 or self.dashtime_cur == 0:
+            if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
-            if self.dict_kb["key_left"] == self.dict_kb["key_right"] or abs(self.vel_x) == self.direction * self.vel_x:
-                self.vel_x *= 0.2
+
 
 
     def jump(self):
-        if self.jumptime_cur > 0:
-            pass
+
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
             self.vel_y = self.JUMP_VELOCITY
 
@@ -120,14 +125,23 @@ class Physics :
                 self.vel_y = 0
 
     def apply_momentum(self):
+        #Basic physics : add vel to position
         self.x += self.vel_x
         self.y += self.vel_y
+
+        #Ground/Air friction. Stop significantly faster on the ground than in the air
+        if self.is_on_floor():
+            self.vel_x *= 0.2
+        elif self.get_direction("x") == 0:
+            self.vel_x *= 0.8
+
+
         return (-self.x,self.y)
 
     def is_on_floor(self, cur_y="undef"):
         if cur_y == "undef":
             cur_y = self.y
-        if cur_y > 100:
+        if cur_y > 500:
             return True
         #TODO : CHANGE THIS
 
@@ -140,6 +154,9 @@ class Physics :
             print("Error encountered : get_direction() received an axis that is neither x nor y")
             return 0
 
+    def collision_check(self):
+
+
 
 class Game:
     #USED FOR DEBUGGING. DO NOT REUSE IT SUCKS.
@@ -151,7 +168,7 @@ class Game:
 
         self.clock = pygame.time.Clock()
 
-        self.img = pygame.image.load('cloud_1.png') #This will make it crash if you're running this file from the Anima github project.
+        self.img = pygame.image.load('cloud_1.png')
         self.img.set_colorkey((0, 0, 0))
         self.img = pygame.transform.scale(self.img, (50,50))
 
@@ -170,6 +187,10 @@ class Game:
                 pygame.draw.rect(self.screen, (0, 100, 255), self.collision_area)
             else:
                 pygame.draw.rect(self.screen, (0, 50, 155), self.collision_area)
+
+
+
+
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -209,9 +230,10 @@ class Game:
                         dict_kb["key_attack"] = 0
                     if event.key == pygame.K_SPACE:
                         dict_kb["key_jump"] = 0
-                print(dict_kb)
 
-            coords = phys.physics_process(1,dict_kb)
+            list_stage = [self.collision_area]
+
+            coords = phys.physics_process(1,dict_kb,list_stage)
             self.img_pos[0],self.img_pos[1] = coords
             self.screen.blit(self.img, self.img_pos)
 
@@ -220,4 +242,3 @@ class Game:
 
 if __name__ == "__main__":
     Game().run()
-
