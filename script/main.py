@@ -12,11 +12,11 @@ class Game:
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((640, 480))
         self.display = pygame.Surface((1280, 960))
-        print()
+
         self.clock = pygame.time.Clock()
 
         self.movement = [False,False]
-        print()
+
         self.assets = {
             'player': load_image('debugasset.png')
         }
