@@ -16,7 +16,7 @@ class Game:
         self.clock = pygame.time.Clock()
 
         self.movement = [False,False]
-
+        print()
         self.assets = {
             'player': load_image('debugasset.png')
         }
