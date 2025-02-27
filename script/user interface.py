@@ -5,13 +5,12 @@ py.init()
 screen = py.display.set_mode(((1200,720)))
 py.display.set_caption("Anima")
 
-BG = py.image.load("Anima/assets/images/menubacck.jpg")
+BG = py.image.load("../assets/images/menubacck.jpg")
 
 def menu_principal_screen():
     screen.blit(BG,(0,0))
     menu_mouse_pos = py.mouse.get_pos()
-
-    play_button = ("nigga")
+    play_button = ("PLAY")
 
 def play_screen():
     l, L = 800, 600
@@ -27,7 +26,6 @@ def play_screen():
 
         screen.fill(WHITE)
         py.display.update()
-
 
 menu_principal_screen()
 
