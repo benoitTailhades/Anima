@@ -125,7 +125,7 @@ class Physics :
             self.dashtime_cur -= 1
             self.vel_x = self.dash_direction_x * self.DASH_SPEED
             self.vel_y = -1 * self.dash_direction_y * self.DASH_SPEED
-            if self.is_on_floor(self.y+self.vel_y):
+            if self.is_on_floor(self.y + self.vel_y):
                 self.vel_y = 0
             if self.dashtime_cur == 0:
                 self.vel_x = 0
@@ -142,13 +142,12 @@ class Physics :
         elif self.get_direction("x") == 0:
             self.vel_x *= 0.8
 
-
         return (-self.x,self.y)
 
     def is_on_floor(self, cur_y="undef"):
         if cur_y == "undef":
             cur_y = self.y
-        if cur_y > 50:
+        if cur_y > 500:
             return True
         #TODO : CHANGE THIS
 
@@ -163,88 +162,4 @@ class Physics :
 
     def collision_check(self):
         pass
-
-
-class Game:
-    #USED FOR DEBUGGING. DO NOT REUSE IT SUCKS.
-    def __init__(self):
-        pygame.init()
-
-        pygame.display.set_caption('TEST')
-        self.screen = pygame.display.set_mode((1640, 980))
-
-        self.clock = pygame.time.Clock()
-
-        self.img = pygame.image.load('../assets/images/debugasset.png')
-        self.img.set_colorkey((0, 0, 0))
-        self.img = pygame.transform.scale(self.img, (50,50))
-
-        self.img_pos = [160, 260]
-
-        self.collision_area = pygame.Rect(50, 50, 300, 50)
-
-    def run(self):
-        phys = Physics()
-        dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
-        while True:
-            self.screen.fill((14, 219, 248))
-
-            img_r = pygame.Rect(self.img_pos[0], self.img_pos[1], self.img.get_width(), self.img.get_height())
-            if img_r.colliderect(self.collision_area):
-                pygame.draw.rect(self.screen, (0, 100, 255), self.collision_area)
-            else:
-                pygame.draw.rect(self.screen, (0, 50, 155), self.collision_area)
-
-
-
-
-
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
-                    pygame.quit()
-                    sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z:
-                        dict_kb["key_up"] = 1
-                    if event.key == pygame.K_s:
-                        dict_kb["key_down"] = 1
-                    if event.key == pygame.K_q:
-                        dict_kb["key_left"] = 1
-                    if event.key == pygame.K_d:
-                        dict_kb["key_right"] = 1
-                    if event.key == pygame.K_q:
-                        dict_kb["key_left"] = 1
-                    if event.key == pygame.K_g:
-                        dict_kb["key_dash"] = 1
-                    if event.key == pygame.K_h:
-                        dict_kb["key_attack"] = 1
-                    if event.key == pygame.K_SPACE:
-                        dict_kb["key_jump"] = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_z:
-                        dict_kb["key_up"] = 0
-                    if event.key == pygame.K_s:
-                        dict_kb["key_down"] = 0
-                    if event.key == pygame.K_q:
-                        dict_kb["key_left"] = 0
-                    if event.key == pygame.K_d:
-                        dict_kb["key_right"] = 0
-                    if event.key == pygame.K_q:
-                        dict_kb["key_left"] = 0
-                    if event.key == pygame.K_g:
-                        dict_kb["key_dash"] = 0
-                    if event.key == pygame.K_h:
-                        dict_kb["key_attack"] = 0
-                    if event.key == pygame.K_SPACE:
-                        dict_kb["key_jump"] = 0
-
-            coords = phys.physics_process(1,dict_kb,list_stage)
-            self.img_pos[0],self.img_pos[1] = coords
-            self.screen.blit(self.img, self.img_pos)
-
-            pygame.display.update()
-            self.clock.tick(60)
-
-if __name__ == "__main__":
-    Game().run()
 
