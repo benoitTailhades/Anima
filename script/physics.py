@@ -13,9 +13,9 @@ class Physics :
         self.x = -100
         self.stage = []
 
-        self.SPEED = 6.5
-        self.DASH_SPEED = 16
-        self.JUMP_VELOCITY = -15.0
+        self.SPEED = 2.5
+        self.DASH_SPEED = 6
+        self.JUMP_VELOCITY = -6.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
 
@@ -76,7 +76,7 @@ class Physics :
     def gravity(self):
         # Gravity (ignored during dashtime to not be annoying)
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            self.vel_y = min(10, self.vel_y+1)
+            self.vel_y = min(5, self.vel_y+0.5)
 
         elif self.is_on_floor():
             if self.is_on_floor(self.y - 1):
@@ -141,7 +141,7 @@ class Physics :
     def is_on_floor(self, cur_y="undef"):
         if cur_y == "undef":
             cur_y = self.y
-        if cur_y > 500:
+        if cur_y > 50:
             return True
         #TODO : CHANGE THIS
 
@@ -230,8 +230,6 @@ class Game:
                         dict_kb["key_attack"] = 0
                     if event.key == pygame.K_SPACE:
                         dict_kb["key_jump"] = 0
-
-            list_stage = [self.collision_area]
 
             coords = phys.physics_process(1,dict_kb,list_stage)
             self.img_pos[0],self.img_pos[1] = coords
