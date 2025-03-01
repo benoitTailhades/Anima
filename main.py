@@ -79,7 +79,7 @@ class Game:
                         self.dict_kb["key_jump"] = 0
 
             self.coords = self.phys.physics_process(1,self.dict_kb,[])
-            self.player.update_coords(self.coords)
+            self.player.update_coords(self.tilemap, self.coords)
             self.player.render(self.display)
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()

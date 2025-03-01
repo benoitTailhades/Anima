@@ -6,10 +6,35 @@ class PhysicsEntity:
         self.type = e_type
         self.pos = list(pos)
         self.size = size
+        self.velocity = [0, 0]
 
-    def update_coords(self, new_coords):
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def update_coords(self, tilemap, new_coords):
+        frame_movement = (new_coords[0] + self.velocity[0], new_coords[1] + self.velocity[1])
+
         self.pos[0] = new_coords[0]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[0] > 0:
+                    entity_rect.right = rect.left
+                if frame_movement[0] < 0:
+                    entity_rect.left = rect.right
+                self.pos[0] = entity_rect.x
+
         self.pos[1] = new_coords[1]
+        entity_rect = self.rect()
+        for rect in tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[1] > 0:
+                    entity_rect.bottom = rect.top
+                if frame_movement[1] < 0:
+                    entity_rect.top = rect.bottom
+                self.pos[1] = entity_rect.y
+
+        self.velocity[1] = min(5, self.velocity[1] + 0.1)
 
     def render(self, surf):
         surf.blit(self.game.assets['player'], self.pos)
