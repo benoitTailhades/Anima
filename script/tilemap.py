@@ -20,6 +20,9 @@ class Tilemap:
                 tiles.append(self.tilemap[check_loc])
         return tiles
 
+    def physics_rects_around(self, pos):
+        pass
+
     def render(self, surf):
         for tile in self.offgrid_tiles:
             surf.blit(self.game.assets[tile['type']][tile['variant']], tile['pos'])
