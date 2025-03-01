@@ -31,6 +31,7 @@ class Physics :
 
         self.tech_momentum_mult = 0
         self.dict_kb = {"key_right":0, "key_left":0, "key_up":0, "key_down":0, "key_jump":0, "key_dash":0}
+        self.anti_dash_buffer = False
 
     def physics_process(self,framerate,dict_kb,stage):
         """Input :
@@ -102,15 +103,21 @@ class Physics :
                 self.vel_y /= self.tech_momentum_mult
 
     def dash(self):
-        if self.dict_kb["key_dash"] and self.dash_amt > 0:
-            self.dash_direction_x = self.get_direction("x")
-            self.dash_direction_y = self.get_direction("y")
+        if not self.anti_dash_buffer:
+            if self.dict_kb["key_dash"]== 1:
+                if self.dash_amt > 0:
+                    self.dash_direction_x = self.get_direction("x")
+                    self.dash_direction_y = self.get_direction("y")
 
-            if self.dash_direction_x == 0 and self.dash_direction_y == 0:  # Have a default dash direction to not get stuck in the air.
-                self.dash_direction_x = self.last_direction
-            self.dashtime_cur = self.DASHTIME
+                    if self.dash_direction_x == 0 and self.dash_direction_y == 0:  # Have a default dash direction to not get stuck in the air.
+                        self.dash_direction_x = self.last_direction
+                    self.dashtime_cur = self.DASHTIME
 
-            self.dash_amt -= 1
+                    self.dash_amt -= 1
+                self.anti_dash_buffer = True
+        else:
+            if self.dict_kb["key_dash"] == 0:
+                self.anti_dash_buffer = False
 
 
     def dash_momentum(self):
