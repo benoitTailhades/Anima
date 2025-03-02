@@ -118,7 +118,7 @@ class PhysicsPlayer:
 
     def get_direction(self, axis):
         if axis == "x":
-            return self.dict_kb["key_right"] - self.dict_kb["key_right"]
+            return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
             return self.dict_kb["key_up"] - self.dict_kb["key_down"]
         else:
