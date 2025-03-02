@@ -9,7 +9,7 @@ from script.tilemap import Tilemap
 
 class PhysicsPlayer:
     # Overall physics and movement handler
-    def __init__(self, game, pos, size):
+    def __init__(self, game, tilemap, pos, size):
         self.game = game
         self.pos = list(pos)  # [x, y]
         self.size = size
@@ -33,6 +33,8 @@ class PhysicsPlayer:
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
 
+        self.tilemap = tilemap
+
     def physics_process(self, framerate, tilemap, dict_kb, stage):
         self.dict_kb = dict_kb
         self.stage = stage
@@ -48,12 +50,15 @@ class PhysicsPlayer:
                 self.velocity[0] = self.direction * self.SPEED
 
         self.gravity()
-        self.jump()
-        self.dash()
-        self.dash_momentum()
-        self.collision_check(tilemap)
 
-        return self.apply_momentum()
+        self.jump()
+
+        self.dash()
+
+        self.dash_momentum()
+
+        self.apply_momentum()
+
 
     def gravity(self):
         if not self.is_on_floor() and not self.dashtime_cur > 0:
@@ -100,6 +105,24 @@ class PhysicsPlayer:
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
 
+    def collision_check(self, frame_movement):
+        entity_rect = self.rect()
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[0] > 0:
+                    entity_rect.right = rect.left
+                if frame_movement[0] < 0:
+                    entity_rect.left = rect.right
+                self.pos[0] += entity_rect.x
+
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if frame_movement[1] > 0:
+                    entity_rect.bottom = rect.top
+                if frame_movement[1] < 0:
+                    entity_rect.top = rect.bottom
+                self.pos[1] = entity_rect.y
+
     def apply_momentum(self):
         self.pos[0] += self.velocity[0]
         self.pos[1] += self.velocity[1]
@@ -111,10 +134,13 @@ class PhysicsPlayer:
 
         return (-self.pos[0], self.pos[1])
 
-    def is_on_floor(self, cur_y="undef"):
+    def is_on_floor(self, cur_y = "undef"):
+        entity_rect = self.rect()
         if cur_y == "undef":
-            cur_y = self.pos[1]
-        return cur_y > 50  # TODO: Replace with proper collision detection
+            cur_y = entity_rect.bottom
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                return cur_y > rect.top
 
     def get_direction(self, axis):
         if axis == "x":
@@ -127,11 +153,6 @@ class PhysicsPlayer:
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
-
-    def collision_check(self, tilemap):
-        for rect in tilemap.physics_rects_around(self.pos):
-            if self.rect().colliderect(rect):
-                return True
 
     def render(self, surf):
         surf.blit(self.game.assets['player'], self.pos)

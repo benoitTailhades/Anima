@@ -28,9 +28,10 @@ class Game:
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
-        self.player = PhysicsPlayer(self, (50, 50), (8, 15))
 
         self.tilemap = Tilemap(self, tile_size=16)
+
+        self.player = PhysicsPlayer(self, self.tilemap, (50, 50), (8, 15))
 
     def run(self):
         while True:
@@ -38,7 +39,6 @@ class Game:
 
             self.tilemap.render(self.display)
 
-            print(self.tilemap.physics_rects_around(self.player.pos))
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     pygame.quit()
