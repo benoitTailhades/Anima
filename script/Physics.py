@@ -64,6 +64,9 @@ class PhysicsPlayer:
                 self.velocity[1] = 0
             if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
+            # Stop unintended horizontal movement if no input is given
+            if self.get_direction("x") == 0:
+                self.velocity[0] = 0
 
     def is_on_floor(self, cur_y = "undef"):
         entity_rect = self.rect()
@@ -118,19 +121,20 @@ class PhysicsPlayer:
         entity_rect = self.rect()
 
         # Handle Vertical Collision First
-        entity_rect.y += self.velocity[1]  # Predict vertical movement
+        entity_rect.y += self.velocity[1] # Predict vertical movement
         for rect in self.tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
-                if self.velocity[1] > 0:  # Falling (downward collision)
-                    self.pos[1] = rect.top - self.size[1]  # Snap to top of block
-                    self.velocity[1] = 0  # Stop downward movement
-                elif self.velocity[1] < 0:  # Jumping (upward collision)
-                    self.pos[1] = rect.bottom  # Snap to bottom of block
-
+                if self.velocity[1] > 0: # Falling (downward collision)
+                    self.pos[1] = rect.top - self.size[1] # Snap to top of block
+                    self.velocity[1] = 0 # Stop downward movement
+                    # Reset horizontal velocity if no input
+                    if self.get_direction("x") == 0:
+                        self.velocity[0] = 0
+                elif self.velocity[1] < 0: # Jumping (upward collision)
+                    self.pos[1] = rect.bottom # Snap to bottom of block
                     # Reset vertical velocity and ensure precise positioning
                     self.velocity[1] = 0
-
-                    # **New Fix: Recalculate entity_rect after snapping to prevent drift**
+                    # Recalculate entity_rect after snapping to prevent drift
                     entity_rect.y = self.pos[1]
 
         # Handle Horizontal Collision After
@@ -143,6 +147,7 @@ class PhysicsPlayer:
                 elif self.velocity[0] < 0:  # Moving left
                     self.pos[0] = rect.right  # Snap to right side of block
                     self.velocity[0] = 0  # Stop movement
+                    entity_rect.y = self.pos[0]
 
     def apply_momentum(self):
         self.pos[0] += self.velocity[0]
