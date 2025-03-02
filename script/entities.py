@@ -1,7 +1,7 @@
 import pygame
 
 class PhysicsEntity:
-    def __init__(self,game, e_type, pos, size):
+    def __init__(self, game, e_type, pos, size):
         self.game = game
         self.type = e_type
         self.pos = list(pos)
@@ -11,10 +11,10 @@ class PhysicsEntity:
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
-    def update_coords(self, tilemap, new_coords):
-        frame_movement = (new_coords[0] + self.velocity[0], new_coords[1] + self.velocity[1])
+    def update_coords(self, tilemap, movement = (0, 0)):
+        frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
 
-        self.pos[0] = new_coords[0]
+        self.pos[0] += movement[0]
         entity_rect = self.rect()
         for rect in tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
@@ -24,8 +24,7 @@ class PhysicsEntity:
                     entity_rect.left = rect.right
                 self.pos[0] = entity_rect.x
 
-        self.pos[1] = new_coords[1]
-        entity_rect = self.rect()
+        self.pos[1] += movement[1]
         for rect in tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
                 if frame_movement[1] > 0:

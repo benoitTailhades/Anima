@@ -5,7 +5,8 @@ import pygame
 from script.utils import load_image, load_images
 from script.entities import PhysicsEntity
 from script.tilemap import Tilemap
-from script.physics import Physics
+from script.Physics import PhysicsPlayer
+
 
 class Game:
     def __init__(self):
@@ -26,9 +27,8 @@ class Game:
 
         }
 
-        self.phys = Physics()
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
-        self.player = PhysicsEntity(self, 'player', (50, 50), (8, 15))
+        self.player = PhysicsPlayer(self, (50, 50), (8, 15))
 
         self.tilemap = Tilemap(self, tile_size=16)
 
@@ -78,8 +78,7 @@ class Game:
                     if event.key == pygame.K_SPACE:
                         self.dict_kb["key_jump"] = 0
 
-            self.coords = self.phys.physics_process(1,self.dict_kb,[])
-            self.player.update_coords(self.tilemap, self.coords)
+            self.player.physics_process(1, self.tilemap , self.dict_kb,[])
             self.player.render(self.display)
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
