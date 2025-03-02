@@ -126,7 +126,12 @@ class PhysicsPlayer:
                     self.velocity[1] = 0  # Stop downward movement
                 elif self.velocity[1] < 0:  # Jumping (upward collision)
                     self.pos[1] = rect.bottom  # Snap to bottom of block
-                    self.velocity[1] = 0  # Stop upward movement
+
+                    # Reset vertical velocity and ensure precise positioning
+                    self.velocity[1] = 0
+
+                    # **New Fix: Recalculate entity_rect after snapping to prevent drift**
+                    entity_rect.y = self.pos[1]
 
         # Handle Horizontal Collision After
         entity_rect.x += self.velocity[0]  # Predict horizontal movement
