@@ -50,26 +50,35 @@ class PhysicsPlayer:
                 self.velocity[0] = self.direction * self.SPEED
 
         self.gravity()
-
         self.jump()
-
         self.dash()
-
+        self.collision_check()
         self.dash_momentum()
-
         self.apply_momentum()
-
 
     def gravity(self):
         if not self.is_on_floor() and not self.dashtime_cur > 0:
             self.velocity[1] = min(5, self.velocity[1] + 0.5)
         elif self.is_on_floor():
-            if self.is_on_floor(self.pos[1] - 1):
-                self.pos[1] -= 1
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
             if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
+
+    def is_on_floor(self, cur_y = "undef"):
+        entity_rect = self.rect()
+        if cur_y == "undef":
+            cur_y = entity_rect.bottom
+
+        # Create a slightly extended rectangle (e.g., 1px lower) to check for near-ground collisions
+        expanded_rect = entity_rect.copy()
+        expanded_rect.height += 1 # Extend the bottom of the rectangle by 1 pixel
+
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if expanded_rect.colliderect(rect):
+                self.pos[1] = rect.top - self.size[1]
+                return cur_y >= rect.top
+
 
     def jump(self):
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
@@ -105,23 +114,30 @@ class PhysicsPlayer:
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
 
-    def collision_check(self, frame_movement):
+    def collision_check(self):
         entity_rect = self.rect()
-        for rect in self.tilemap.physics_rects_around(self.pos):
-            if entity_rect.colliderect(rect):
-                if frame_movement[0] > 0:
-                    entity_rect.right = rect.left
-                if frame_movement[0] < 0:
-                    entity_rect.left = rect.right
-                self.pos[0] += entity_rect.x
 
+        # Handle Vertical Collision First
+        entity_rect.y += self.velocity[1]  # Predict vertical movement
         for rect in self.tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
-                if frame_movement[1] > 0:
-                    entity_rect.bottom = rect.top
-                if frame_movement[1] < 0:
-                    entity_rect.top = rect.bottom
-                self.pos[1] = entity_rect.y
+                if self.velocity[1] > 0:  # Falling (downward collision)
+                    self.pos[1] = rect.top - self.size[1]  # Snap to top of block
+                    self.velocity[1] = 0  # Stop downward movement
+                elif self.velocity[1] < 0:  # Jumping (upward collision)
+                    self.pos[1] = rect.bottom  # Snap to bottom of block
+                    self.velocity[1] = 0  # Stop upward movement
+
+        # Handle Horizontal Collision After
+        entity_rect.x += self.velocity[0]  # Predict horizontal movement
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if entity_rect.colliderect(rect):
+                if self.velocity[0] > 0:  # Moving right
+                    self.pos[0] = rect.left - self.size[0]  # Snap to left side of block
+                    self.velocity[0] = 0  # Stop movement
+                elif self.velocity[0] < 0:  # Moving left
+                    self.pos[0] = rect.right  # Snap to right side of block
+                    self.velocity[0] = 0  # Stop movement
 
     def apply_momentum(self):
         self.pos[0] += self.velocity[0]
@@ -133,14 +149,6 @@ class PhysicsPlayer:
             self.velocity[0] *= 0.8
 
         return (-self.pos[0], self.pos[1])
-
-    def is_on_floor(self, cur_y = "undef"):
-        entity_rect = self.rect()
-        if cur_y == "undef":
-            cur_y = entity_rect.bottom
-        for rect in self.tilemap.physics_rects_around(self.pos):
-            if entity_rect.colliderect(rect):
-                return cur_y > rect.top
 
     def get_direction(self, axis):
         if axis == "x":
