@@ -36,9 +36,9 @@ class PhysicsPlayer:
 
         self.tilemap = tilemap
 
-    def physics_process(self, framerate, tilemap, dict_kb, stage):
+    def physics_process(self, framerate, tilemap, dict_kb,stage=[]):
         self.dict_kb = dict_kb
-        self.stage = stage
+
 
         self.direction = self.get_direction("x")
         if self.direction != 0:
@@ -150,7 +150,6 @@ class PhysicsPlayer:
             if entity_rect.colliderect(rect):
                 if self.velocity[0] > 0:  # Moving right
                     self.pos[0] = rect.left - self.size[0]  # Snap to left side of block
-                    print("snapped left!")
                     self.velocity[0] = 0  # Stop movement
                 elif self.velocity[0] < 0:  # Moving left
                     self.pos[0] = rect.right  # Snap to right side of block
