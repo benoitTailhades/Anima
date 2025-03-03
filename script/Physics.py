@@ -176,3 +176,6 @@ class PhysicsPlayer:
         surf.blit(self.game.assets['player'], self.pos)
 
 
+
+
+
