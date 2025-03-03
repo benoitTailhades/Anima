@@ -52,7 +52,7 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.K_ESCAPE:
+                if event.type == pygame.KEYDOWN and event.type == pygame.K_ESCAPE:
                     menu()
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0

@@ -34,8 +34,6 @@ def menu():
 
         py.display.flip()
 
-
-
     running = True
     while running:
         draw_buttons()
