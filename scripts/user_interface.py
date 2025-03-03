@@ -5,10 +5,7 @@ import pygame as py
 def menu():
     # Initialisation de Pygame
     py.init()
-
-    # Dimensions de l'écran
-    WIDTH, HEIGHT = 500, 400
-    screen = py.display.set_mode((WIDTH, HEIGHT))
+    screen = py.display.set_mode((1000, 600),py.RESIZABLE)
     py.display.set_caption("Menu")
 
     # Couleurs
@@ -20,7 +17,7 @@ def menu():
     # Police
     font = py.font.Font(None, 40)
 
-    # Création des boutons
+
     buttons = {
         "RESUME": py.Rect(150, 100, 200, 50),
         "OPTION": py.Rect(150, 180, 200, 50),
@@ -40,7 +37,7 @@ def menu():
         py.display.flip()
 
 
-    # Boucle principale
+
     running = True
     while running:
         draw_buttons()
@@ -57,5 +54,3 @@ def menu():
                             print("Options menu")  # Placeholder
                         elif text == "RESUME":
                             print("Resume game")  # Placeholder
-
-    py.quit()

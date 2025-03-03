@@ -6,7 +6,7 @@ from scripts.utils import load_image, load_images
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
-
+from scripts.user_interface import *
 
 class Game:
     def __init__(self):
@@ -47,8 +47,10 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.K_ESCAPE:
+                if event.type ==pygame.KEYDOWN  and event.key == pygame.K_ESCAPE:
+                    print("blud")
                     menu()
+
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {
