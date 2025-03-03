@@ -5,7 +5,7 @@ import sys
 
 import pygame
 
-from script.tilemap import Tilemap
+from scripts.tilemap import Tilemap
 
 class PhysicsPlayer:
     # Overall physics and movement handler

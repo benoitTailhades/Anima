@@ -2,10 +2,10 @@ import sys
 
 import pygame
 
-from script.utils import load_image, load_images
-from script.entities import PhysicsEntity
-from script.tilemap import Tilemap
-from script.Physics import PhysicsPlayer
+from scripts.utils import load_image, load_images
+from scripts.entities import PhysicsEntity
+from scripts.tilemap import Tilemap
+from scripts.Physics import PhysicsPlayer
 
 
 class Game:
