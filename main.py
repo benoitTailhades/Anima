@@ -24,12 +24,13 @@ class Game:
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone'),
             'player': load_image('entities/player.png')
-
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
         self.tilemap = Tilemap(self, tile_size=16)
+
+        self.scroll = [0, 0]
 
         self.player = PhysicsPlayer(self, self.tilemap, (50, 50), (8, 15))
 
@@ -38,6 +39,9 @@ class Game:
             self.display.fill((14, 219, 248))
 
             self.tilemap.render(self.display)
+
+            self.player.physics_process(1, self.tilemap, self.dict_kb, [])
+            self.player.render(self.display, offset= self.scroll)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -62,8 +66,6 @@ class Game:
                 elif event.type == pygame.VIDEORESIZE:
                     self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
-            self.player.physics_process(1, self.tilemap , self.dict_kb,[])
-            self.player.render(self.display)
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
             self.clock.tick(60)

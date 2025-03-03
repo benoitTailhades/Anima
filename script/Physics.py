@@ -32,12 +32,13 @@ class PhysicsPlayer:
         self.tech_momentum_mult = 0
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
+        self.stop_dash_momentum = {"y":False,"x":False}
 
         self.tilemap = tilemap
 
-    def physics_process(self, framerate, tilemap, dict_kb, stage):
+    def physics_process(self, framerate, tilemap, dict_kb,stage=[]):
         self.dict_kb = dict_kb
-        self.stage = stage
+
 
         self.direction = self.get_direction("x")
         if self.direction != 0:
@@ -52,8 +53,9 @@ class PhysicsPlayer:
         self.gravity()
         self.jump()
         self.dash()
-        self.collision_check()
         self.dash_momentum()
+        self.collision_check()
+
         self.apply_momentum()
 
     def gravity(self):
@@ -101,6 +103,7 @@ class PhysicsPlayer:
                     if self.dash_direction == [0, 0]:
                         self.dash_direction[0] = self.last_direction
                     self.dashtime_cur = self.DASHTIME
+                    self.stop_dash_momentum["y"],self.stop_dash_momentum["x"] = False,False
                     self.dash_amt -= 1
                 self.anti_dash_buffer = True
         else:
@@ -110,10 +113,10 @@ class PhysicsPlayer:
     def dash_momentum(self):
         if self.dashtime_cur > 0:
             self.dashtime_cur -= 1
-            self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
-            self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
-            if self.is_on_floor(self.pos[1] + self.velocity[1]):
-                self.velocity[1] = 0
+            if not self.stop_dash_momentum["x"]:
+                self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
+            if not self.stop_dash_momentum["y"]:
+                self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
 
@@ -121,6 +124,7 @@ class PhysicsPlayer:
         entity_rect = self.rect()
 
         # Handle Vertical Collision First
+        backup_velo = self.velocity[1]
         entity_rect.y += self.velocity[1] # Predict vertical movement
         for rect in self.tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
@@ -136,6 +140,9 @@ class PhysicsPlayer:
                     self.velocity[1] = 0
                     # Recalculate entity_rect after snapping to prevent drift
                     entity_rect.y = self.pos[1]
+                self.stop_dash_momentum["y"] = True
+
+        entity_rect.y -= backup_velo
 
         # Handle Horizontal Collision After
         entity_rect.x += self.velocity[0]  # Predict horizontal movement
@@ -148,6 +155,7 @@ class PhysicsPlayer:
                     self.pos[0] = rect.right  # Snap to right side of block
                     self.velocity[0] = 0  # Stop movement
                     entity_rect.y = self.pos[0]
+                self.stop_dash_momentum["x"] = True
 
     def apply_momentum(self):
         self.pos[0] += self.velocity[0]
