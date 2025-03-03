@@ -4,7 +4,7 @@ import sys
 def option_menu():
     py.init()
     screen = py.display.set_mode((1000, 600), py.RESIZABLE)
-    py.display.set_caption("Anima")
+    py.display.set_caption("Menu Options")
 
     font = py.font.Font(None, 36)
 
@@ -155,5 +155,6 @@ def menu():
                         elif text == "OPTION":
                             option_menu()  # Placeholder
                         elif text == "RESUME":
-                            running = False # Placeholder
+                            print("Resume game")  # Placeholder
 
+menu()
