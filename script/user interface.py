@@ -1,37 +1,61 @@
 import pygame as py
-import sys
 
-py.init()
-screen = py.display.set_mode(((1200,720)))
-py.display.set_caption("Anima")
 
-BG = py.image.load("../assets/images/menubacck.jpg")
 
-def menu_principal_screen():
-    screen.blit(BG,(0,0))
-    menu_mouse_pos = py.mouse.get_pos()
-    play_button = ("PLAY")
+def menu():
+    # Initialisation de Pygame
+    py.init()
 
-def play_screen():
-    l, L = 800, 600
-    BLUE, WHITE = (0, 100, 200), (255, 255, 255)
-    screen = py.display.set_mode((l, L))
-    py.display.set_caption("Anima")
+    # Dimensions de l'écran
+    WIDTH, HEIGHT = 500, 400
+    screen = py.display.set_mode((WIDTH, HEIGHT))
+    py.display.set_caption("Menu")
 
-    playing = True
-    while playing:
+    # Couleurs
+    WHITE = (255, 255, 255)
+    GRAY = (170, 170, 170)
+    DARK_GRAY = (100, 100, 100)
+    BLACK = (0, 0, 0)
+
+    # Police
+    font = py.font.Font(None, 40)
+
+    # Création des boutons
+    buttons = {
+        "RESUME": py.Rect(150, 100, 200, 50),
+        "OPTION": py.Rect(150, 180, 200, 50),
+        "QUIT": py.Rect(150, 260, 200, 50)
+    }
+
+
+    def draw_buttons():
+        screen.fill(WHITE)
+
+        for text, rect in buttons.items():
+            color = DARK_GRAY if rect.collidepoint(py.mouse.get_pos()) else GRAY
+            py.draw.rect(screen, color, rect, border_radius=10)
+            label = font.render(text, True, BLACK)
+            screen.blit(label, (rect.x + 50, rect.y + 10))
+
+        py.display.flip()
+
+
+    # Boucle principale
+    running = True
+    while running:
+        draw_buttons()
+
         for event in py.event.get():
             if event.type == py.QUIT:
-                playing = False
+                running = False
+            elif event.type == py.MOUSEBUTTONDOWN and event.button == 1:
+                for text, rect in buttons.items():
+                    if rect.collidepoint(event.pos):
+                        if text == "QUIT":
+                            running = False
+                        elif text == "OPTION":
+                            print("Options menu")  # Placeholder
+                        elif text == "RESUME":
+                            print("Resume game")  # Placeholder
 
-        screen.fill(WHITE)
-        py.display.update()
-
-
-
-py.quit()
-
-
-
-
-
+    py.quit()
