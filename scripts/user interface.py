@@ -1,7 +1,5 @@
 import pygame as py
 
-
-
 def menu():
     # Initialisation de Pygame
     py.init()

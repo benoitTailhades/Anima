@@ -23,7 +23,8 @@ class Game:
             'grass': load_images('tiles/grass'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone'),
-            'player': load_image('entities/player.png')
+            'player': load_image('entities/player.png'),
+            'background' : load_image('background.jpg')
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
@@ -36,12 +37,16 @@ class Game:
 
     def run(self):
         while True:
-            self.display.fill((14, 219, 248))
+            self.display.blit(self.assets['background'], (0, 0))
 
-            self.tilemap.render(self.display)
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+
+            self.tilemap.render(self.display, offset = render_scroll)
 
             self.player.physics_process(1, self.tilemap, self.dict_kb, [])
-            self.player.render(self.display, offset= self.scroll)
+            self.player.render(self.display, offset = render_scroll)
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
