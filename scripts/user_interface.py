@@ -156,5 +156,3 @@ def menu():
                             option_menu()  # Placeholder
                         elif text == "RESUME":
                             print("Resume game")  # Placeholder
-
-menu()
