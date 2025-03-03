@@ -10,33 +10,41 @@ from scripts.tilemap import Tilemap
 class PhysicsPlayer:
     # Overall physics and movement handler
     def __init__(self, game, tilemap, pos, size):
+
+        #Hitbox util vars
         self.game = game
         self.pos = list(pos)  # [x, y]
         self.size = size
         self.velocity = [0, 0]  # [vel_x, vel_y]
 
+        #Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
         self.JUMP_VELOCITY = -6.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
 
-        self.dashtime_cur = 0  # Immune to gravity during dashtime
+        #Vars related to constants
+        self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
         self.dash_amt = 1
-        self.jumptime_cur = 0
+        self.tech_momentum_mult = 0
 
+        #Direction vars
         self.direction = 0
         self.last_direction = 1
-
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
-        self.tech_momentum_mult = 0
+
+        #Keyboard and movement exceptions utils
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y":False,"x":False}
 
+        #Tilemap (stage)
         self.tilemap = tilemap
 
-    def physics_process(self, framerate, tilemap, dict_kb,stage=[]):
+    def physics_process(self, tilemap, dict_kb):
+        """Input : tilemap (map), dict_kb (dict)
+        output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
 
 
@@ -59,6 +67,8 @@ class PhysicsPlayer:
         self.apply_momentum()
 
     def gravity(self):
+        """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
+        player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
             self.velocity[1] = min(5, self.velocity[1] + 0.5)
         elif self.is_on_floor():
@@ -71,6 +81,7 @@ class PhysicsPlayer:
                 self.velocity[0] = 0
 
     def is_on_floor(self, cur_y = "undef"):
+        """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
         entity_rect = self.rect()
         if cur_y == "undef":
             cur_y = entity_rect.bottom
@@ -86,9 +97,13 @@ class PhysicsPlayer:
 
 
     def jump(self):
+        """Handles player jump and super/hyperdash tech"""
+
+        #Jumping
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
             self.velocity[1] = self.JUMP_VELOCITY
 
+            #Tech
             if self.dashtime_cur != 0:
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
@@ -96,6 +111,7 @@ class PhysicsPlayer:
                 self.velocity[1] /= self.tech_momentum_mult
 
     def dash(self):
+        """Handles player dash."""
         if not self.anti_dash_buffer:
             if self.dict_kb["key_dash"] == 1:
                 if self.dash_amt > 0:
@@ -111,6 +127,7 @@ class PhysicsPlayer:
                 self.anti_dash_buffer = False
 
     def dash_momentum(self):
+        """Applies momentum from dash. Deletes all momentum when the dash ends."""
         if self.dashtime_cur > 0:
             self.dashtime_cur -= 1
             if not self.stop_dash_momentum["x"]:
@@ -121,6 +138,7 @@ class PhysicsPlayer:
                 self.velocity = [0, 0]
 
     def collision_check(self):
+        """Checks for collision using tilemap"""
         entity_rect = self.rect()
 
         # Handle Vertical Collision First
@@ -158,6 +176,7 @@ class PhysicsPlayer:
                 self.stop_dash_momentum["x"] = True
 
     def apply_momentum(self):
+        """Applies velocity to the coords of the object. Slows down movement depending on environment"""
         self.pos[0] += self.velocity[0]
         self.pos[1] += self.velocity[1]
 
@@ -169,6 +188,7 @@ class PhysicsPlayer:
         return (-self.pos[0], self.pos[1])
 
     def get_direction(self, axis):
+        """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""
         if axis == "x":
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
