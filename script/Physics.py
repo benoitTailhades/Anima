@@ -180,7 +180,5 @@ class PhysicsPlayer:
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
-    def render(self, surf):
-        surf.blit(self.game.assets['player'], self.pos)
-
-
+    def render(self, surf, offset = (0, 0)):
+        surf.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
