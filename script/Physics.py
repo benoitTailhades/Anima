@@ -52,8 +52,9 @@ class PhysicsPlayer:
         self.gravity()
         self.jump()
         self.dash()
-        self.collision_check()
         self.dash_momentum()
+        self.collision_check()
+
         self.apply_momentum()
 
     def gravity(self):
@@ -174,8 +175,5 @@ class PhysicsPlayer:
 
     def render(self, surf):
         surf.blit(self.game.assets['player'], self.pos)
-
-
-
 
 
