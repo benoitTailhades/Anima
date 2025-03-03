@@ -40,7 +40,7 @@ class Game:
 
             self.tilemap.render(self.display)
 
-            self.player.physics_process(1, self.tilemap, self.dict_kb, [])
+            self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset= self.scroll)
 
             for event in pygame.event.get():
