@@ -13,8 +13,8 @@ class Game:
         pygame.init()
 
         pygame.display.set_caption("Anima")
-        self.screen = pygame.display.set_mode((640, 480))
-        self.display = pygame.Surface((320, 240))
+        self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
+        self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
 
@@ -47,9 +47,12 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+                if event.type == pygame.K_ESCAPE:
+                    menu()
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {
+                        pygame.K_ESCAPE: "key_menu",
                         pygame.K_z: "key_up",
                         pygame.K_s: "key_down",
                         pygame.K_q: "key_left",
@@ -60,6 +63,8 @@ class Game:
                     }
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
+                elif event.type == pygame.VIDEORESIZE:
+                    self.screen = pygame.display.set_mode((event.w, event.h), pygame.RESIZABLE)
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
