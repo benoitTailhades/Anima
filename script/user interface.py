@@ -27,7 +27,7 @@ def play_screen():
         screen.fill(WHITE)
         py.display.update()
 
-menu_principal_screen()
+
 
 py.quit()
 
