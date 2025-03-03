@@ -6,7 +6,7 @@ from scripts.utils import load_image, load_images
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
-
+from scripts.user_interface import menu
 
 class Game:
     def __init__(self):
