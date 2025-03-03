@@ -102,8 +102,6 @@ def option_menu():
 
         py.display.flip()  # Mettre à jour l'affichage de la fenêtre avec tous les changements graphiques
 
-
-
 def menu():
     py.init()
     screen = py.display.set_mode((1000, 600),py.RESIZABLE)
@@ -136,8 +134,6 @@ def menu():
             screen.blit(label, (rect.x + 50, rect.y + 10))
 
         py.display.flip()
-
-
 
     running = True
     while running:
