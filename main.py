@@ -40,7 +40,7 @@ class Game:
 
             self.tilemap.render(self.display)
 
-            self.player.physics_process(self.tilemap, self.dict_kb)
+            self.player.physics_process(1,self.tilemap, self.dict_kb)
             self.player.render(self.display, offset= self.scroll)
 
             for event in pygame.event.get():
@@ -48,7 +48,6 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.type ==pygame.KEYDOWN  and event.key == pygame.K_ESCAPE:
-                    print("blud")
                     menu()
 
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
