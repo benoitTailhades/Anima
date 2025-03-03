@@ -57,7 +57,6 @@ class Game:
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {
-                        pygame.K_ESCAPE: "key_menu",
                         pygame.K_z: "key_up",
                         pygame.K_s: "key_down",
                         pygame.K_q: "key_left",
