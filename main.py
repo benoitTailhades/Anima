@@ -43,40 +43,19 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z:
-                        self.dict_kb["key_up"] = 1
-                    if event.key == pygame.K_s:
-                        self.dict_kb["key_down"] = 1
-                    if event.key == pygame.K_q:
-                        self.dict_kb["key_left"] = 1
-                    if event.key == pygame.K_d:
-                        self.dict_kb["key_right"] = 1
-                    if event.key == pygame.K_q:
-                        self.dict_kb["key_left"] = 1
-                    if event.key == pygame.K_g:
-                        self.dict_kb["key_dash"] = 1
-                    if event.key == pygame.K_h:
-                        self.dict_kb["key_attack"] = 1
-                    if event.key == pygame.K_SPACE:
-                        self.dict_kb["key_jump"] = 1
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_z:
-                        self.dict_kb["key_up"] = 0
-                    if event.key == pygame.K_s:
-                        self.dict_kb["key_down"] = 0
-                    if event.key == pygame.K_q:
-                        self.dict_kb["key_left"] = 0
-                    if event.key == pygame.K_d:
-                        self.dict_kb["key_right"] = 0
-                    if event.key == pygame.K_q:
-                        self.dict_kb["key_left"] = 0
-                    if event.key == pygame.K_g:
-                        self.dict_kb["key_dash"] = 0
-                    if event.key == pygame.K_h:
-                        self.dict_kb["key_attack"] = 0
-                    if event.key == pygame.K_SPACE:
-                        self.dict_kb["key_jump"] = 0
+                if event.type in (pygame.KEYDOWN, pygame.KEYUP):
+                    state = 1 if event.type == pygame.KEYDOWN else 0
+                    key_map = {
+                        pygame.K_z: "key_up",
+                        pygame.K_s: "key_down",
+                        pygame.K_q: "key_left",
+                        pygame.K_d: "key_right",
+                        pygame.K_g: "key_dash",
+                        pygame.K_h: "key_attack",
+                        pygame.K_SPACE: "key_jump",
+                    }
+                    if event.key in key_map:
+                        self.dict_kb[key_map[event.key]] = state
 
             self.player.physics_process(1, self.tilemap , self.dict_kb,[])
             self.player.render(self.display)
