@@ -1,6 +1,7 @@
 import pygame
 
 NEIGHBOR_OFFSETS = [(-1, 0), (-1,-1), (0, -1), (1, -1), (1, 0), (0, 0), (-1, 1), (0, 1), (1, 1)]
+UNDER_OFFSETS = [(-1,-1),(0,-1),(1,-1)]
 PHYSICS_TILES = {'grass', 'stone'}
 
 class Tilemap:
@@ -24,12 +25,28 @@ class Tilemap:
                 tiles.append(self.tilemap[check_loc])
         return tiles
 
+    def tiles_under(self, pos):
+        u_tiles = []
+        u_tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
+        for offset in UNDER_OFFSETS:
+            check_loc = str(u_tile_loc[0] + offset[0]) + ';' + str(u_tile_loc[1] + offset[1])
+            if check_loc in self.tilemap:
+                u_tiles.append(self.tilemap[check_loc])
+        return u_tiles
+
     def physics_rects_around(self, pos):
         rects = []
         for tile in self.tiles_around(pos):
             if tile['type'] in PHYSICS_TILES:
                 rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
         return rects
+
+    def physics_rects_under(self, pos):
+        u_rects = []
+        for tile in self.tiles_under(pos):
+            if tile['type'] in PHYSICS_TILES:
+                u_rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
+        return u_rects
 
     def render(self, surf, offset = (0, 0)):
         for tile in self.offgrid_tiles:
