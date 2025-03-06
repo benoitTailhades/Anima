@@ -58,6 +58,7 @@ class PhysicsPlayer:
             elif abs(self.velocity[0]) <= abs(self.direction * self.SPEED):
                 self.velocity[0] = self.direction * self.SPEED
 
+
         self.gravity()
         self.jump()
         self.dash()
@@ -65,6 +66,22 @@ class PhysicsPlayer:
         self.collision_check()
 
         self.apply_momentum()
+
+    def is_on_floor(self, cur_y="undef"):
+        """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
+        entity_rect = self.rect()
+        if cur_y == "undef":
+            cur_y = entity_rect.bottom
+
+        # Create a slightly extended rectangle (e.g., 1px lower) to check for near-ground collisions
+        expanded_rect = entity_rect.copy()
+        expanded_rect.height += 1  # Extend the bottom of the rectangle by 1 pixel
+
+        for rect in self.tilemap.physics_rects_around(self.pos):
+            if expanded_rect.colliderect(rect):
+                self.pos[1] = rect.top - self.size[1]
+                return cur_y >= rect.top
+        return False
 
     def gravity(self):
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
@@ -80,26 +97,11 @@ class PhysicsPlayer:
             if self.get_direction("x") == 0:
                 self.velocity[0] = 0
 
-    def is_on_floor(self, cur_y = "undef"):
-        """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
-        entity_rect = self.rect()
-        if cur_y == "undef":
-            cur_y = entity_rect.bottom
-
-        # Create a slightly extended rectangle (e.g., 1px lower) to check for near-ground collisions
-        expanded_rect = entity_rect.copy()
-        expanded_rect.height += 1 # Extend the bottom of the rectangle by 1 pixel
-
-        for rect in self.tilemap.physics_rects_around(self.pos):
-            if expanded_rect.colliderect(rect):
-                self.pos[1] = rect.top - self.size[1]
-                return cur_y >= rect.top
-
-
     def jump(self):
         """Handles player jump and super/hyperdash tech"""
 
         #Jumping
+        print(self.is_on_floor())
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
             self.velocity[1] = self.JUMP_VELOCITY
 
@@ -146,13 +148,7 @@ class PhysicsPlayer:
         entity_rect.y += self.velocity[1] # Predict vertical movement
         for rect in self.tilemap.physics_rects_around(self.pos):
             if entity_rect.colliderect(rect):
-                if self.velocity[1] > 0: # Falling (downward collision)
-                    self.pos[1] = rect.top - self.size[1] # Snap to top of block
-                    self.velocity[1] = 0 # Stop downward movement
-                    # Reset horizontal velocity if no input
-                    if self.get_direction("x") == 0:
-                        self.velocity[0] = 0
-                elif self.velocity[1] < 0: # Jumping (upward collision)
+                if self.velocity[1] < 0: # Jumping (upward collision)
                     self.pos[1] = rect.bottom # Snap to bottom of block
                     # Reset vertical velocity and ensure precise positioning
                     self.velocity[1] = 0
@@ -172,8 +168,9 @@ class PhysicsPlayer:
                 elif self.velocity[0] < 0:  # Moving left
                     self.pos[0] = rect.right  # Snap to right side of block
                     self.velocity[0] = 0  # Stop movement
-                    entity_rect.y = self.pos[0]
+                    entity_rect.x = self.pos[0]
                 self.stop_dash_momentum["x"] = True
+
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""

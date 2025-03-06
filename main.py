@@ -29,24 +29,28 @@ class Game:
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
-        self.tilemap = Tilemap(self, tile_size=16)
+        self.tilemap = Tilemap(self, tile_size = 16)
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (50, 50), (8, 15))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (8, 16))
 
     def run(self):
         while True:
+
             self.display.blit(self.assets['background'], (0, 0))
 
-            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 30
-            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 30
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
             self.tilemap.render(self.display, offset = render_scroll)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset = render_scroll)
+
+            #print(self.tilemap.tiles_under(self.player.pos))
+
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

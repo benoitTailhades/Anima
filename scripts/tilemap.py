@@ -1,11 +1,11 @@
 import pygame
 
 NEIGHBOR_OFFSETS = [(-1, 0), (-1,-1), (0, -1), (1, -1), (1, 0), (0, 0), (-1, 1), (0, 1), (1, 1)]
-UNDER_OFFSETS = [(-1,-1),(0,-1),(1,-1)]
+UNDER_OFFSETS = [(-1, 1), (0, 1), (1, 1)]
 PHYSICS_TILES = {'grass', 'stone'}
 
 class Tilemap:
-    def __init__(self, game, tile_size=16):
+    def __init__(self, game, tile_size = 16):
         self.game = game
         self.tile_size = tile_size
         self.tilemap = {}
@@ -30,8 +30,11 @@ class Tilemap:
         u_tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
         for offset in UNDER_OFFSETS:
             check_loc = str(u_tile_loc[0] + offset[0]) + ';' + str(u_tile_loc[1] + offset[1])
+            #print(check_loc)
             if check_loc in self.tilemap:
                 u_tiles.append(self.tilemap[check_loc])
+        #print("check")
+        #print(u_tiles)
         return u_tiles
 
     def physics_rects_around(self, pos):
