@@ -60,7 +60,6 @@ class PhysicsPlayer:
             elif abs(self.velocity[0]) <= abs(self.direction * self.SPEED):
                 self.velocity[0] = self.direction * self.SPEED
 
-
         self.gravity()
         self.jump()
         self.dash()
@@ -83,7 +82,6 @@ class PhysicsPlayer:
             if expanded_rect.colliderect(rect):
                 self.pos[1] = rect.top - self.size[1]
                 return True
-        return False
         return False
 
     def gravity(self):
