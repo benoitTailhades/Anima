@@ -14,26 +14,28 @@ class Game:
 
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
-        self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
+        self.display = pygame.Surface((2000, 1200),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
 
+        self.tile_size = 64
+
         self.assets = {
-            'decor': load_images('tiles/decor'),
-            'grass': load_images('tiles/grass'),
-            'large_decor': load_images('tiles/large_decor'),
-            'stone': load_images('tiles/stone'),
-            'player': load_image('entities/player.png'),
-            'background' : load_image('background.jpg')
+            'decor': load_images('tiles/decor', self.tile_size),
+            'grass': load_images('tiles/grass', self.tile_size),
+            'large_decor': load_images('tiles/large_decor', self.tile_size),
+            'stone': load_images('tiles/stone', self.tile_size),
+            'player': load_image('entities/player.png', (32, 60)),
+            'background' : load_image('background.jpg', self.display.get_size())
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
-        self.tilemap = Tilemap(self, tile_size = 16)
+        self.tilemap = Tilemap(self, self.tile_size)
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (8, 16))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (32, 60))
 
     def run(self):
         while True:
@@ -48,9 +50,6 @@ class Game:
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset = render_scroll)
-
-            #print(self.tilemap.tiles_under(self.player.pos))
-
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

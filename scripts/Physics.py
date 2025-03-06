@@ -18,9 +18,9 @@ class PhysicsPlayer:
         self.velocity = [0, 0]  # [vel_x, vel_y]
 
         #Constants for movement
-        self.SPEED = 2.5
-        self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -6.0
+        self.SPEED = 10
+        self.DASH_SPEED = 20
+        self.JUMP_VELOCITY = -12.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
 
@@ -87,7 +87,7 @@ class PhysicsPlayer:
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
         player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            self.velocity[1] = min(5, self.velocity[1] + 0.5)
+            self.velocity[1] = min(18, self.velocity[1] + 0.8)
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
@@ -101,7 +101,6 @@ class PhysicsPlayer:
         """Handles player jump and super/hyperdash tech"""
 
         #Jumping
-        print(self.is_on_floor())
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
             self.velocity[1] = self.JUMP_VELOCITY
 
@@ -170,7 +169,6 @@ class PhysicsPlayer:
                     self.velocity[0] = 0  # Stop movement
                     entity_rect.x = self.pos[0]
                 self.stop_dash_momentum["x"] = True
-
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
