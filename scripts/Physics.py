@@ -1,4 +1,6 @@
 #Heavily upgraded basic godot physics code that i then converted to Python --Aymeric
+from typing import reveal_type
+
 import pygame as pg
 
 import sys
@@ -18,9 +20,9 @@ class PhysicsPlayer:
         self.velocity = [0, 0]  # [vel_x, vel_y]
 
         #Constants for movement
-        self.SPEED = 10
-        self.DASH_SPEED = 20
-        self.JUMP_VELOCITY = -12.0
+        self.SPEED = 2.5
+        self.DASH_SPEED = 4
+        self.JUMP_VELOCITY = -6.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
 
@@ -80,14 +82,15 @@ class PhysicsPlayer:
         for rect in self.tilemap.physics_rects_under(self.pos):
             if expanded_rect.colliderect(rect):
                 self.pos[1] = rect.top - self.size[1]
-                return cur_y >= rect.top
+                return True
+        return False
         return False
 
     def gravity(self):
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
         player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            self.velocity[1] = min(18, self.velocity[1] + 0.8)
+            self.velocity[1] = min(5, self.velocity[1] + 0.5)
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0

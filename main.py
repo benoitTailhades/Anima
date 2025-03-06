@@ -14,18 +14,18 @@ class Game:
 
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
-        self.display = pygame.Surface((2000, 1200),pygame.RESIZABLE)
+        self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
 
-        self.tile_size = 64
+        self.tile_size = 16
 
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
             'large_decor': load_images('tiles/large_decor', self.tile_size),
             'stone': load_images('tiles/stone', self.tile_size),
-            'player': load_image('entities/player.png', (60, 60)),
+            'player': load_image('entities/player.png', (15, 15)),
             'background' : load_image('background.jpg', self.display.get_size())
         }
 
@@ -35,7 +35,7 @@ class Game:
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (60, 60))
+        self.player = PhysicsPlayer(self, self.tilemap, (150, 50), (15, 15))
 
     def run(self):
         while True:
