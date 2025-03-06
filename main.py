@@ -25,7 +25,7 @@ class Game:
             'grass': load_images('tiles/grass', self.tile_size),
             'large_decor': load_images('tiles/large_decor', self.tile_size),
             'stone': load_images('tiles/stone', self.tile_size),
-            'player': load_image('entities/player.png', (32, 60)),
+            'player': load_image('entities/player.png', (60, 60)),
             'background' : load_image('background.jpg', self.display.get_size())
         }
 
@@ -35,7 +35,7 @@ class Game:
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (32, 60))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), (60, 60))
 
     def run(self):
         while True:

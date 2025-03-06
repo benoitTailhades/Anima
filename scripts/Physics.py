@@ -77,7 +77,7 @@ class PhysicsPlayer:
         expanded_rect = entity_rect.copy()
         expanded_rect.height += 1  # Extend the bottom of the rectangle by 1 pixel
 
-        for rect in self.tilemap.physics_rects_around(self.pos):
+        for rect in self.tilemap.physics_rects_under(self.pos):
             if expanded_rect.colliderect(rect):
                 self.pos[1] = rect.top - self.size[1]
                 return cur_y >= rect.top
