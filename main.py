@@ -20,7 +20,7 @@ class Game:
 
         self.tile_size = 16
 
-        self.p_size = (35, 35)
+        self.p_size = (40, 40)
 
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
@@ -37,7 +37,7 @@ class Game:
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 50), self.p_size)
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), self.p_size)
 
     def run(self):
         while True:
