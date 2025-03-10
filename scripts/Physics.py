@@ -21,7 +21,7 @@ class PhysicsPlayer:
 
         #Constants for movement
         self.SPEED = 2.5
-        self.DASH_SPEED = 4
+        self.DASH_SPEED = 6
         self.JUMP_VELOCITY = -6.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
@@ -32,7 +32,6 @@ class PhysicsPlayer:
         self.tech_momentum_mult = 0
 
         #Direction vars
-        self.direction = 0
         self.last_direction = 1
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
 
@@ -49,39 +48,30 @@ class PhysicsPlayer:
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
 
-
-        self.direction = self.get_direction("x")
-        if self.direction != 0:
-            self.last_direction = self.direction
+        direction = self.get_direction("x")
+        if direction != 0:
+            self.last_direction = direction
 
         if not self.dashtime_cur > 0:
-            if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != self.direction:
-                self.velocity[0] += self.direction * self.SPEED / 2
-            elif abs(self.velocity[0]) <= abs(self.direction * self.SPEED):
-                self.velocity[0] = self.direction * self.SPEED
+            if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != direction:
+                self.velocity[0] += direction * self.SPEED / 2
+            elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
+                self.velocity[0] = direction * self.SPEED
 
         self.gravity()
         self.jump()
         self.dash()
         self.dash_momentum()
-        self.collision_check()
 
         self.apply_momentum()
 
-    def is_on_floor(self, cur_y="undef"):
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def is_on_floor(self):
         """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
-        entity_rect = self.rect()
-        if cur_y == "undef":
-            cur_y = entity_rect.bottom
-
-        # Create a slightly extended rectangle (e.g., 1px lower) to check for near-ground collisions
-        expanded_rect = entity_rect.copy()
-        expanded_rect.height += 1  # Extend the bottom of the rectangle by 1 pixel
-
         for rect in self.tilemap.physics_rects_under(self.pos):
-            if expanded_rect.colliderect(rect):
-                self.pos[1] = rect.top - self.size[1]
-                return True
+            return rect.y <= self.rect().bottom
         return False
 
     def gravity(self):
@@ -139,49 +129,47 @@ class PhysicsPlayer:
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
 
-    def collision_check(self):
+    def collision_check(self, axe):
         """Checks for collision using tilemap"""
         entity_rect = self.rect()
+        tilemap = self.tilemap
 
         # Handle Vertical Collision First
-        backup_velo = self.velocity[1]
-        entity_rect.y += self.velocity[1] # Predict vertical movement
-        for rect in self.tilemap.physics_rects_around(self.pos):
-            if entity_rect.colliderect(rect):
-                if self.velocity[1] < 0: # Jumping (upward collision)
-                    self.pos[1] = rect.bottom # Snap to bottom of block
-                    # Reset vertical velocity and ensure precise positioning
-                    self.velocity[1] = 0
-                    # Recalculate entity_rect after snapping to prevent drift
-                    entity_rect.y = self.pos[1]
-                self.stop_dash_momentum["y"] = True
+        if axe == "y":
+            backup_velo = self.velocity[1]
+            entity_rect.y += self.velocity[1] # Predict vertical movement
+            for rect in tilemap.physics_rects_around(self.pos):
+                if entity_rect.colliderect(rect):
+                    if self.velocity[1] > 0:
+                        entity_rect.bottom = rect.top
+                    if self.velocity[1] < 0:
+                        entity_rect.top = rect.bottom
+                    self.pos[1] = entity_rect.y
+                    self.stop_dash_momentum["y"] = True
+            entity_rect.y -= backup_velo
 
-        entity_rect.y -= backup_velo
-
-        # Handle Horizontal Collision After
-        entity_rect.x += self.velocity[0]  # Predict horizontal movement
-        for rect in self.tilemap.physics_rects_around(self.pos):
-            if entity_rect.colliderect(rect):
-                if self.velocity[0] > 0:  # Moving right
-                    self.pos[0] = rect.left - self.size[0]  # Snap to left side of block
-                    self.velocity[0] = 0  # Stop movement
-                elif self.velocity[0] < 0:  # Moving left
-                    self.pos[0] = rect.right  # Snap to right side of block
-                    self.velocity[0] = 0  # Stop movement
-                    entity_rect.x = self.pos[0]
-                self.stop_dash_momentum["x"] = True
+        if axe == "x":
+            entity_rect.x += self.velocity[0]  # Predict horizontal movement
+            for rect in tilemap.physics_rects_around(self.pos):
+                if entity_rect.colliderect(rect):
+                    if self.velocity[0] > 0:
+                        entity_rect.right = rect.left
+                    if self.velocity[0] < 0:
+                        entity_rect.left = rect.right
+                    self.pos[0] = entity_rect.x
+                    self.stop_dash_momentum["x"] = True
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
         self.pos[0] += self.velocity[0]
+        self.collision_check("x")
         self.pos[1] += self.velocity[1]
+        self.collision_check("y")
 
         if self.is_on_floor():
             self.velocity[0] *= 0.2
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
-
-        return (-self.pos[0], self.pos[1])
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""
@@ -192,9 +180,6 @@ class PhysicsPlayer:
         else:
             print("Error: get_direction() received an invalid axis")
             return 0
-
-    def rect(self):
-        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
     def render(self, surf, offset = (0, 0)):
         surf.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
