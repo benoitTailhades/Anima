@@ -1,4 +1,4 @@
-#Heavily upgraded basic godot physics code that i then converted to Python --Aymeric
+#Heavily upgraded basic godot physics code that I then converted to Python --Aymeric
 from typing import reveal_type
 
 import pygame as pg
