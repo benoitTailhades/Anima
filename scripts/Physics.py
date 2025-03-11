@@ -97,13 +97,11 @@ class PhysicsPlayer:
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
-                self.set_action("idle")
             if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
             if self.get_direction("x") == 0:
                 self.velocity[0] = 0
-                self.set_action("idle")
 
     def jump(self):
         """Handles player jump and super/hyperdash tech"""
@@ -197,7 +195,7 @@ class PhysicsPlayer:
                 elif self.get_direction("x") == -1:
                     self.flip = 'left'
                 self.set_action("run")
-            elif self.get_direction("x") == 0:
+            else:
                 self.set_action("idle")
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
