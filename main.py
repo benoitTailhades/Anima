@@ -2,7 +2,7 @@ import sys
 
 import pygame
 
-from scripts.utils import load_image, load_images
+from scripts.utils import load_image, load_images, Animation
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
@@ -20,15 +20,18 @@ class Game:
 
         self.tile_size = 16
 
-        self.p_size = (40, 40)
-
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
             'large_decor': load_images('tiles/large_decor', self.tile_size),
             'stone': load_images('tiles/stone', self.tile_size),
-            'player': load_image('entities/player.png', self.p_size),
-            'background' : load_image('background.jpg', self.display.get_size())
+            'player': load_image('entities/player.png', (40, 40)),
+            'background' : load_image('background.jpg', self.display.get_size()),
+            'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
+            'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=4),
+            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=4),
+            'player/jump/right' : Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False)
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
@@ -37,7 +40,7 @@ class Game:
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), self.p_size)
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (35, 35))
 
     def run(self):
         while True:

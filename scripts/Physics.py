@@ -38,10 +38,17 @@ class PhysicsPlayer:
         #Keyboard and movement exceptions utils
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
-        self.stop_dash_momentum = {"y":False,"x":False}
+        self.stop_dash_momentum = {"y": False,"x": False}
 
         #Tilemap (stage)
         self.tilemap = tilemap
+
+        self.action = ''
+        self.anim_offset = (-3, -3)
+        self.flip = 'right'
+        self.set_action('idle')
+        self.collision = {'left': False, 'right': False}
+        self.air_time = 0
 
     def physics_process(self, tilemap, dict_kb):
         """Input : tilemap (map), dict_kb (dict)
@@ -64,6 +71,13 @@ class PhysicsPlayer:
         self.dash_momentum()
 
         self.apply_momentum()
+
+        self.animation.update()
+
+    def set_action(self, action):
+        if action != self.action :
+            self.action = action
+            self.animation = self.game.assets['player/' + self.action + ('/'+self.flip if action != 'idle' else '') ].copy()
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -93,7 +107,9 @@ class PhysicsPlayer:
 
         #Jumping
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
+            self.set_action("jump")
             self.velocity[1] = self.JUMP_VELOCITY
+
 
             #Tech
             if self.dashtime_cur != 0:
@@ -154,22 +170,40 @@ class PhysicsPlayer:
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
+                        self.collision['right'] = True
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
+                        self.collision['left'] = True
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
 
+
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
+        self.air_time += 1
+        self.collision = {'left': False, 'right': False}
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
         self.pos[1] += self.velocity[1]
         self.collision_check("y")
 
         if self.is_on_floor():
+            self.air_time = 0
+            self.jumping = False
             self.velocity[0] *= 0.2
+            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
+                if self.get_direction("x") == 1:
+                    self.flip = 'right'
+                elif self.get_direction("x") == -1:
+                    self.flip = 'left'
+                self.set_action("run")
+                self.animation.update()
+            else:
+                self.set_action("idle")
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
+
+
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""
@@ -182,4 +216,4 @@ class PhysicsPlayer:
             return 0
 
     def render(self, surf, offset = (0, 0)):
-        surf.blit(self.game.assets['player'], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        surf.blit(self.animation.img(), (self.pos[0] - offset[0], self.pos[1] - offset[1] - 5))
