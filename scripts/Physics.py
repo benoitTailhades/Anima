@@ -43,10 +43,10 @@ class PhysicsPlayer:
         #Tilemap (stage)
         self.tilemap = tilemap
 
-        self.action = ''
-        self.anim_offset = (-3, -3)
-        self.flip = 'right'
-        self.set_action('idle')
+        self.action = ""
+        self.anim_offset = (-1, -1)
+        self.flip = "right"
+        self.set_action("idle")
         self.collision = {'left': False, 'right': False}
         self.air_time = 0
 
@@ -54,6 +54,7 @@ class PhysicsPlayer:
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
+        self.air_time += 1
 
         direction = self.get_direction("x")
         if direction != 0:
@@ -96,20 +97,22 @@ class PhysicsPlayer:
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
+                self.set_action("idle")
             if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
             if self.get_direction("x") == 0:
                 self.velocity[0] = 0
+                self.set_action("idle")
 
     def jump(self):
         """Handles player jump and super/hyperdash tech"""
 
         #Jumping
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
-            self.set_action("jump")
             self.velocity[1] = self.JUMP_VELOCITY
-
+            if self.air_time == 1:
+                self.set_action("jump")
 
             #Tech
             if self.dashtime_cur != 0:
@@ -177,10 +180,8 @@ class PhysicsPlayer:
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
 
-
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        self.air_time += 1
         self.collision = {'left': False, 'right': False}
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
@@ -189,7 +190,6 @@ class PhysicsPlayer:
 
         if self.is_on_floor():
             self.air_time = 0
-            self.jumping = False
             self.velocity[0] *= 0.2
             if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
                 if self.get_direction("x") == 1:
@@ -197,13 +197,10 @@ class PhysicsPlayer:
                 elif self.get_direction("x") == -1:
                     self.flip = 'left'
                 self.set_action("run")
-                self.animation.update()
-            else:
+            elif self.get_direction("x") == 0:
                 self.set_action("idle")
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
-
-
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""
