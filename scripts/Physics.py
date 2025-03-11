@@ -39,13 +39,12 @@ class PhysicsPlayer:
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
+        self.holding_jump = False
 
         #Tilemap (stage)
         self.tilemap = tilemap
 
         self.action = ""
-        self.anim_offset = (-1, -1)
-        self.flip = "right"
         self.set_action("idle")
         self.collision = {'left': False, 'right': False}
         self.air_time = 0
@@ -73,12 +72,21 @@ class PhysicsPlayer:
 
         self.apply_momentum()
 
+        if self.is_on_floor():
+            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
+                if self.get_direction("x") == 1:
+                     self.set_action("run/right")
+                elif self.get_direction("x") == -1:
+                     self.set_action("run/left")
+            else:
+                self.set_action("idle")
+
         self.animation.update()
 
     def set_action(self, action):
         if action != self.action :
             self.action = action
-            self.animation = self.game.assets['player/' + self.action + ('/'+self.flip if action != 'idle' else '') ].copy()
+            self.animation = self.game.assets['player/' + self.action].copy()
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -97,6 +105,7 @@ class PhysicsPlayer:
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
+                self.set_action("idle")
             if self.dashtime_cur < 10 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
@@ -107,10 +116,16 @@ class PhysicsPlayer:
         """Handles player jump and super/hyperdash tech"""
 
         #Jumping
-        if self.dict_kb["key_jump"] == 1 and self.is_on_floor():
+        if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump:
             self.velocity[1] = self.JUMP_VELOCITY
+            self.holding_jump = True
             if self.air_time == 1:
-                self.set_action("jump")
+                if self.get_direction("x") == 1:
+                    self.set_action("jump/right")
+                elif self.get_direction("x") <= 0:
+                    self.set_action("jump/left")
+        if self.dict_kb["key_jump"] == 0:
+            self.holding_jump = False
 
             #Tech
             if self.dashtime_cur != 0:
@@ -189,14 +204,6 @@ class PhysicsPlayer:
         if self.is_on_floor():
             self.air_time = 0
             self.velocity[0] *= 0.2
-            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
-                if self.get_direction("x") == 1:
-                    self.flip = 'right'
-                elif self.get_direction("x") == -1:
-                    self.flip = 'left'
-                self.set_action("run")
-            else:
-                self.set_action("idle")
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
 
@@ -211,4 +218,6 @@ class PhysicsPlayer:
             return 0
 
     def render(self, surf, offset = (0, 0)):
-        surf.blit(self.animation.img(), (self.pos[0] - offset[0], self.pos[1] - offset[1] - 5))
+        r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
+        surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 8, self.pos[1] - offset[1] - 5))
+        #pygame.draw.rect(surf, (255,230,255), r)

@@ -40,7 +40,7 @@ class Game:
 
         self.scroll = [0, 0]
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (35, 35))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
     def run(self):
         while True:
