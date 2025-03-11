@@ -28,8 +28,8 @@ class Game:
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background.jpg', self.display.get_size()),
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
-            'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=4),
-            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=4),
+            'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=3),
+            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
             'player/jump/right' : Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
             'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False)
         }
