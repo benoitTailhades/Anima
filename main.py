@@ -6,7 +6,7 @@ from scripts.utils import load_image, load_images, Animation
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
-from scripts.user_interface import menu
+from scripts.user_interface import Menu
 
 class Game:
     def __init__(self):
@@ -17,8 +17,10 @@ class Game:
         self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
-
+        self.Menu = Menu(self)
         self.tile_size = 16
+
+        self.Menu = Menu(self)
 
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
@@ -38,14 +40,14 @@ class Game:
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
-
+        self.time = 0
         self.scroll = [0, 0]
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
     def run(self):
         while True:
-
+            self.time+=1
             self.display.blit(self.assets['background'], (0, 0))
 
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
@@ -62,7 +64,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    menu()
+                    self.Menu.menu_display()
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {
