@@ -37,6 +37,7 @@ class Game:
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
+        self.tilemap.load('map.json')
 
         self.scroll = [0, 0]
 

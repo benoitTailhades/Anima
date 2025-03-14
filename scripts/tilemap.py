@@ -1,8 +1,24 @@
 import pygame
 
+import json
+
 from scripts.utils import round_up
 
+AUTOTILE_MAP = {
+    tuple(sorted([(1, 0), (0, 1)])): 0,
+    tuple(sorted([(1, 0), (0, 1), (-1, 0)])): 1,
+    tuple(sorted([(-1, 0), (0, 1)])): 2,
+    tuple(sorted([(-1, 0), (0, -1), (0, 1)])): 3,
+    tuple(sorted([(-1, 0), (0, -1)])): 4,
+    tuple(sorted([(-1, 0), (0, -1), (1, 0)])): 5,
+    tuple(sorted([(1, 0), (0, -1)])): 6,
+    tuple(sorted([(1, 0), (0, -1), (0, 1)])): 7,
+    tuple(sorted([(1, 0), (-1, 0), (0, 1), (0, -1)])): 8,
+
+}
+
 PHYSICS_TILES = {'grass', 'stone'}
+AUTOTILE_TYPES = {'grass', 'stone'}
 
 class Tilemap:
     def __init__(self, game, tile_size = 16):
@@ -12,10 +28,6 @@ class Tilemap:
         self.offgrid_tiles = []
         self.show_collisions = False
 
-        for i in range(20):
-            self.tilemap[str(3 + i) + ';10'] = {'type': 'grass', 'variant': 1, 'pos': (3 + i, 10)}
-            self.tilemap[str(5 + i) + ';6'] = {'type': 'grass', 'variant': 1, 'pos': (5 + i, 6)}
-            self.tilemap['10;' + str(i + 5)] = {'type': 'stone', 'variant': 1, 'pos': (10, 5 + i)}
 
     def neighbor_offset(self):
         offset = []
@@ -64,6 +76,36 @@ class Tilemap:
             if check_loc in self.tilemap:
                 u_tiles.append(self.tilemap[check_loc])
         return u_tiles
+
+    def save(self, path):
+        f = open(path, 'w')
+        json.dump({'tilemap': self.tilemap,
+                   'tilesize': self.tile_size,
+                   'offgrid': self.offgrid_tiles}, f)
+        f.close()
+
+    def load(self, path):
+        f = open(path, 'r')
+        map_data = json.load(f)
+        f.close()
+
+        self.tilemap = map_data['tilemap']
+        self.tile_size = map_data['tilesize']
+        self.offgrid_tiles = map_data['offgrid']
+
+    def autotile(self):
+        for loc in self.tilemap:
+            tile = self.tilemap[loc]
+            neighbors = set()
+            for shift in [(1, 0), (-1, 0), (0, -1), (0, 1)]:
+                check_loc = str(tile['pos'][0] + shift[0]) + ";" + str(tile['pos'][1] + shift[1])
+                if check_loc in self.tilemap:
+                    if self.tilemap[check_loc]['type'] == tile['type']:
+                        neighbors.add(shift)
+            neighbors = tuple(sorted(neighbors))
+            if (tile['type'] in AUTOTILE_TYPES) and (neighbors in AUTOTILE_MAP):
+                tile['variant'] = AUTOTILE_MAP[neighbors]
+
 
     def physics_rects_around(self, pos):
         rects = []
