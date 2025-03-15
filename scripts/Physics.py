@@ -128,11 +128,11 @@ class PhysicsPlayer:
             self.holding_jump = False
 
             #Tech
-            if self.dashtime_cur != 0:
+            """if self.dashtime_cur != 0:
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
-                self.velocity[1] /= self.tech_momentum_mult
+                self.velocity[1] /= self.tech_momentum_mult"""
 
     def dash(self):
         """Handles player dash."""
