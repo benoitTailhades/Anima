@@ -206,6 +206,11 @@ class PhysicsPlayer:
             self.velocity[0] *= 0.2
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
+        elif self.air_time >= 20:
+            if self.get_direction("x") == 1:
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1:
+                self.set_action('falling/left')
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""

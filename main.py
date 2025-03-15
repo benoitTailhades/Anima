@@ -31,7 +31,9 @@ class Game:
             'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=3),
             'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
             'player/jump/right' : Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
-            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False)
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
+            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=False),
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False)
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
