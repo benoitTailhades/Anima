@@ -120,9 +120,9 @@ class PhysicsPlayer:
             self.velocity[1] = self.JUMP_VELOCITY
             self.holding_jump = True
             if self.air_time == 1:
-                if self.get_direction("x") == 1:
+                if self.get_direction("x") >= 0:
                     self.set_action("jump/right")
-                elif self.get_direction("x") <= 0:
+                elif self.get_direction("x") == -1:
                     self.set_action("jump/left")
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False

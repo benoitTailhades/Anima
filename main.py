@@ -23,7 +23,7 @@ class Game:
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
-            'large_decor': load_images('tiles/large_decor', self.tile_size),
+            'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background.jpg', self.display.get_size()),
