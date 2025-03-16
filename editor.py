@@ -22,6 +22,8 @@ class Editor:
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
+            'vine': load_images('tiles/vine', self.tile_size),
+            'vine_decor': load_images('tiles/vine_decor', self.tile_size),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
         }
@@ -57,6 +59,7 @@ class Editor:
             self.tilemap.render(self.display, offset=render_scroll)
 
             current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
+            print(self.tile_group, self.tile_variant)
             current_tile_img.set_alpha(100)
 
             mpos = pygame.mouse.get_pos()
