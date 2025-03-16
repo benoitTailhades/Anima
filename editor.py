@@ -23,7 +23,7 @@ class Editor:
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
             'vine': load_images('tiles/vine', self.tile_size),
-            'vine_decor': load_images('tiles/vine_decor', self.tile_size),
+            'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
         }
