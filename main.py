@@ -2,10 +2,14 @@ import sys
 
 import pygame
 
+import random
+
 from scripts.utils import load_image, load_images, Animation
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
+from scripts.particle import Particle
 from scripts.user_interface import menu
+
 
 class Game:
     def __init__(self):
@@ -28,8 +32,8 @@ class Game:
             'stone': load_images('tiles/stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background_begin.png', self.display.get_size()),
-            'background1': load_image('bg1.png', self.display.get_size()),
-            'background2': load_image('bg2.png', self.display.get_size()),
+            'background1': load_image('bg1.png'),
+            'background2': load_image('bg2.png'),
             'brume': load_image('brume_begin.png'),
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
             'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=3),
@@ -37,16 +41,22 @@ class Game:
             'player/jump/right' : Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
             'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
             'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=False),
-            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False)
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False),
+            'particle/leaf': Animation(load_images('particles/leaf'))
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
-
         self.tilemap.load('map.json')
 
+        self.leaf_spawners = []
+        for plant in self.tilemap.extract([('vine_decor', 3)], keep=True):
+            self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
+
         self.scroll = [0, 0]
+
+        self.particles = []
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
@@ -59,13 +69,24 @@ class Game:
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            self.display.blit(self.assets['background1'], (0, 0))
-            self.display.blit(self.assets['background2'], (0, 0))
+            for rect in self.leaf_spawners:
+                if random.random() * 49999 < rect.width * rect.height:
+                    pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
+                    self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
+
+            self.display.blit(self.assets['background1'], (0, -20))
+            self.display.blit(self.assets['background2'], (0, -20))
 
             self.tilemap.render(self.display, offset=render_scroll)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
+
+            for particle in self.particles.copy():
+                kill = particle.update()
+                particle.render(self.display, offset=render_scroll)
+                if kill:
+                    self.particles.remove(particle)
 
 
             for event in pygame.event.get():
