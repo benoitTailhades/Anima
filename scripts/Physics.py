@@ -218,7 +218,7 @@ class PhysicsPlayer:
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')
-        returns : -1 if left/down, 1 if right/up"""
+        returns : -1 if left/down, 1 if right/up. 0 if bad arguments"""
         if axis == "x":
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
