@@ -40,7 +40,9 @@ class PhysicsPlayer:
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
-        self.can_walljump = {"available":False,"wall":-1,"buffer":False} #available used to know if you can walljump, wall to know where the wall is located, buffer to deal with logic conflicts in collision_check
+        self.can_walljump = {"available":False,"wall":-1,"buffer":False,"timer":0}
+        #available used to know if you can walljump, wall to know where the wall is located,
+        #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -129,10 +131,10 @@ class PhysicsPlayer:
 
         elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump: #Walljump
             self.jump_logic_helper()
-            if self.can_walljump["wall"] == self.get_direction("x"):
+            if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
                 self.velocity[1] *= 1.3
-            else:
+            else: #Jumping away from the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
 
             self.can_walljump["available"] = False
@@ -188,6 +190,10 @@ class PhysicsPlayer:
             backup_velo = self.velocity[1]
             entity_rect.y += self.velocity[1] # Predict vertical movement
             self.can_walljump["buffer"] = False
+            self.can_walljump["timer"] = max(0,self.can_walljump["timer"]-1)
+
+            if self.can_walljump["timer"] == 0:
+                self.can_walljump["available"] = False
 
             for rect in tilemap.physics_rects_around(self.pos):
                 if entity_rect.colliderect(rect):
@@ -212,19 +218,22 @@ class PhysicsPlayer:
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
-                        if not self.can_walljump["buffer"]:
-                            self.can_walljump["available"] = True
-                            self.can_walljump["wall"] = 1
+                        self.collision_check_walljump_helper(1)
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
-                        if not self.can_walljump["buffer"]:
-                            self.can_walljump["available"] = True
-                            self.can_walljump["wall"] = -1
+                        self.collision_check_walljump_helper(1)
 
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
+
+    def collision_check_walljump_helper(self,axis):
+        """Avoids redundancy"""
+        if not self.can_walljump["buffer"]:
+            self.can_walljump["available"] = True
+            self.can_walljump["wall"] = axis
+            self.can_walljump["timer"] = 8
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
