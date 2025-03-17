@@ -25,15 +25,20 @@ class Game:
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
-            'large_decor': load_images('tiles/large_decor', self.tile_size),
+            'vine': load_images('tiles/vine', self.tile_size),
+            'vine_decor': load_images('tiles/vine_decor'),
+            'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
-            'background' : load_image('background.jpg', self.display.get_size()),
+            'background' : load_image('background_begin.png', self.display.get_size()),
+            'brume': load_image('brume_begin.png'),
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
             'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=3),
             'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
             'player/jump/right' : Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
-            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False)
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
+            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=False),
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False)
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
@@ -54,10 +59,12 @@ class Game:
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            self.tilemap.render(self.display, offset = render_scroll)
+            self.tilemap.render(self.display, offset=render_scroll)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
-            self.player.render(self.display, offset = render_scroll)
+            self.player.render(self.display, offset=render_scroll)
+
+            self.display.blit(self.assets['brume'], (-137-(self.assets['brume'].get_width()/2)-render_scroll[0], -135-(self.assets['brume'].get_height()/4)-render_scroll[1]))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:

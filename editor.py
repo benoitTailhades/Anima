@@ -22,6 +22,8 @@ class Editor:
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
             'grass': load_images('tiles/grass', self.tile_size),
+            'vine': load_images('tiles/vine', self.tile_size),
+            'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
         }
@@ -120,13 +122,13 @@ class Editor:
                     if event.button == 3:
                         self.right_clicking = False
                 if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_LEFT:
+                    if event.key == pygame.K_q:
                         self.movement[0] = True
-                    if event.key == pygame.K_RIGHT:
+                    if event.key == pygame.K_d:
                         self.movement[1] = True
-                    if event.key == pygame.K_UP:
+                    if event.key == pygame.K_z:
                         self.movement[2] = True
-                    if event.key == pygame.K_DOWN:
+                    if event.key == pygame.K_s:
                         self.movement[3] = True
                     if event.key == pygame.K_g:
                         self.ongrid = not self.ongrid
@@ -137,13 +139,13 @@ class Editor:
                     if event.key == pygame.K_o:
                         self.tilemap.save('map.json')
                 if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_LEFT:
+                    if event.key == pygame.K_q:
                         self.movement[0] = False
-                    if event.key == pygame.K_RIGHT:
+                    if event.key == pygame.K_d:
                         self.movement[1] = False
-                    if event.key == pygame.K_UP:
+                    if event.key == pygame.K_z:
                         self.movement[2] = False
-                    if event.key == pygame.K_DOWN:
+                    if event.key == pygame.K_s:
                         self.movement[3] = False
                     if event.key == pygame.K_LSHIFT:
                         self.shift = False

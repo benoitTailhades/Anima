@@ -120,19 +120,19 @@ class PhysicsPlayer:
             self.velocity[1] = self.JUMP_VELOCITY
             self.holding_jump = True
             if self.air_time == 1:
-                if self.get_direction("x") == 1:
+                if self.get_direction("x") >= 0:
                     self.set_action("jump/right")
-                elif self.get_direction("x") <= 0:
+                elif self.get_direction("x") == -1:
                     self.set_action("jump/left")
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False
 
             #Tech
-            if self.dashtime_cur != 0:
+            """if self.dashtime_cur != 0:
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
-                self.velocity[1] /= self.tech_momentum_mult
+                self.velocity[1] /= self.tech_momentum_mult"""
 
     def dash(self):
         """Handles player dash."""
@@ -206,6 +206,11 @@ class PhysicsPlayer:
             self.velocity[0] *= 0.2
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
+        elif self.air_time >= 20:
+            if self.get_direction("x") == 1:
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1:
+                self.set_action('falling/left')
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""

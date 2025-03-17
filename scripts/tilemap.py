@@ -17,8 +17,8 @@ AUTOTILE_MAP = {
 
 }
 
-PHYSICS_TILES = {'grass', 'stone'}
-AUTOTILE_TYPES = {'grass', 'stone'}
+PHYSICS_TILES = {'grass', 'stone', 'vine'}
+AUTOTILE_TYPES = {'grass', 'stone', 'vine'}
 
 class Tilemap:
     def __init__(self, game, tile_size = 16):
