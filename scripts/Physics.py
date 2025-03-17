@@ -40,6 +40,9 @@ class PhysicsPlayer:
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
+        self.can_walljump = {"available":False,"wall":-1,"buffer":False,"timer":0}
+        #available used to know if you can walljump, wall to know where the wall is located,
+        #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -106,7 +109,7 @@ class PhysicsPlayer:
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
                 self.set_action("idle")
-            if self.dashtime_cur < 10 and self.dash_amt == 0:
+            if self.dashtime_cur < 5 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
             if self.get_direction("x") == 0:
@@ -116,23 +119,39 @@ class PhysicsPlayer:
         """Handles player jump and super/hyperdash tech"""
 
         #Jumping
-        if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump:
-            self.velocity[1] = self.JUMP_VELOCITY
-            self.holding_jump = True
-            if self.air_time == 1:
-                if self.get_direction("x") >= 0:
-                    self.set_action("jump/right")
-                elif self.get_direction("x") == -1:
-                    self.set_action("jump/left")
-        if self.dict_kb["key_jump"] == 0:
-            self.holding_jump = False
+        if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump: #Jump on the ground
+            self.jump_logic_helper()
 
-            #Tech
-            """if self.dashtime_cur != 0:
+            # Tech
+            if self.dashtime_cur != 0:
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
-                self.velocity[1] /= self.tech_momentum_mult"""
+                self.velocity[1] /= self.tech_momentum_mult
+
+        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump: #Walljump
+            self.jump_logic_helper()
+            if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
+                self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
+                self.velocity[1] *= 1.3
+            else: #Jumping away from the wall
+                self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
+
+            self.can_walljump["available"] = False
+
+        if self.dict_kb["key_jump"] == 0:
+            self.holding_jump = False
+
+    def jump_logic_helper(self):
+        """Avoid code redundancy"""
+        self.velocity[1] = self.JUMP_VELOCITY
+        self.holding_jump = True
+        if self.air_time == 1:
+            if self.get_direction("x") >= 0:
+                self.set_action("jump/right")
+            elif self.get_direction("x") == -1:
+                self.set_action("jump/left")
+
 
     def dash(self):
         """Handles player dash."""
@@ -170,12 +189,24 @@ class PhysicsPlayer:
         if axe == "y":
             backup_velo = self.velocity[1]
             entity_rect.y += self.velocity[1] # Predict vertical movement
+            self.can_walljump["buffer"] = False
+            self.can_walljump["timer"] = max(0,self.can_walljump["timer"]-1)
+
+            if self.can_walljump["timer"] == 0:
+                self.can_walljump["available"] = False
+
             for rect in tilemap.physics_rects_around(self.pos):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
                         entity_rect.bottom = rect.top
+                        self.can_walljump["buffer"] = True
+                        self.can_walljump["available"] = False
+
                     if self.velocity[1] < 0:
                         entity_rect.top = rect.bottom
+                        self.can_walljump["buffer"] = True
+                        self.can_walljump["available"] = False
+
                     self.pos[1] = entity_rect.y
                     self.stop_dash_momentum["y"] = True
             entity_rect.y -= backup_velo
@@ -187,11 +218,22 @@ class PhysicsPlayer:
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
+                        self.collision_check_walljump_helper(1)
+
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
+                        self.collision_check_walljump_helper(1)
+
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
+
+    def collision_check_walljump_helper(self,axis):
+        """Avoids redundancy"""
+        if not self.can_walljump["buffer"]:
+            self.can_walljump["available"] = True
+            self.can_walljump["wall"] = axis
+            self.can_walljump["timer"] = 8
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
@@ -213,7 +255,8 @@ class PhysicsPlayer:
                 self.set_action('falling/left')
 
     def get_direction(self, axis):
-        """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')"""
+        """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')
+        returns : -1 if left/down, 1 if right/up. 0 if bad arguments"""
         if axis == "x":
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
