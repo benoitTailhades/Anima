@@ -43,6 +43,7 @@ class PhysicsPlayer:
         self.can_walljump = {"available":False,"wall":-1,"buffer":False,"timer":0}
         #available used to know if you can walljump, wall to know where the wall is located,
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
+        self.dash_cooldown = 0
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -155,8 +156,9 @@ class PhysicsPlayer:
 
     def dash(self):
         """Handles player dash."""
+        self.dash_cooldown = max(self.dash_cooldown-1,0)
         if not self.anti_dash_buffer:
-            if self.dict_kb["key_dash"] == 1:
+            if self.dict_kb["key_dash"] == 1 and self.dash_cooldown == 0:
                 if self.dash_amt > 0:
                     self.dash_direction = [self.get_direction("x"), self.get_direction("y")]
                     if self.dash_direction == [0, 0]:
@@ -165,6 +167,7 @@ class PhysicsPlayer:
                     self.stop_dash_momentum["y"],self.stop_dash_momentum["x"] = False,False
                     self.dash_amt -= 1
                 self.anti_dash_buffer = True
+                self.dash_cooldown = 20
         else:
             if self.dict_kb["key_dash"] == 0:
                 self.anti_dash_buffer = False
@@ -223,7 +226,7 @@ class PhysicsPlayer:
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
-                        self.collision_check_walljump_helper(1)
+                        self.collision_check_walljump_helper(-1)
 
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
