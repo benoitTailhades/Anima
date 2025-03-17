@@ -1,6 +1,8 @@
 import pygame as py
 import sys
 
+from scripts.utils import load_images
+
 
 class Menu:
     def __init__(self, game):
@@ -152,3 +154,33 @@ class Menu:
                                 self.option_menu()
                             elif text == "RESUME":
                                 running = False
+
+def start_menu():
+
+        screen = py.display.set_mode((1000, 600), py.NOFRAME)
+
+        background = py.image.load("assets/images/Launching_Screen_Anima.png")
+        background = py.transform.scale(background, (1000, 600))
+
+        font = py.font.Font(None, 24)
+        font.set_italic(True)
+        text = font.render("click anywhere to start", True, (255, 255, 255))  #
+        text_rect = text.get_rect(center=(500, 580))
+
+        running = True
+        while running:
+            screen.blit(background, (0, 0))
+            screen.blit(text, text_rect)
+
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    running = False
+                elif event.type == py.MOUSEBUTTONDOWN:
+                    running = False
+                    py.QUIT
+
+            py.display.flip()
+
+
+
+
