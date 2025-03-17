@@ -107,7 +107,7 @@ class PhysicsPlayer:
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
                 self.set_action("idle")
-            if self.dashtime_cur < 10 and self.dash_amt == 0:
+            if self.dashtime_cur < 5 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
             if self.get_direction("x") == 0:
