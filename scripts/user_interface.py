@@ -11,7 +11,6 @@ class Menu:
         self.background = None
 
     def capture_background(self):
-        """ Capture l'écran actuel du jeu pour l'afficher en arrière-plan du menu """
         self.background = self.screen.copy()
 
     def draw_gradient(self, screen, color1, color2):
@@ -24,7 +23,10 @@ class Menu:
 
     def option_menu(self):
         py.init()
+
         screen = py.display.set_mode((1000, 600), py.RESIZABLE)
+
+
         py.display.set_caption("Menu Options")
 
         font = py.font.Font(None, 36)
@@ -47,11 +49,15 @@ class Menu:
         selected_language = languages[0]
         dropdown_rect = py.Rect(350, 300, 300, 40)
         dropdown_expanded = False
-        back_button = py.Rect(400, 450, 200, 50)
+        back_button = py.Rect(400, 500, 200, 50)
+
+        background = py.image.load("assets/images/menu_option_bg.jpg")
+        background = py.transform.scale(background, (1000, 600))
 
         while True:
-            screen.fill(WHITE)
+
             self.draw_gradient(screen, (30, 144, 255), (100, 200, 255))
+            screen.blit(background,(0, 0))
 
             for event in py.event.get():
                 if event.type == py.QUIT:
@@ -89,8 +95,8 @@ class Menu:
                         volume = (knob_x - slider_rect.x) / slider_rect.width
 
             py.draw.rect(screen, GRAY, slider_rect, border_radius=5)
-            py.draw.circle(screen, BLACK, (knob_x, knob_y), knob_radius)
-            vol_text = font.render(f"Volume : {int(volume * 100)}%", True, BLACK)
+            py.draw.circle(screen, WHITE, (knob_x, knob_y), knob_radius)
+            vol_text = font.render(f"Volume : {int(volume * 100)}%", True, WHITE)
             screen.blit(vol_text, (slider_rect.x, slider_rect.y - 40))
 
             py.draw.rect(screen, GRAY, dropdown_rect, border_radius=5)
