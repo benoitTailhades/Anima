@@ -31,6 +31,7 @@ class Editor:
         self.movement = [False, False, False, False]
 
         self.tilemap = Tilemap(self, self.tile_size)
+
         try:
             self.tilemap.load('map.json')
         except FileNotFoundError:

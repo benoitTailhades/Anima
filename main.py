@@ -3,7 +3,6 @@ import sys
 import pygame
 
 from scripts.utils import load_image, load_images, Animation
-from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
 from scripts.user_interface import menu
@@ -29,6 +28,8 @@ class Game:
             'stone': load_images('tiles/stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background_begin.png', self.display.get_size()),
+            'background1': load_image('bg1.png', self.display.get_size()),
+            'background2': load_image('bg2.png', self.display.get_size()),
             'brume': load_image('brume_begin.png'),
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
             'player/run/right' : Animation(load_images('entities/player/run/right'), img_dur=3),
@@ -42,6 +43,7 @@ class Game:
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
+
         self.tilemap.load('map.json')
 
         self.scroll = [0, 0]
@@ -57,12 +59,14 @@ class Game:
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
+            self.display.blit(self.assets['background1'], (0, 0))
+            self.display.blit(self.assets['background2'], (0, 0))
+
             self.tilemap.render(self.display, offset=render_scroll)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
-            self.display.blit(self.assets['brume'], (-137-(self.assets['brume'].get_width()/2)-render_scroll[0], -135-(self.assets['brume'].get_height()/4)-render_scroll[1]))
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -79,8 +83,7 @@ class Game:
                         pygame.K_d: "key_right",
                         pygame.K_g: "key_dash",
                         pygame.K_h: "key_attack",
-                        pygame.K_SPACE: "key_jump",
-                        pygame.K_n: "key_noclip"
+                        pygame.K_SPACE: "key_jump"
                     }
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state

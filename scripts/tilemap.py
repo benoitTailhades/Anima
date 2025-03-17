@@ -28,6 +28,18 @@ class Tilemap:
         self.offgrid_tiles = []
         self.show_collisions = False
 
+    def extract(self, id_pairs, keep=False):
+        matches = []
+        for tile in self.offgrid_tiles.copy():
+            if (tile['type'], tile['variant']) in id_pairs:
+                matches.append(tile.copy())
+                if not keep:
+                    self.offgrid_tiles.remove(tile)
+        for loc in self.tilemap:
+            tile = self.tilemap[loc]
+            if (tile['type'], tile['variant']) in id_pairs:
+                matches.append(tile.copy())
+                matches[-1]['pos'] = matches[-1]['pos'].copy
 
     def neighbor_offset(self):
         offset = []

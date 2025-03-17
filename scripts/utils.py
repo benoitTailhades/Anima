@@ -39,7 +39,6 @@ class Animation:
             if self.frame >= self.img_duration * len(self.images) - 1:
                 self.done = True
 
-
     def img(self):
         return self.images[int(self.frame / self.img_duration)]
 
