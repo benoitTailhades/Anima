@@ -125,13 +125,14 @@ class PhysicsPlayer:
                 elif self.get_direction("x") == -1:
                     self.set_action("jump/left")
 
-                    # Tech
+            # Tech
             if self.dashtime_cur != 0:
                 print("happening")
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                  self.velocity[1] /= self.tech_momentum_mult
+
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False
 
