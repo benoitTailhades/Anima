@@ -6,17 +6,20 @@ from scripts.utils import load_image, load_images, Animation
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
-from scripts.user_interface import menu
+from scripts.user_interface import Menu, start_menu
+
 
 class Game:
     def __init__(self):
         pygame.init()
-
+        start_menu()
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
         self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
+
+        self.menu = Menu(self)
 
         self.tile_size = 16
 
@@ -49,6 +52,7 @@ class Game:
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
     def run(self):
+
         while True:
 
             self.display.blit(self.assets['background'], (0, 0))
@@ -69,7 +73,7 @@ class Game:
                     pygame.quit()
                     sys.exit()
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    menu()
+                    self.menu.menu_display()
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {

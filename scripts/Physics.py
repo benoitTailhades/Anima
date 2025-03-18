@@ -36,7 +36,7 @@ class PhysicsPlayer:
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
 
         #Keyboard and movement exceptions utils
-        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0, "key_clip":0}
+        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
