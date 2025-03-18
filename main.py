@@ -6,23 +6,19 @@ from scripts.utils import load_image, load_images, Animation
 from scripts.entities import PhysicsEntity
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
-from scripts.user_interface import Menu, start_menu
-
+from scripts.user_interface import menu
 
 class Game:
     def __init__(self):
         pygame.init()
 
-        start_menu()
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
         self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
-        self.Menu = Menu(self)
-        self.tile_size = 16
 
-        self.menu = Menu(self)
+        self.tile_size = 16
 
         self.assets = {
             'decor': load_images('tiles/decor', self.tile_size),
@@ -41,22 +37,20 @@ class Game:
             'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
             'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=False),
             'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False)
-
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
-        self.time = 0
+
         self.scroll = [0, 0]
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
     def run(self):
-
         while True:
-            self.time+=1
+
             self.display.blit(self.assets['background'], (0, 0))
 
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
@@ -68,21 +62,14 @@ class Game:
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
-            #self.display.blit(self.assets['brume'], (-137-(self.assets['brume'].get_width()/2)-render_scroll[0], -135-(self.assets['brume'].get_height()/4)-render_scroll[1]))
-
-
+            self.display.blit(self.assets['brume'], (-137-(self.assets['brume'].get_width()/2)-render_scroll[0], -135-(self.assets['brume'].get_height()/4)-render_scroll[1]))
 
             for event in pygame.event.get():
-
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_r:
-                        self.player.pos[0] = 100
-                        self.player.pos[1] = 0
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                    self.Menu.menu_display()
+                    menu()
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {

@@ -36,13 +36,17 @@ class PhysicsPlayer:
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
 
         #Keyboard and movement exceptions utils
-        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
+        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0, "key_clip":0}
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
         self.can_walljump = {"available":False,"wall":-1,"buffer":False,"timer":0}
         #available used to know if you can walljump, wall to know where the wall is located,
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
+        self.dash_cooldown = 0
+        self.noclip = False
+
+        self.allowNoClip = True #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -56,35 +60,44 @@ class PhysicsPlayer:
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
-        self.air_time += 1
 
-        direction = self.get_direction("x")
-        if direction != 0:
-            self.last_direction = direction
 
-        if not self.dashtime_cur > 0:
-            if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != direction:
-                self.velocity[0] += direction * self.SPEED / 2
-            elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
-                self.velocity[0] = direction * self.SPEED
+        if not False:
+            #if self.dict_kb["key_clip"] == 1 and self.allowNoClip:
+            #    self.noclip = True
 
-        self.gravity()
-        self.jump()
-        self.dash()
-        self.dash_momentum()
+            self.air_time += 1
+            direction = self.get_direction("x")
+            if direction != 0:
+                self.last_direction = direction
 
-        self.apply_momentum()
+            if not self.dashtime_cur > 0:
+                if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != direction:
+                    self.velocity[0] += direction * self.SPEED / 2
+                elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
+                    self.velocity[0] = direction * self.SPEED
 
-        if self.is_on_floor():
-            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
-                if self.get_direction("x") == 1:
-                     self.set_action("run/right")
-                elif self.get_direction("x") == -1:
-                     self.set_action("run/left")
-            else:
-                self.set_action("idle")
+            self.gravity()
+            self.jump()
+            self.dash()
+            self.dash_momentum()
 
-        self.animation.update()
+            self.apply_momentum()
+
+            if self.is_on_floor():
+                if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
+                    if self.get_direction("x") == 1:
+                         self.set_action("run/right")
+                    elif self.get_direction("x") == -1:
+                         self.set_action("run/left")
+                else:
+                    self.set_action("idle")
+
+            self.animation.update()
+        else:
+            self.pos[0] += self.SPEED * self.get_direction("x")
+            self.pos[1] += self.SPEED * self.get_direction("y")
+
 
     def set_action(self, action):
         if action != self.action :
@@ -155,8 +168,9 @@ class PhysicsPlayer:
 
     def dash(self):
         """Handles player dash."""
+        self.dash_cooldown = max(self.dash_cooldown-1,0)
         if not self.anti_dash_buffer:
-            if self.dict_kb["key_dash"] == 1:
+            if self.dict_kb["key_dash"] == 1 and self.dash_cooldown == 0:
                 if self.dash_amt > 0:
                     self.dash_direction = [self.get_direction("x"), self.get_direction("y")]
                     if self.dash_direction == [0, 0]:
@@ -165,6 +179,7 @@ class PhysicsPlayer:
                     self.stop_dash_momentum["y"],self.stop_dash_momentum["x"] = False,False
                     self.dash_amt -= 1
                 self.anti_dash_buffer = True
+                self.dash_cooldown = 20
         else:
             if self.dict_kb["key_dash"] == 0:
                 self.anti_dash_buffer = False
@@ -223,7 +238,7 @@ class PhysicsPlayer:
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
-                        self.collision_check_walljump_helper(1)
+                        self.collision_check_walljump_helper(-1)
 
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
