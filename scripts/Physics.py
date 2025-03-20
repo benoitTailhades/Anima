@@ -53,7 +53,7 @@ class PhysicsPlayer:
 
         self.action = ""
         self.set_action("idle")
-        self.collision = {'left': False, 'right': False}
+        self.collision = {'left': False, 'right': False, 'bottom': False}
         self.air_time = 0
 
     def physics_process(self, tilemap, dict_kb):
@@ -98,7 +98,6 @@ class PhysicsPlayer:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * self.get_direction("y")
 
-
     def set_action(self, action):
         if action != self.action :
             self.action = action
@@ -110,8 +109,9 @@ class PhysicsPlayer:
     def is_on_floor(self):
         """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
         for rect in self.tilemap.physics_rects_under(self.pos):
-            return rect.y <= self.rect().bottom
-        return False
+            entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
+            if entity_rect.colliderect(rect):
+                return self.rect().bottom == rect.top
 
     def gravity(self):
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
@@ -165,7 +165,6 @@ class PhysicsPlayer:
             elif self.get_direction("x") == -1:
                 self.set_action("jump/left")
 
-
     def dash(self):
         """Handles player dash."""
         self.dash_cooldown = max(self.dash_cooldown-1,0)
@@ -210,13 +209,16 @@ class PhysicsPlayer:
             if self.can_walljump["timer"] == 0:
                 self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_around(self.pos):
+            for rect in tilemap.physics_rects_under(self.pos):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
-                        entity_rect.bottom = rect.top
+                        self.pos[1] = rect.top - entity_rect.height
+                        self.collision['bottom'] = True
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
 
+            for rect in tilemap.physics_rects_around(self.pos):
+                if entity_rect.colliderect(rect):
                     if self.velocity[1] < 0:
                         entity_rect.top = rect.bottom
                         self.can_walljump["buffer"] = True
@@ -252,7 +254,7 @@ class PhysicsPlayer:
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        self.collision = {'left': False, 'right': False}
+        self.collision = {'left': False, 'right': False, 'bottom': False}
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
         self.pos[1] += self.velocity[1]

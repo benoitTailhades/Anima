@@ -17,7 +17,8 @@ AUTOTILE_MAP = {
 
 }
 
-PHYSICS_TILES = {'grass', 'stone', 'vine'}
+PHYSICS_TILES = {'stone', 'vine'}
+TRANSPARENT_TILES = {'grass':[0,1,2]}
 AUTOTILE_TYPES = {'grass', 'stone', 'vine'}
 
 class Tilemap:
@@ -51,7 +52,7 @@ class Tilemap:
         tiles_x = round_up(self.game.player.size[0]/self.tile_size)
         tiles_y = round_up(self.game.player.size[1]/self.tile_size)
         for x in range(0, tiles_x + 1):
-            for y in range(0, tiles_y + 1):
+            for y in range(0, tiles_y):
                 offset.append((x, y))
         return offset
 
@@ -59,9 +60,9 @@ class Tilemap:
         u_offset = []
         tiles_x = round_up(self.game.player.size[0] / self.tile_size)
         tiles_y = round_up(self.game.player.size[1] / self.tile_size)
-        for offset in n_offset:
-            if offset[1] > tiles_y - 1  and offset[0] in range(0, tiles_x):
-                u_offset.append(offset)
+        for x in range(0, tiles_x + 1):
+            for y in range(tiles_y, tiles_y+1):
+                u_offset.append((x, y))
         return u_offset
 
     def tiles_around(self, pos):
@@ -86,7 +87,7 @@ class Tilemap:
             check_loc = str(u_tile_loc[0] + offset[0]) + ';' + str(u_tile_loc[1] + offset[1])
             if self.show_collisions:
                 pygame.draw.rect(self.game.display, (0, 0, 255),
-                                 ((u_tile_loc[0] + offset[0]) * self.tile_size - int(self.game.scroll[0]),
+                                ((u_tile_loc[0] + offset[0]) * self.tile_size - int(self.game.scroll[0]),
                                   (u_tile_loc[1] + offset[1]) * self.tile_size - int(self.game.scroll[1]),
                                   16,
                                   16))
@@ -123,7 +124,6 @@ class Tilemap:
             if (tile['type'] in AUTOTILE_TYPES) and (neighbors in AUTOTILE_MAP):
                 tile['variant'] = AUTOTILE_MAP[neighbors]
 
-
     def physics_rects_around(self, pos):
         rects = []
         for tile in self.tiles_around(pos):
@@ -136,7 +136,18 @@ class Tilemap:
         for tile in self.tiles_under(pos):
             if tile['type'] in PHYSICS_TILES:
                 u_rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
+            elif tile['type'] in set(TRANSPARENT_TILES.keys()) and tile['variant'] in TRANSPARENT_TILES[tile['type']]:
+                u_rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size,self.tile_size))
         return u_rects
+
+    def get_type_from_rect(self, rect):
+        for tile in self.tilemap:
+            if str(rect.x//self.tile_size) + ";" + str(rect.y//self.tile_size) == tile:
+                return self.tilemap[tile]["type"]
+    def get_variant_from_rect(self, rect):
+        for tile in self.tilemap:
+            if str(rect.x//self.tile_size) + ";" + str(rect.y//self.tile_size) == tile:
+                return self.tilemap[tile]["variant"]
 
     def render(self, surf, offset = (0, 0)):
         for tile in self.offgrid_tiles:
