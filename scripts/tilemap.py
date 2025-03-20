@@ -17,8 +17,8 @@ AUTOTILE_MAP = {
 
 }
 
-PHYSICS_TILES = {'stone', 'vine'}
-TRANSPARENT_TILES = {'grass':[0,1,2]}
+PHYSICS_TILES = {'grass','stone', 'vine'}
+TRANSPARENT_TILES = {'vine_transp':[0,1,2]}
 AUTOTILE_TYPES = {'grass', 'stone', 'vine'}
 
 class Tilemap:
