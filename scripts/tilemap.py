@@ -17,9 +17,9 @@ AUTOTILE_MAP = {
 
 }
 
-PHYSICS_TILES = {'grass','stone', 'vine'}
+PHYSICS_TILES = {'grass','stone', 'vine','mossy_stone'}
 TRANSPARENT_TILES = {'vine_transp':[0,1,2], 'vine_transp_back':[0,1,2]}
-AUTOTILE_TYPES = {'grass', 'stone'}
+AUTOTILE_TYPES = {'grass', 'stone', 'mossy_stone'}
 
 class Tilemap:
     def __init__(self, game, tile_size = 16):

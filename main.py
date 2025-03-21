@@ -33,6 +33,7 @@ class Game:
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
+            'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background_begin.png', self.display.get_size()),
             'background1': load_image('bg1.png'),
