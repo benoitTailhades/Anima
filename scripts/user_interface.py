@@ -173,13 +173,14 @@ def start_menu():
     text_rect = text.get_rect(center=(500, 580))
 
     cap = cv2.VideoCapture("assets/images/start_video.mp4")
-
+    frame_id = 0
     running = True
     while running:
         ret, frame = cap.read()
         if not ret:
-            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
             continue
+            
 
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (1000, 600))  #
@@ -190,6 +191,7 @@ def start_menu():
 
         screen.blit(frame, (0, 0))
         screen.blit(text, text_rect)
+        frame_id+=0.75
 
         for event in py.event.get():
             if event.type == py.QUIT:
