@@ -1,5 +1,7 @@
 import pygame as py
 import sys
+import numpy as np
+import cv2
 
 from scripts.utils import load_images
 
@@ -165,29 +167,44 @@ class Menu:
 
 def start_menu():
 
-        screen = py.display.set_mode((1000, 600), py.NOFRAME)
 
-        background = py.image.load("assets/images/Launching_Screen_Anima.png")
-        background = py.transform.scale(background, (1000, 600))
+    py.init()
+    screen = py.display.set_mode((1000, 600), py.NOFRAME)
+    font = py.font.Font(None, 24)
+    font.set_italic(True)
+    text = font.render("Click anywhere to start", True, (255, 255, 255))
+    text_rect = text.get_rect(center=(500, 580))
 
-        font = py.font.Font(None, 24)
-        font.set_italic(True)
-        text = font.render("click anywhere to start", True, (255, 255, 255))  #
-        text_rect = text.get_rect(center=(500, 580))
+    cap = cv2.VideoCapture("assets/images/start_video.mp4")
 
-        running = True
-        while running:
-            screen.blit(background, (0, 0))
-            screen.blit(text, text_rect)
+    running = True
+    while running:
+        ret, frame = cap.read()
+        if not ret:
+            cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+            continue
 
-            for event in py.event.get():
-                if event.type == py.QUIT:
-                    running = False
-                elif event.type == py.MOUSEBUTTONDOWN:
-                    running = False
-                    py.QUIT
+        frame = cv2.flip(frame, 1)
+        frame = cv2.resize(frame, (1000, 600))  #
+        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame = np.rot90(frame)
+        frame = py.surfarray.make_surface(frame)
 
-            py.display.flip()
+
+        screen.blit(frame, (0, 0))
+        screen.blit(text, text_rect)
+
+        for event in py.event.get():
+            if event.type == py.QUIT:
+                running = False
+            elif event.type == py.MOUSEBUTTONDOWN:
+                running = False
+
+        py.display.flip()
+
+    cap.release()
+    py.quit()
+
 
 
 
