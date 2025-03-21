@@ -4,6 +4,7 @@ import pygame
 
 import random
 
+from scripts.entities import player_death
 from scripts.utils import load_image, load_images, Animation
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
@@ -88,6 +89,11 @@ class Game:
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
+
+            if self.player.pos[1] > 500:
+                player_death(self,self.screen)
+
+
             for particle in self.particles.copy():
                 kill = particle.update()
                 particle.render(self.display, offset=render_scroll)
@@ -99,8 +105,11 @@ class Game:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
+
                 if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                     self.menu.menu_display()
+
+
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = {

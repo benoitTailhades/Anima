@@ -133,6 +133,8 @@ class Menu:
             self.screen.blit(self.background, (0, 0))
             self.screen.blit(overlay, (0, 0))
 
+
+
             for text, rect in buttons.items():
                 color = (200, 200, 200) if rect.collidepoint(py.mouse.get_pos()) else (255, 255, 255)
                 py.draw.rect(self.screen, color, rect, border_radius=20)
