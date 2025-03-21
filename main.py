@@ -46,6 +46,8 @@ class Game:
             'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
             'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=False),
             'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False),
+            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
+            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
             'particle/leaf': Animation(load_images('particles/leaf'))
         }
 
