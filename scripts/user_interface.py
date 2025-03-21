@@ -2,7 +2,6 @@ import pygame as py
 import sys
 import numpy as np
 import cv2
-
 from scripts.utils import load_images
 
 
@@ -166,8 +165,6 @@ class Menu:
                                 running = False
 
 def start_menu():
-
-
     py.init()
     screen = py.display.set_mode((1000, 600), py.NOFRAME)
     font = py.font.Font(None, 24)
@@ -175,7 +172,7 @@ def start_menu():
     text = font.render("Click anywhere to start", True, (255, 255, 255))
     text_rect = text.get_rect(center=(500, 580))
 
-    cap = cv2.VideoCapture("assets/images/start_video.mp4")
+    cap = cv2.VideoCapture("assets/images/video.mp4")
 
     running = True
     while running:
