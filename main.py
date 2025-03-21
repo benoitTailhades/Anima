@@ -17,8 +17,8 @@ class Game:
 
         start_menu()
         pygame.display.set_caption("Anima")
-        self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
-        self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
+        self.display = pygame.Surface((480, 288),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
 
