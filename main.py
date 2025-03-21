@@ -54,7 +54,7 @@ class Game:
         self.tilemap.load('map.json')
 
         self.leaf_spawners = []
-        for plant in self.tilemap.extract([('vine_decor', 3)], keep=True):
+        for plant in self.tilemap.extract([('vine_decor', 3),('vine_decor', 4),('vine_decor', 5)], keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.scroll = [0, 0]
