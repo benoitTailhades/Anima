@@ -5,7 +5,7 @@ import pygame
 import random
 
 from scripts.entities import player_death
-from scripts.utils import load_image, load_images, Animation
+from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
 from scripts.particle import Particle
@@ -83,8 +83,9 @@ class Game:
                     pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            self.display.blit(self.assets['background1'], (0, -20))
-            self.display.blit(self.assets['background2'], (0, -20))
+
+            display_bg(self.display, self.assets['background1'], self.player.pos, (-self.scroll[0]/ 10, -20))
+            display_bg(self.display, self.assets['background2'], self.player.pos, (-self.scroll[0]/ 60, -20))
 
             self.tilemap.render(self.display, offset=render_scroll)
 
