@@ -12,8 +12,8 @@ class Editor:
         pygame.init()
 
         pygame.display.set_caption("Editor")
-        self.screen = pygame.display.set_mode((1000, 600), pygame.RESIZABLE)
-        self.display = pygame.Surface((500, 300),pygame.RESIZABLE)
+        self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
+        self.display = pygame.Surface((480, 288),pygame.RESIZABLE)
 
         self.clock = pygame.time.Clock()
 
@@ -66,7 +66,7 @@ class Editor:
             current_tile_img.set_alpha(100)
 
             mpos = pygame.mouse.get_pos()
-            mpos = (mpos[0] / RENDER_SCALE, mpos[1] / RENDER_SCALE)
+            mpos = ((mpos[0] / RENDER_SCALE)*(960/self.screen.get_size()[0]), (mpos[1] / RENDER_SCALE)*(576/self.screen.get_size()[1]))
             tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                         int((mpos[1] +  self.scroll[1]) // self.tilemap.tile_size))
 
