@@ -84,7 +84,7 @@ class Game:
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
             display_bg(self.display, self.assets['background1'], self.player.pos, (-self.scroll[0]/ 10, -20))
-            display_bg(self.display, self.assets['background2'], self.player.pos, (-self.scroll[0]/ 60, -20))
+            display_bg(self.display, self.assets['background2'], self.player.pos, (self.scroll[0]/ 50, -20))
 
             self.tilemap.render(self.display, offset=render_scroll)
 
