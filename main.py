@@ -29,6 +29,7 @@ class Game:
             'grass': load_images('tiles/grass', self.tile_size),
             'vine': load_images('tiles/vine', self.tile_size),
             'vine_transp': load_images('tiles/vine_transp', self.tile_size),
+            'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
