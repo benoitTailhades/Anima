@@ -83,7 +83,6 @@ class Game:
                     pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
                     self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-
             display_bg(self.display, self.assets['background1'], self.player.pos, (-self.scroll[0]/ 10, -20))
             display_bg(self.display, self.assets['background2'], self.player.pos, (-self.scroll[0]/ 60, -20))
 

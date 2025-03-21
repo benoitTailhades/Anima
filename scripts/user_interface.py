@@ -172,7 +172,7 @@ def start_menu():
     text = font.render("Click anywhere to start", True, (255, 255, 255))
     text_rect = text.get_rect(center=(500, 580))
 
-    cap = cv2.VideoCapture("assets/images/video.mp4")
+    cap = cv2.VideoCapture("assets/images/start_video.mp4")
 
     running = True
     while running:
