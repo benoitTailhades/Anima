@@ -66,10 +66,11 @@ def message_display(surface, message, auteur, font, couleur):
 
 def death_animation(screen):
     clock = pygame.time.Clock()
+    pygame.font.init()
     font = pygame.font.Font(None, 36)
 
     citations = {
-        "La seule façon de faire du bon travail est d’aimer ce que vous faites.": "Steve Jobs",
+        "Lingagu ligaligali wasa.": "Giannini Loic",
 
     }
 
