@@ -35,6 +35,7 @@ class Game:
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
+            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'background' : load_image('background_begin.png', self.display.get_size()),
             'background1': load_image('bg1.png'),
@@ -58,7 +59,9 @@ class Game:
         self.tilemap.load('map.json')
 
         self.leaf_spawners = []
-        for plant in self.tilemap.extract([('vine_decor', 3),('vine_decor', 4),('vine_decor', 5)], keep=True):
+        for plant in self.tilemap.extract([('vine_decor', 3),('vine_decor', 4),('vine_decor', 5),
+                                           ('mossy_stone_decor', 15),('mossy_stone_decor', 16)],
+                                          keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.scroll = [0, 0]

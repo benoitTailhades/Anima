@@ -26,6 +26,7 @@ class Editor:
             'vine_transp': load_images('tiles/vine_transp', self.tile_size),
             'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
+            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
