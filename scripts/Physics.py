@@ -87,7 +87,6 @@ class PhysicsPlayer:
             if self.is_on_floor():
                 if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
                     if self.get_direction("x") == 1 and self.action not in ("run/right", "dash/right" ) :
-                        print('run right')
                         self.set_action("run/right")
                     elif self.get_direction("x") == -1 and self.action not in ("run/left", "dash/left" ):
                         self.set_action("run/left")
@@ -199,6 +198,11 @@ class PhysicsPlayer:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
+            if not self.is_on_floor():
+                if self.get_direction("x") == 1:
+                    self.set_action('falling/right')
+                elif self.get_direction("x") == -1:
+                    self.set_action('falling/left')
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
@@ -274,7 +278,7 @@ class PhysicsPlayer:
             self.velocity[0] *= 0.2
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
-        elif self.air_time >= 20:
+        elif self.air_time >= 20 or self.velocity[1] > 0:
             if self.get_direction("x") == 1 and self.action != "dash/right":
                 self.set_action('falling/right')
             elif self.get_direction("x") == -1 and self.action != "dash/left":
