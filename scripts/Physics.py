@@ -189,6 +189,10 @@ class PhysicsPlayer:
             self.dashtime_cur -= 1
             if not self.stop_dash_momentum["x"]:
                 self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
+                if self.get_direction("x") == 1:
+                    self.set_action("dash/right")
+                elif self.get_direction("x") == -1:
+                    self.set_action("dash/left")
             if not self.stop_dash_momentum["y"]:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
@@ -289,4 +293,4 @@ class PhysicsPlayer:
     def render(self, surf, offset = (0, 0)):
         r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
         surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 8, self.pos[1] - offset[1] - 5))
-        pygame.draw.rect(surf, (255,230,255), r)
+        #pygame.draw.rect(surf, (255,230,255), r)
