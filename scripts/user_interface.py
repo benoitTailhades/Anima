@@ -122,6 +122,7 @@ class Menu:
 
     def menu_display(self):
         self.capture_background()
+        py.font.init()
         font = py.font.Font(None, 50)
         buttons = {
             "RESUME": py.Rect(400, 200, 200, 60),
