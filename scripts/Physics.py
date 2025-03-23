@@ -86,10 +86,11 @@ class PhysicsPlayer:
 
             if self.is_on_floor():
                 if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
-                    if self.get_direction("x") == 1:
-                         self.set_action("run/right")
-                    elif self.get_direction("x") == -1:
-                         self.set_action("run/left")
+                    if self.get_direction("x") == 1 and self.action not in ("run/right", "dash/right" ) :
+                        print('run right')
+                        self.set_action("run/right")
+                    elif self.get_direction("x") == -1 and self.action not in ("run/left", "dash/left" ):
+                        self.set_action("run/left")
                 else:
                     self.set_action("idle")
 
@@ -112,6 +113,7 @@ class PhysicsPlayer:
             entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
             if entity_rect.colliderect(rect):
                 return self.rect().bottom == rect.top
+        return False
 
     def gravity(self):
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
@@ -270,13 +272,12 @@ class PhysicsPlayer:
         if self.is_on_floor():
             self.air_time = 0
             self.velocity[0] *= 0.2
-            self.velocity[1] = 0
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
         elif self.air_time >= 20:
-            if self.get_direction("x") == 1:
+            if self.get_direction("x") == 1 and self.action != "dash/right":
                 self.set_action('falling/right')
-            elif self.get_direction("x") == -1:
+            elif self.get_direction("x") == -1 and self.action != "dash/left":
                 self.set_action('falling/left')
 
     def get_direction(self, axis):
