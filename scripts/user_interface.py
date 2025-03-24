@@ -2,8 +2,6 @@ import pygame as py
 import sys
 import numpy as np
 import cv2
-import pygame.time
-
 from scripts.utils import load_images
 
 
@@ -176,7 +174,7 @@ def start_menu():
     text_rect = text.get_rect(center=(500, 580))
 
     cap = cv2.VideoCapture("assets/images/start_video.mp4")
-    frame_id = 0
+    frame_id = -5
     running = True
     while running:
         ret, frame = cap.read()
@@ -202,7 +200,7 @@ def start_menu():
                 running = False
 
         py.display.flip()
-        pygame.time.wait(50)
+        py.time.wait(50)
 
     cap.release()
     py.quit()
