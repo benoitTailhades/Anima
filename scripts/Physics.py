@@ -51,6 +51,7 @@ class PhysicsPlayer:
         #Tilemap (stage)
         self.tilemap = tilemap
 
+        self.facing = ""
         self.action = ""
         self.set_action("idle")
         self.collision = {'left': False, 'right': False, 'bottom': False}
@@ -84,21 +85,7 @@ class PhysicsPlayer:
 
             self.apply_momentum()
 
-            if self.is_on_floor():
-                if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
-                    if self.get_direction("x") == 1 and self.action not in ("run/right", "dash/right" ) :
-                        self.set_action("run/right")
-                    elif self.get_direction("x") == -1 and self.action not in ("run/left", "dash/left" ):
-                        self.set_action("run/left")
-                else:
-                    self.set_action("idle")
-            else:
-                if self.velocity[1] > 0:
-                    if self.collision["right"]:
-                        self.set_action("wall_slide/right")
-                    elif self.collision["left"]:
-                        self.set_action("wall_slide/left")
-
+            self.apply_animations()
 
             self.animation.update()
         else:
@@ -109,6 +96,32 @@ class PhysicsPlayer:
         if action != self.action :
             self.action = action
             self.animation = self.game.assets['player/' + self.action].copy()
+
+    def apply_animations(self):
+        # Animation when is on floor
+        if self.is_on_floor():
+            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
+                if self.get_direction("x") == 1 and self.action not in ("run/right", "dash/right"):
+                    self.set_action("run/right")
+                elif self.get_direction("x") == -1 and self.action not in ("run/left", "dash/left"):
+                    self.set_action("run/left")
+            else:
+                self.set_action("idle")
+
+        # Animations when on the air
+        elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
+            if self.get_direction("x") == 1 or self.facing == "left":
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1 or self.facing == "right":
+                self.set_action('falling/left')
+            if self.velocity[1] > 0:
+                if self.collision["right"]:
+                    self.set_action("wall_slide/right")
+                    self.facing = "left"
+                elif self.collision["left"]:
+                    self.set_action("wall_slide/left")
+                    self.facing = "right"
+                self.facing = ""
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -129,7 +142,6 @@ class PhysicsPlayer:
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
-                self.set_action("idle")
             if self.dashtime_cur < 5 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
@@ -209,11 +221,11 @@ class PhysicsPlayer:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
-            if not self.is_on_floor():
-                if self.get_direction("x") == 1:
-                    self.set_action('falling/right')
-                elif self.get_direction("x") == -1:
-                    self.set_action('falling/left')
+        elif self.velocity[1] > 0:
+            if self.get_direction("x") == 1:
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1:
+                self.set_action('falling/left')
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
@@ -239,6 +251,8 @@ class PhysicsPlayer:
                         self.collision['bottom'] = True
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
+                    else:
+                        self.collision["bottom"] = False
 
             for rect in tilemap.physics_rects_around(self.pos):
                 if entity_rect.colliderect(rect):
@@ -260,11 +274,15 @@ class PhysicsPlayer:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
                         self.collision_check_walljump_helper(1)
+                    else:
+                        self.collision['right'] = False
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
                         self.collision_check_walljump_helper(-1)
+                    else:
+                        self.collision['left'] = False
 
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
@@ -278,7 +296,6 @@ class PhysicsPlayer:
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        self.collision = {'left': False, 'right': False, 'bottom': False}
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
         self.pos[1] += self.velocity[1]
@@ -289,11 +306,6 @@ class PhysicsPlayer:
             self.velocity[0] *= 0.2
         elif self.get_direction("x") == 0:
             self.velocity[0] *= 0.8
-        elif self.air_time >= 20 or self.velocity[1] > 0:
-            if self.get_direction("x") == 1 and self.action != "dash/right":
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1 and self.action != "dash/left":
-                self.set_action('falling/left')
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')
