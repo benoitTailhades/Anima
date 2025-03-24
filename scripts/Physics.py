@@ -78,6 +78,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
+            print(self.collision)
             self.gravity()
             self.jump()
             self.dash()
@@ -274,15 +275,11 @@ class PhysicsPlayer:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
                         self.collision_check_walljump_helper(1)
-                    else:
-                        self.collision['right'] = False
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
                         self.collision_check_walljump_helper(-1)
-                    else:
-                        self.collision['left'] = False
 
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
@@ -296,6 +293,7 @@ class PhysicsPlayer:
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
+        self.collision = {'left': False, 'right': False, 'bottom': False}
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
         self.pos[1] += self.velocity[1]
