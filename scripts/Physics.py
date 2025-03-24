@@ -111,10 +111,6 @@ class PhysicsPlayer:
 
         # Animations when on the air
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
-            if self.get_direction("x") == 1 or self.facing == "left":
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or self.facing == "right":
-                self.set_action('falling/left')
             if self.velocity[1] > 0:
                 if self.collision["right"]:
                     self.set_action("wall_slide/right")
@@ -122,7 +118,11 @@ class PhysicsPlayer:
                 elif self.collision["left"]:
                     self.set_action("wall_slide/left")
                     self.facing = "right"
-                self.facing = ""
+            if self.get_direction("x") == 1 or (self.facing == "left" and not self.collision["right"]):
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.collision["left"]):
+                self.set_action('falling/left')
+        self.facing = ""
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -221,7 +221,6 @@ class PhysicsPlayer:
             else:
                 if self.dash_direction[0] == -1:
                     self.set_action("wall_slide/right")
-                    print("happening")
                 elif self.dash_direction[0] == 1:
                     self.set_action("wall_slide/left")
 
