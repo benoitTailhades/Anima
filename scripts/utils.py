@@ -27,7 +27,6 @@ def display_bg(surf, img, player_pos, pos):
     elif player_pos[0] > (pos[0] + img.get_width()) / 2:
         surf.blit(img, (pos[0] + img.get_width(), pos[1]))
 
-
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):
         self.images = images
