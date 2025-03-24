@@ -2,5 +2,5 @@ import pygame
 
 pygame.mixer.init()
 
-Explosion_Large_Blast_1__6s = pygame.mixer.Sound("assets\sounds\effects\Explosions\Explosion_Large_Blast_1__6s.wav")
-Explosion_Large_Blast_1__6s.play()
+Mer = pygame.mixer.Sound("../assets/sounds/Vagues/AMBSea_Mer_vagues_moyennes_et_mouettes_(ID 0267)_LS.wav")
+Mer.play()
