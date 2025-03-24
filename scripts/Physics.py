@@ -78,7 +78,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-            print(self.collision)
+            #print(self.collision)
             self.gravity()
             self.jump()
             self.dash()
@@ -218,6 +218,13 @@ class PhysicsPlayer:
                     self.set_action("dash/right")
                 elif self.get_direction("x") == -1:
                     self.set_action("dash/left")
+            else:
+                if self.dash_direction[0] == -1:
+                    self.set_action("wall_slide/right")
+                    print("happening")
+                elif self.dash_direction[0] == 1:
+                    self.set_action("wall_slide/left")
+
             if not self.stop_dash_momentum["y"]:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
