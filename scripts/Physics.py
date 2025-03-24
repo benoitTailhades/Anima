@@ -93,10 +93,10 @@ class PhysicsPlayer:
                 else:
                     self.set_action("idle")
             else:
-                if (self.collision["right"] or self.collision["left"]) and self.velocity[1] > 0:
-                    if self.get_direction("x") == 1:
+                if self.velocity[1] > 0:
+                    if self.collision["right"]:
                         self.set_action("wall_slide/right")
-                    elif self.get_direction("x") == -1:
+                    elif self.collision["left"]:
                         self.set_action("wall_slide/left")
 
 
@@ -151,6 +151,10 @@ class PhysicsPlayer:
                 self.velocity[1] /= self.tech_momentum_mult
 
         elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump: #Walljump
+            if self.action == "wall_slide/left":
+                self.set_action("falling/right")
+            elif self.action == "wall_slide/right":
+                self.set_action("falling/left")
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
@@ -210,7 +214,6 @@ class PhysicsPlayer:
                     self.set_action('falling/right')
                 elif self.get_direction("x") == -1:
                     self.set_action('falling/left')
-
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
