@@ -78,6 +78,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
+            #print(self.collision)
             self.gravity()
             self.jump()
             self.dash()
@@ -110,6 +111,10 @@ class PhysicsPlayer:
 
         # Animations when on the air
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
+            if self.get_direction("x") == 1 or self.facing == "left":
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1 or self.facing == "right":
+                self.set_action('falling/left')
             if self.velocity[1] > 0:
                 if self.collision["right"]:
                     self.set_action("wall_slide/right")
@@ -118,11 +123,6 @@ class PhysicsPlayer:
                     self.set_action("wall_slide/left")
                     self.facing = "right"
                 self.facing = ""
-            if self.get_direction("x") == 1 or self.facing == "left":
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or self.facing == "right":
-                self.set_action('falling/left')
-
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -218,6 +218,13 @@ class PhysicsPlayer:
                     self.set_action("dash/right")
                 elif self.get_direction("x") == -1:
                     self.set_action("dash/left")
+            else:
+                if self.dash_direction[0] == -1:
+                    self.set_action("wall_slide/right")
+                    print("happening")
+                elif self.dash_direction[0] == 1:
+                    self.set_action("wall_slide/left")
+
             if not self.stop_dash_momentum["y"]:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
