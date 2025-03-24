@@ -92,6 +92,13 @@ class PhysicsPlayer:
                         self.set_action("run/left")
                 else:
                     self.set_action("idle")
+            else:
+                if (self.collision["right"] or self.collision["left"]) and self.velocity[1] > 0:
+                    if self.get_direction("x") == 1:
+                        self.set_action("wall_slide/right")
+                    elif self.get_direction("x") == -1:
+                        self.set_action("wall_slide/left")
+
 
             self.animation.update()
         else:
@@ -203,6 +210,7 @@ class PhysicsPlayer:
                     self.set_action('falling/right')
                 elif self.get_direction("x") == -1:
                     self.set_action('falling/left')
+
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
