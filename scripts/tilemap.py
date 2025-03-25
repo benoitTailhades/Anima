@@ -27,7 +27,7 @@ class Tilemap:
         self.tile_size = tile_size
         self.tilemap = {}
         self.offgrid_tiles = []
-        self.show_collisions = False
+        self.show_collisions = True
 
     def extract(self, id_pairs, keep=False):
         matches = []

@@ -82,7 +82,7 @@ class PhysicsPlayer:
                     self.velocity[0] = direction * self.SPEED
 
 
-            print(self.get_block_on)
+            #print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
@@ -119,13 +119,13 @@ class PhysicsPlayer:
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
             if self.get_direction("x") == 1 or (self.facing == "left" and not self.get_block_on["right"]):
                 self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.collision["left"]):
+            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.get_block_on["left"]):
                 self.set_action('falling/left')
             if self.velocity[1] > 0:
                 if self.collision["right"] and self.get_block_on["right"]:
                     self.set_action("wall_slide/right")
                     self.facing = "left"
-                elif self.collision["left"]:
+                elif self.collision["left"] and self.get_block_on["left"]:
                     self.set_action("wall_slide/left")
                     self.facing = "right"
         else:
