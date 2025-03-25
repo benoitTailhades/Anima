@@ -81,6 +81,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
+            print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
@@ -301,8 +302,9 @@ class PhysicsPlayer:
                     b_l.add(True)
                 if rect.x > entity_rect.x:
                     b_r.add(True)
-                self.get_block_on["left"] = bool(b_l)
-                self.get_block_on["right"] = bool(b_r)
+
+            self.get_block_on["left"] = bool(b_l)
+            self.get_block_on["right"] = bool(b_r)
 
     def collision_check_walljump_helper(self,axis):
         """Avoids redundancy"""
