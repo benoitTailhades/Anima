@@ -36,7 +36,7 @@ class PhysicsPlayer:
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
 
         #Keyboard and movement exceptions utils
-        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
+        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,"key_noclip":0} #Used for reference
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
@@ -45,8 +45,9 @@ class PhysicsPlayer:
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
         self.dash_cooldown = 0
         self.noclip = False
+        self.noclip_buffer = False
 
-        self.allowNoClip = True #MANUALLY TURN IT ON HERE TO USE NOCLIP
+        self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -63,9 +64,9 @@ class PhysicsPlayer:
         self.dict_kb = dict_kb
 
 
-        if not False:
-            #if self.dict_kb["key_clip"] == 1 and self.allowNoClip:
-            #    self.noclip = True
+        if not self.noclip:
+            if self.dict_kb["key_noclip"] == 1 and self.allowNoClip:
+                self.noclip = True
 
             self.air_time += 1
             direction = self.get_direction("x")
@@ -91,7 +92,9 @@ class PhysicsPlayer:
             self.animation.update()
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
-            self.pos[1] += self.SPEED * self.get_direction("y")
+            self.pos[1] += self.SPEED * -self.get_direction("y")
+            if self.dict_kb["key_noclip"] == 1:
+                self.noclip = False
 
     def set_action(self, action):
         if action != self.action :

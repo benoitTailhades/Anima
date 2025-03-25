@@ -55,7 +55,7 @@ class Game:
             'particle/leaf': Animation(load_images('particles/leaf'))
         }
 
-        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0}
+        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,"key_noclip": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
@@ -126,7 +126,8 @@ class Game:
                         pygame.K_d: "key_right",
                         pygame.K_g: "key_dash",
                         pygame.K_h: "key_attack",
-                        pygame.K_SPACE: "key_jump"
+                        pygame.K_SPACE: "key_jump",
+                        pygame.K_n: "key_noclip"
                     }
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
