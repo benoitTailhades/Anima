@@ -81,8 +81,6 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-
-            #print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
@@ -225,7 +223,7 @@ class PhysicsPlayer:
                     self.set_action("dash/right")
                 elif self.get_direction("x") == -1:
                     self.set_action("dash/left")
-            else:
+            elif not self.is_on_floor():
                 if self.dash_direction[0] == -1:
                     self.set_action("wall_slide/left")
                 elif self.dash_direction[0] == 1:
@@ -288,27 +286,23 @@ class PhysicsPlayer:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
                         self.collision_check_walljump_helper(1)
+                        self.anti_dash_buffer = True
+                        self.dash_cooldown = 5
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
                         self.collision_check_walljump_helper(-1)
+                        self.anti_dash_buffer = True
+                        self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
                 if rect.x < entity_rect.x:
                     b_l.add(True)
                 if rect.x > entity_rect.x:
                     b_r.add(True)
-            if b_l:
-                self.get_block_on["left"] = True
-            else:
-                self.get_block_on["left"] = False
-            if b_r:
-                self.get_block_on["right"] = True
-            else:
-                self.get_block_on["right"] = False
-
-
+                self.get_block_on["left"] = bool(b_l)
+                self.get_block_on["right"] = bool(b_r)
 
     def collision_check_walljump_helper(self,axis):
         """Avoids redundancy"""
