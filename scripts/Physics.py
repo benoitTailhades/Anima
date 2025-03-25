@@ -78,7 +78,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-            #print(self.collision)
+            print(self.collision)
             self.gravity()
             self.jump()
             self.dash()
@@ -111,6 +111,10 @@ class PhysicsPlayer:
 
         # Animations when on the air
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
+            if self.get_direction("x") == 1 or (self.facing == "left" and not self.collision["right"]):
+                self.set_action('falling/right')
+            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.collision["left"]):
+                self.set_action('falling/left')
             if self.velocity[1] > 0:
                 if self.collision["right"]:
                     self.set_action("wall_slide/right")
@@ -118,10 +122,6 @@ class PhysicsPlayer:
                 elif self.collision["left"]:
                     self.set_action("wall_slide/left")
                     self.facing = "right"
-            if self.get_direction("x") == 1 or (self.facing == "left" and not self.collision["right"]):
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.collision["left"]):
-                self.set_action('falling/left')
         self.facing = ""
 
     def rect(self):
@@ -258,8 +258,6 @@ class PhysicsPlayer:
                         self.collision['bottom'] = True
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
-                    else:
-                        self.collision["bottom"] = False
 
             for rect in tilemap.physics_rects_around(self.pos):
                 if entity_rect.colliderect(rect):
@@ -299,7 +297,12 @@ class PhysicsPlayer:
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        self.collision = {'left': False, 'right': False, 'bottom': False}
+        if self.velocity[0] > 0:
+            self.collision["left"] = False
+        if self.velocity[0] < 0:
+            self.collision["right"] = False
+        if self.velocity[1] > 0:
+            self.collision["bottom"] = False
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
         self.pos[1] += self.velocity[1]
