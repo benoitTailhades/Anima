@@ -300,9 +300,8 @@ class PhysicsPlayer:
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        if self.velocity[0] > 0:
+        if self.velocity[0] != 0:
             self.collision["left"] = False
-        if self.velocity[0] < 0:
             self.collision["right"] = False
         if self.velocity[1] > 0:
             self.collision["bottom"] = False
