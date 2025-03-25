@@ -51,7 +51,7 @@ class Tilemap:
         offset = []
         tiles_x = round_up(self.game.player.size[0]/self.tile_size)
         tiles_y = round_up(self.game.player.size[1]/self.tile_size)
-        for x in range(0, tiles_x + 1):
+        for x in range(-1, tiles_x + 1):
             for y in range(0, tiles_y):
                 offset.append((x, y))
         return offset
@@ -60,7 +60,7 @@ class Tilemap:
         u_offset = []
         tiles_x = round_up(self.game.player.size[0] / self.tile_size)
         tiles_y = round_up(self.game.player.size[1] / self.tile_size)
-        for x in range(0, tiles_x + 1):
+        for x in range(-1, tiles_x + 1):
             for y in range(tiles_y, tiles_y+1):
                 u_offset.append((x, y))
         return u_offset
