@@ -223,9 +223,9 @@ class PhysicsPlayer:
                     self.set_action("dash/left")
             else:
                 if self.dash_direction[0] == -1:
-                    self.set_action("wall_slide/right")
-                elif self.dash_direction[0] == 1:
                     self.set_action("wall_slide/left")
+                elif self.dash_direction[0] == 1:
+                    self.set_action("wall_slide/right")
 
             if not self.stop_dash_momentum["y"]:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
