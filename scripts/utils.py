@@ -39,8 +39,12 @@ class Animation:
         return Animation(self.images, self.img_duration, self.loop)
 
     def update(self):
-        if self.loop:
+        if self.loop > 0:
             self.frame = (self.frame + 1) % (self.img_duration * len(self.images))
+            if type(self.loop) in (int, float):
+                self.loop -= (1/int(self.img_duration * len(self.images)))
+            print(self.loop)
+
         else:
             self.frame = min(self.frame + 1, self.img_duration * len(self.images) - 1)
             if self.frame >= self.img_duration * len(self.images) - 1:

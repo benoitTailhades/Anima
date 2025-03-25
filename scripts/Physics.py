@@ -48,7 +48,7 @@ class PhysicsPlayer:
         self.noclip = False
         self.noclip_buffer = False
 
-        self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
+        self.allowNoClip = True #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
         #Tilemap (stage)
         self.tilemap = tilemap
@@ -81,7 +81,6 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-            print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
