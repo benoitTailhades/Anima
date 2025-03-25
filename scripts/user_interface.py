@@ -155,7 +155,6 @@ class Menu:
         return []
 
     def _handle_button_click(self, buttons, mouse_pos):
-
         for text, rect in buttons.items():
             if rect.collidepoint(mouse_pos):
                 if text == "RESUME":
@@ -289,8 +288,7 @@ class Menu:
         Affiche le menu principal et gère les interactions utilisateur.
         """
         # Assurez-vous que l'arrière-plan est capturé avant d'afficher le menu
-        if self.original_background is None:
-            self.capture_background()
+        self.capture_background()
 
         running = True
         while running:
