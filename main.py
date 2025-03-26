@@ -116,7 +116,7 @@ class Game:
             self.player.render(self.display, offset=render_scroll)
 
             if self.player.pos[1] > 500:
-                player_death(self, self.screen)
+                player_death(self, self.screen, self.spawn_pos)
 
             for particle in self.particles.copy():
                 kill = particle.update()
