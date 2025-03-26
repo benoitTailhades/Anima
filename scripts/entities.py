@@ -71,21 +71,29 @@ def death_animation(screen):
 
     citations = {
         "Lingagu ligaligali wasa.": "Giannini Loic",
-
     }
 
     message, auteur = random.choice(list(citations.items()))
 
     screen_copy = screen.copy()
 
-    for blur_intensity in range(1,6):
+    for blur_intensity in range(1, 6):
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                return
+
         blurred_screen = blur(screen_copy, blur_intensity)
         screen.blit(blurred_screen, (0, 0))
         message_display(screen, message, auteur, font, (255, 255, 255))
         pygame.display.flip()
         clock.tick(15)
 
-    pygame.time.delay(2500)
+    start_time = pygame.time.get_ticks()
+    while pygame.time.get_ticks() - start_time < 2500:
+        for event in pygame.event.get():
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                return
+        clock.tick(30)
 
 
 def player_death(self,screen):
