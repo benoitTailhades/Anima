@@ -30,6 +30,7 @@ class Editor:
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
+            'spawners': load_images('tiles/spawners')
         }
 
         self.movement = [False, False, False, False]

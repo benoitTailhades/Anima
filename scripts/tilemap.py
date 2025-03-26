@@ -36,7 +36,7 @@ class Tilemap:
                 matches.append(tile.copy())
                 if not keep:
                     self.offgrid_tiles.remove(tile)
-        for loc in self.tilemap:
+        for loc in self.tilemap.copy():
             tile = self.tilemap[loc]
             if (tile['type'], tile['variant']) in id_pairs:
                 matches.append(tile.copy())
@@ -47,28 +47,28 @@ class Tilemap:
                     del self.tilemap[loc]
         return matches
 
-    def neighbor_offset(self):
+    def neighbor_offset(self, size):
         offset = []
-        tiles_x = round_up(self.game.player.size[0]/self.tile_size)
-        tiles_y = round_up(self.game.player.size[1]/self.tile_size)
+        tiles_x = round_up(size[0]/self.tile_size)
+        tiles_y = round_up(size[1]/self.tile_size)
         for x in range(-1, tiles_x + 1):
             for y in range(0, tiles_y):
                 offset.append((x, y))
         return offset
 
-    def under_offset(self, n_offset):
+    def under_offset(self, size):
         u_offset = []
-        tiles_x = round_up(self.game.player.size[0] / self.tile_size)
-        tiles_y = round_up(self.game.player.size[1] / self.tile_size)
+        tiles_x = round_up(size[0] / self.tile_size)
+        tiles_y = round_up(size[1] / self.tile_size)
         for x in range(-1, tiles_x + 1):
             for y in range(tiles_y, tiles_y+1):
                 u_offset.append((x, y))
         return u_offset
 
-    def tiles_around(self, pos):
+    def tiles_around(self, pos, size):
         tiles = []
         tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
-        for offset in self.neighbor_offset():
+        for offset in self.neighbor_offset(size):
             check_loc = str(tile_loc[0] + offset[0]) + ';' + str(tile_loc[1] + offset[1])
             if self.show_collisions:
                 pygame.draw.rect(self.game.display, (255, 0, 255),
@@ -80,10 +80,10 @@ class Tilemap:
                 tiles.append(self.tilemap[check_loc])
         return tiles
 
-    def tiles_under(self, pos):
+    def tiles_under(self, pos, size):
         u_tiles = []
         u_tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
-        for offset in self.under_offset(self.neighbor_offset()):
+        for offset in self.under_offset(size):
             check_loc = str(u_tile_loc[0] + offset[0]) + ';' + str(u_tile_loc[1] + offset[1])
             if self.show_collisions:
                 pygame.draw.rect(self.game.display, (0, 0, 255),
@@ -124,16 +124,25 @@ class Tilemap:
             if (tile['type'] in AUTOTILE_TYPES) and (neighbors in AUTOTILE_MAP):
                 tile['variant'] = AUTOTILE_MAP[neighbors]
 
-    def physics_rects_around(self, pos):
+    def solid_check(self, pos):
+        tile_loc = str(int(pos[0] // self.tile_size)) + ";" + str(int(pos[1] // self.tile_size))
+        if tile_loc in self.tilemap:
+            tile = self.tilemap[tile_loc]
+            if tile["type"] in PHYSICS_TILES:
+                return self.tilemap[tile_loc]
+            elif tile['type'] in set(TRANSPARENT_TILES.keys()) and tile['variant'] in TRANSPARENT_TILES[tile['type']]:
+                return self.tilemap[tile_loc]
+
+    def physics_rects_around(self, pos, size):
         rects = []
-        for tile in self.tiles_around(pos):
+        for tile in self.tiles_around(pos, size):
             if tile['type'] in PHYSICS_TILES:
                 rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
         return rects
 
-    def physics_rects_under(self, pos):
+    def physics_rects_under(self, pos, size):
         u_rects = []
-        for tile in self.tiles_under(pos):
+        for tile in self.tiles_under(pos, size):
             if tile['type'] in PHYSICS_TILES:
                 u_rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
             elif tile['type'] in set(TRANSPARENT_TILES.keys()) and tile['variant'] in TRANSPARENT_TILES[tile['type']]:
@@ -144,6 +153,7 @@ class Tilemap:
         for tile in self.tilemap:
             if str(rect.x//self.tile_size) + ";" + str(rect.y//self.tile_size) == tile:
                 return self.tilemap[tile]["type"]
+
     def get_variant_from_rect(self, rect):
         for tile in self.tilemap:
             if str(rect.x//self.tile_size) + ";" + str(rect.y//self.tile_size) == tile:

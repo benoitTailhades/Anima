@@ -1,7 +1,8 @@
 import sys
+import math
 import pygame
 import random
-from scripts.entities import player_death
+from scripts.entities import player_death, Enemy
 from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.Physics import PhysicsPlayer
@@ -33,6 +34,8 @@ class Game:
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
+            'enemy/idle': Animation(load_images('entities/enemy/idle'), img_dur=4),
+            'enemy/run': Animation(load_images('entities/enemy/run'), img_dur=4),
             'background': load_image('background_begin.png', self.display.get_size()),
             'background1': load_image('bg1.png'),
             'background2': load_image('bg2.png'),
@@ -58,16 +61,27 @@ class Game:
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
 
-        self.leaf_spawners = [pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13)
-                              for plant in
-                              self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
-                                                    ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
-                                                   keep=True)]
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
+
+        self.leaf_spawners = []
+        for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
+                                           ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
+                                          keep=True):
+            self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
+
+        self.enemies = []
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
+            if spawner['variant'] == 0:
+                self.spawn_pos = spawner['pos']
+                self.player.pos = spawner['pos'].copy()
+            else:
+                self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
 
         self.scroll = [0, 0]
+
         self.particles = []
+
         self.menu = Menu(self)
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -93,6 +107,11 @@ class Game:
             display_bg(self.display, self.assets['background2'], self.player.pos, (self.scroll[0] / 50, -20))
 
             self.tilemap.render(self.display, offset=render_scroll)
+
+            for enemy in self.enemies.copy():
+                enemy.update(self.tilemap, (0, 0))
+                enemy.render(self.display, offset=render_scroll)
+
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
@@ -102,6 +121,8 @@ class Game:
             for particle in self.particles.copy():
                 kill = particle.update()
                 particle.render(self.display, offset=render_scroll)
+                if particle.type == 'leaf':
+                    particle.pos[0] += math.sin(particle.animation.frame * 0.035) * 0.3
                 if kill:
                     self.particles.remove(particle)
 

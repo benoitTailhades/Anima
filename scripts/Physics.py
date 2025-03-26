@@ -134,7 +134,7 @@ class PhysicsPlayer:
 
     def is_on_floor(self):
         """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
-        for rect in self.tilemap.physics_rects_under(self.pos):
+        for rect in self.tilemap.physics_rects_under(self.pos, self.size):
             entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
             if entity_rect.colliderect(rect):
                 return self.rect().bottom == rect.top
@@ -258,7 +258,7 @@ class PhysicsPlayer:
             if self.can_walljump["timer"] == 0:
                 self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_under(self.pos):
+            for rect in tilemap.physics_rects_under(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
                         self.pos[1] = rect.top - entity_rect.height
@@ -267,7 +267,7 @@ class PhysicsPlayer:
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_around(self.pos):
+            for rect in tilemap.physics_rects_around(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] < 0:
                         self.pos[1] = rect.bottom
@@ -281,7 +281,7 @@ class PhysicsPlayer:
 
         if axe == "x":
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
-            for rect in tilemap.physics_rects_around(self.pos):
+            for rect in tilemap.physics_rects_around(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
