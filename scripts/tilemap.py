@@ -56,6 +56,14 @@ class Tilemap:
                 offset.append((x, y))
         return offset
 
+    def between_check(self,p_pos,e_pos):
+        y = e_pos[1]
+        x_min, x_max = int(min(p_pos[0], e_pos[0])),int(max(p_pos[0], e_pos[0]))
+        for x in range(x_min, x_max+1):
+            if self.solid_check((x,y)):
+                return True
+        return False
+
     def under_offset(self, size):
         u_offset = []
         tiles_x = round_up(size[0] / self.tile_size)

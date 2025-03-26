@@ -2,7 +2,7 @@ import pygame as py
 import sys
 import numpy as np
 import cv2
-from scripts.utils import load_images
+from scripts.Sound import run_sound
 
 
 class Menu:
@@ -362,11 +362,6 @@ class Menu:
                 elif event.type == py.MOUSEMOTION and self.dragging_volume:
                     self._handle_volume_drag(event.pos[0])
 
-
-
-
-
-
 def start_menu():
     py.init()
     screen = py.display.set_mode((1000, 600), py.NOFRAME)
@@ -378,6 +373,7 @@ def start_menu():
     cap = cv2.VideoCapture("assets/images/start_video.mp4")
     frame_id = -5
     running = True
+    sound_running = False
     while running:
         ret, frame = cap.read()
         if not ret:
@@ -398,6 +394,7 @@ def start_menu():
                 running = False
             elif event.type == py.MOUSEBUTTONDOWN:
                 running = False
+
 
         py.display.flip()
         py.time.wait(50)

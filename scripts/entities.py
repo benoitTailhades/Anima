@@ -83,25 +83,70 @@ class Enemy(PhysicsEntity):
 
         self.walking = 0
 
+        self.attack_distance = 5
+        self.vision_distance = 100
+        self.is_attacking = False
+
     def update(self, tilemap, movement=(0, 0)):
         if self.walking:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                if self.collisions['right'] or self.collisions['left']:
-                    self.flip = not self.flip
+                if self.check_if_player_close(100):
+                    if abs(self.pos[0]-self.game.player.pos[0]) >= self.attack_distance:
+                        movement = (movement[0] - 1 if self.flip else 1, movement[1])
+                        print("s'approchant")
+                    else:
+                        self.walking = 0
+                        self.is_attacking = True
+                        print("attaque")
                 else:
-                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
-                self.walking = max(0, self.walking - 1)
+                    self.is_attacking = False
+                    if self.collisions['right'] or self.collisions['left']:
+                        self.flip = not self.flip
+                    else:
+                        movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                        print("pas vu")
+                    self.walking = max(0, self.walking - 1)
             else:
                 self.flip = not self.flip
-        elif random.random() < 0.01:
+        elif not self.is_attacking and random.random() < 0.01:
+            print("randingo")
             self.walking = random.randint(30, 120)
+        if abs(self.pos[0]-self.game.player.pos[0]) >= self.vision_distance and self.is_attacking:
+            self.is_attacking = False
+        elif self.check_if_player_close(100, False) and self.is_attacking:
+            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
+                if abs(self.pos[0] - self.game.player.pos[0]) >= self.attack_distance:
+                    self.flip = self.pos[0] > self.game.player.pos[0]
+                    movement = (movement[0] - 1 if self.flip else 1, movement[1])
+                    print("s'approchant")
+                else:
+                    self.walking = 0
+                    self.is_attacking = True
+                    print("attaque")
+            else:
+                self.flip = not self.flip
 
+        print(self.walking)
         super().update(tilemap, movement=movement)
 
         if movement[0] != 0:
             self.set_action("run")
         else:
             self.set_action("idle")
+
+    def check_if_player_close(self, visual_distance, mono_direction=True):
+        if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
+                and self.game.player.pos[1]+self.game.player.size[1] == int(self.pos[1] + self.size[1])):
+            if abs(self.game.player.pos[0] - int(self.pos[0])) <= visual_distance:
+                if mono_direction:
+                    if self.flip and self.game.player.pos[0] < int(self.pos[0]):
+                        return True
+                    if not self.flip and self.game.player.pos[0] > int(self.pos[0]):
+                        return True
+                else:
+                    return True
+
+        return False
 
     def render(self, surf, offset=(0, 0)):
         super().render(surf, offset=offset)
