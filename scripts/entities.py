@@ -100,6 +100,8 @@ class Enemy(PhysicsEntity):
                 self.walking = max(0, self.walking - 1)
             else:
                 self.flip = not self.flip
+                self.is_attacking = False
+                self.is_chasing = False
         elif not (self.is_attacking or self.is_chasing):
             rand = random.random()
             if rand < 0.01:
@@ -122,6 +124,8 @@ class Enemy(PhysicsEntity):
                     print("attaque")
             else:
                 self.flip = not self.flip
+                self.is_attacking = False
+                self.is_chasing = False
         if self.distance_with_player() > self.attack_distance and self.is_attacking and self.game.player.is_on_floor():
             self.is_attacking = False
         if self.distance_with_player() > self.vision_distance and self.is_chasing and self.game.player.is_on_floor():
