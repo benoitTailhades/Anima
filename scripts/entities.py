@@ -1,5 +1,6 @@
 import pygame
 import random
+import math
 
 
 class PhysicsEntity:
@@ -86,47 +87,42 @@ class Enemy(PhysicsEntity):
         self.attack_distance = 5
         self.vision_distance = 100
         self.is_attacking = False
+        self.is_chasing = False
+
 
     def update(self, tilemap, movement=(0, 0)):
         if self.walking:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                if self.check_if_player_close(100):
-                    if abs(self.pos[0]-self.game.player.pos[0]) >= self.attack_distance:
-                        movement = (movement[0] - 1 if self.flip else 1, movement[1])
-                        print("s'approchant")
-                    else:
-                        self.walking = 0
-                        self.is_attacking = True
-                        print("attaque")
+                if self.collisions['right'] or self.collisions['left']:
+                    self.flip = not self.flip
                 else:
-                    self.is_attacking = False
-                    if self.collisions['right'] or self.collisions['left']:
-                        self.flip = not self.flip
-                    else:
-                        movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
-                        print("pas vu")
-                    self.walking = max(0, self.walking - 1)
+                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                self.walking = max(0, self.walking - 1)
             else:
                 self.flip = not self.flip
-        elif not self.is_attacking and random.random() < 0.01:
-            print("randingo")
-            self.walking = random.randint(30, 120)
-        if abs(self.pos[0]-self.game.player.pos[0]) >= self.vision_distance and self.is_attacking:
+        elif not (self.is_attacking or self.is_chasing):
+            rand = random.random()
+            if rand < 0.01:
+                self.walking = random.randint(30, 120)
+        if abs(self.pos[0]-self.game.player.pos[0]) > self.attack_distance and self.is_attacking:
             self.is_attacking = False
-        elif self.check_if_player_close(100, False) and self.is_attacking:
+        if abs(self.pos[0]-self.game.player.pos[0]) > self.vision_distance and self.is_chasing:
+            self.is_chasing = False
+        elif self.distance_with_player() <= self.vision_distance:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                if abs(self.pos[0] - self.game.player.pos[0]) >= self.attack_distance:
+                if self.check_if_player_close(self.vision_distance, not self.is_chasing): #if it is not chasing, it becomes mono direction
                     self.flip = self.pos[0] > self.game.player.pos[0]
-                    movement = (movement[0] - 1 if self.flip else 1, movement[1])
-                    print("s'approchant")
-                else:
+                    if not self.is_attacking:
+                        self.is_chasing = True
+                        movement = (movement[0] - 1 if self.flip else 1, movement[1])
+                        print("s'approchant")
+                if self.distance_with_player() <= self.attack_distance:
                     self.walking = 0
                     self.is_attacking = True
                     print("attaque")
             else:
                 self.flip = not self.flip
 
-        print(self.walking)
         super().update(tilemap, movement=movement)
 
         if movement[0] != 0:
@@ -134,10 +130,10 @@ class Enemy(PhysicsEntity):
         else:
             self.set_action("idle")
 
-    def check_if_player_close(self, visual_distance, mono_direction=True):
+    def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
                 and self.game.player.pos[1]+self.game.player.size[1] == int(self.pos[1] + self.size[1])):
-            if abs(self.game.player.pos[0] - int(self.pos[0])) <= visual_distance:
+            if abs(self.game.player.pos[0] - int(self.pos[0])) <= vision_distance:
                 if mono_direction:
                     if self.flip and self.game.player.pos[0] < int(self.pos[0]):
                         return True
@@ -147,6 +143,10 @@ class Enemy(PhysicsEntity):
                     return True
 
         return False
+
+    def distance_with_player(self):
+        return math.sqrt((self.pos[0] - self.game.player.pos[0]) ** 2 + (
+                    (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
 
     def render(self, surf, offset=(0, 0)):
         super().render(surf, offset=offset)
