@@ -104,24 +104,28 @@ class Enemy(PhysicsEntity):
             rand = random.random()
             if rand < 0.01:
                 self.walking = random.randint(30, 120)
-        if abs(self.pos[0]-self.game.player.pos[0]) > self.attack_distance and self.is_attacking:
-            self.is_attacking = False
-        if abs(self.pos[0]-self.game.player.pos[0]) > self.vision_distance and self.is_chasing:
-            self.is_chasing = False
-        elif self.distance_with_player() <= self.vision_distance:
+        if self.distance_with_player() <= self.vision_distance:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                if self.check_if_player_close(self.vision_distance, not self.is_chasing): #if it is not chasing, it becomes mono direction
-                    self.flip = self.pos[0] > self.game.player.pos[0]
+                if (self.check_if_player_close(self.vision_distance, not self.is_chasing) # if it is not chasing, it becomes mono direction
+                        or (not self.game.player.is_on_floor() and self.is_chasing)):
+                    if self.check_if_player_close(self.vision_distance, not self.is_chasing):
+                        self.flip = self.pos[0] > self.game.player.pos[0]
                     if not self.is_attacking:
                         self.is_chasing = True
                         movement = (movement[0] - 1 if self.flip else 1, movement[1])
                         print("s'approchant")
-                if self.distance_with_player() <= self.attack_distance:
+                else:
+                    self.is_chasing = False
+                if self.check_if_player_close(self.attack_distance, not self.is_attacking) or (not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
                     print("attaque")
             else:
                 self.flip = not self.flip
+        if self.distance_with_player() > self.attack_distance and self.is_attacking and self.game.player.is_on_floor():
+            self.is_attacking = False
+        if self.distance_with_player() > self.vision_distance and self.is_chasing and self.game.player.is_on_floor():
+            self.is_chasing = False
 
         super().update(tilemap, movement=movement)
 
