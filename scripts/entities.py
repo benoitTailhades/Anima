@@ -89,7 +89,6 @@ class Enemy(PhysicsEntity):
         self.is_attacking = False
         self.is_chasing = False
 
-
     def update(self, tilemap, movement=(0, 0)):
         if self.walking:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
@@ -102,10 +101,12 @@ class Enemy(PhysicsEntity):
                 self.flip = not self.flip
                 self.is_attacking = False
                 self.is_chasing = False
+
         elif not (self.is_attacking or self.is_chasing):
             rand = random.random()
             if rand < 0.01:
                 self.walking = random.randint(30, 120)
+
         if self.distance_with_player() <= self.vision_distance:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
                 if (self.check_if_player_close(self.vision_distance, not self.is_chasing) # if it is not chasing, it becomes mono direction
@@ -118,6 +119,7 @@ class Enemy(PhysicsEntity):
                         print("s'approchant")
                 else:
                     self.is_chasing = False
+
                 if self.check_if_player_close(self.attack_distance, not self.is_attacking) or (not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
@@ -126,8 +128,10 @@ class Enemy(PhysicsEntity):
                 self.flip = not self.flip
                 self.is_attacking = False
                 self.is_chasing = False
+
         if self.distance_with_player() > self.attack_distance and self.is_attacking and self.game.player.is_on_floor():
             self.is_attacking = False
+
         if self.distance_with_player() > self.vision_distance and self.is_chasing and self.game.player.is_on_floor():
             self.is_chasing = False
 
@@ -149,7 +153,6 @@ class Enemy(PhysicsEntity):
                         return True
                 else:
                     return True
-
         return False
 
     def distance_with_player(self):
