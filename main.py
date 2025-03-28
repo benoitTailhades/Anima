@@ -5,7 +5,7 @@ import random
 from scripts.entities import player_death, Enemy
 from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
-from scripts.Physics import PhysicsPlayer
+from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.user_interface import Menu, start_menu
 
