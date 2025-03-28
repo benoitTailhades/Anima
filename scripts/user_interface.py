@@ -47,6 +47,7 @@ class Menu:
         self.control_font = load_game_font(size=24)
         self.button_font = load_game_font(size=36)
         self.hover_image = load_image("Opera_senza_titolo.png")
+        self.hover2_image = py.transform.flip(load_image("Opera_senza_titolo.png"), True, False)
 
         self.button_font.set_bold(True)
 
@@ -61,11 +62,9 @@ class Menu:
         }
 
     def capture_background(self):
-        """Capture l'écran actuel comme arrière-plan du menu"""
         self.original_background = self.screen.copy()
 
     def _get_centered_buttons(self, current_screen_size):
-
         buttons = {}
 
         # Si les options sont visibles, ne pas afficher les autres boutons
@@ -73,32 +72,67 @@ class Menu:
             # Bouton RETOUR placé en bas à gauche du panneau d'options
             buttons["RETOUR"] = py.Rect(50, current_screen_size[1] - 80, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
         else:
-            # Affichage normal des boutons centrés
+            # Calculer la position x centrée
             button_x = (current_screen_size[0] - self.BUTTON_WIDTH) // 2
 
-            buttons["RESUME"] = py.Rect(button_x, 150, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
-            buttons["OPTIONS"] = py.Rect(button_x, 210, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
-            buttons["QUIT"] = py.Rect(button_x, 270, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
+            # Calculer la hauteur totale des boutons et de l'espacement
+            total_button_height = self.BUTTON_HEIGHT * 3  # 3 boutons
+            total_spacing = 20 * 2  # Espace entre les boutons
+            total_content_height = total_button_height + total_spacing
+
+            # Calculer la position y de départ pour centrer verticalement
+            start_y = (current_screen_size[1] - total_content_height) // 2
+
+            # Charger les deux images
+            top_image = load_image("Opera_senza_titolo 1.png")
+            bottom_image = load_image("Opera_senza_titolo 2.png")
+
+            # Calculer les positions pour les images
+            top_image_x = (current_screen_size[0] - top_image.get_width()) // 2
+            top_image_y = start_y - top_image.get_height() - 20  # Au-dessus du premier bouton
+
+            # Créer les boutons avec un espacement vertical
+            buttons["RESUME"] = py.Rect(button_x, start_y, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
+            buttons["OPTIONS"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
+            buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
+
+            # Placer l'image juste en dessous du dernier bouton
+            bottom_image_x = (current_screen_size[0] - bottom_image.get_width()) // 2
+            bottom_image_y = buttons["QUIT"].bottom + 10  # 10 pixels en dessous du bouton QUIT
+
+            # Stocker les images comme attribut de l'instance pour pouvoir les dessiner
+            self.top_image = top_image
+            self.bottom_image = bottom_image
+            self.top_image_pos = (top_image_x, top_image_y)
+            self.bottom_image_pos = (bottom_image_x, bottom_image_y)
 
         return buttons
 
 
-
-
     def _draw_buttons(self, buttons):
-
         mouse_pos = py.mouse.get_pos()
         for text, rect in buttons.items():
-            label = self.button_font.render(text, True, self.COLORS["white"])
-            self.screen.blit(label, (
-                rect.x + (rect.width - label.get_width()) // 2,
-                rect.y + (rect.height - label.get_height()) // 2
-            ))
+            # Couleur de base du texte
+            text_color = self.COLORS["light_gray"]
+
+            # Vérifier si la souris survole le bouton
+            if rect.collidepoint(mouse_pos):
+                text_color = (255, 255, 255)
+
+            # Rendu du texte
+            label = self.button_font.render(text, True, text_color)
+            self.screen.blit(label, (rect.x + (rect.width - label.get_width()) // 2,rect.y + (rect.height - label.get_height()) // 2))
 
             if rect.collidepoint(mouse_pos):
-                image_x = rect.left - 10  # Décalage de 10 pixels à droite du bouton
+                image_x = rect.left - 15
                 image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
                 self.screen.blit(self.hover_image, (image_x, image_y))
+
+                image_x2 = rect.left + (rect.right - rect.left)-30
+                image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
+                self.screen.blit(self.hover2_image, (image_x2, image_y2))
+
+
 
     def _draw_volume_control(self):
 
@@ -281,6 +315,13 @@ class Menu:
                 self._draw_options_panel(current_screen_size)
 
             buttons = self._get_centered_buttons(current_screen_size)
+
+            if not self.options_visible:
+                if hasattr(self, 'bottom_image'):
+                    self.screen.blit(self.top_image, self.bottom_image_pos)
+                if hasattr(self, 'top_image'):
+                    self.screen.blit(self.bottom_image, self.top_image_pos)
+
             self._draw_buttons(buttons)
 
             knob_x = self._draw_volume_control()
