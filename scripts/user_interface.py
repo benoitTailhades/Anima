@@ -13,36 +13,28 @@ from scripts.utils import load_images, load_image, load_game_font
 
 
 class Menu:
-    """
-    Classe qui gère le menu du jeu avec des options comme la reprise,
-    les options (volume, langue) et la possibilité de quitter.
-    """
+
 
     def __init__(self, game):
         self.game = game
         self.screen = game.screen
         self.original_background = None
 
-        # Paramètres utilisateur
         self.volume = 0.5
         self.languages = ["Français", "English", "Español"]
         self.selected_language = self.languages[0]
 
-        # États
         self.dropdown_expanded = False
         self.dragging_volume = False
         self.options_visible = False
 
-        # Constantes
         self.BUTTON_WIDTH = 200
         self.BUTTON_HEIGHT = 50
         self.KNOB_RADIUS = 8
 
-        # Position des éléments d'options (initialisés avec des valeurs par défaut)
         self.slider_rect = py.Rect(50, 100, 200, 5)
         self.dropdown_rect = py.Rect(50, 150, 200, 30)
 
-        # Initialisation de la police
         py.font.init()
         self.control_font = load_game_font(size=24)
         self.button_font = load_game_font(size=36)
@@ -51,7 +43,6 @@ class Menu:
 
         self.button_font.set_bold(True)
 
-        # Couleurs
         self.COLORS = {
             "white": (255, 255, 255),
             "black": (0, 0, 0),
@@ -67,40 +58,31 @@ class Menu:
     def _get_centered_buttons(self, current_screen_size):
         buttons = {}
 
-        # Si les options sont visibles, ne pas afficher les autres boutons
         if self.options_visible:
-            # Bouton RETOUR placé en bas à gauche du panneau d'options
-            buttons["RETOUR"] = py.Rect(50, current_screen_size[1] - 80, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
+            buttons["BACK"] = py.Rect(70, current_screen_size[1] - 90, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
         else:
-            # Calculer la position x centrée
             button_x = (current_screen_size[0] - self.BUTTON_WIDTH) // 2
 
-            # Calculer la hauteur totale des boutons et de l'espacement
-            total_button_height = self.BUTTON_HEIGHT * 3  # 3 boutons
-            total_spacing = 20 * 2  # Espace entre les boutons
+            total_button_height = self.BUTTON_HEIGHT * 3
+            total_spacing = 20 * 2
             total_content_height = total_button_height + total_spacing
 
-            # Calculer la position y de départ pour centrer verticalement
             start_y = (current_screen_size[1] - total_content_height) // 2
 
-            # Charger les deux images
             top_image = load_image("Opera_senza_titolo 1.png")
             bottom_image = load_image("Opera_senza_titolo 2.png")
 
-            # Calculer les positions pour les images
             top_image_x = (current_screen_size[0] - top_image.get_width()) // 2
-            top_image_y = start_y - top_image.get_height() - 20  # Au-dessus du premier bouton
+            top_image_y = start_y - top_image.get_height() - 20
 
-            # Créer les boutons avec un espacement vertical
+
             buttons["RESUME"] = py.Rect(button_x, start_y, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
             buttons["OPTIONS"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
             buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
 
-            # Placer l'image juste en dessous du dernier bouton
             bottom_image_x = (current_screen_size[0] - bottom_image.get_width()) // 2
-            bottom_image_y = buttons["QUIT"].bottom + 10  # 10 pixels en dessous du bouton QUIT
+            bottom_image_y = buttons["QUIT"].bottom + 10
 
-            # Stocker les images comme attribut de l'instance pour pouvoir les dessiner
             self.top_image = top_image
             self.bottom_image = bottom_image
             self.top_image_pos = (top_image_x, top_image_y)
@@ -108,72 +90,62 @@ class Menu:
 
         return buttons
 
-
     def _draw_buttons(self, buttons):
         mouse_pos = py.mouse.get_pos()
         for text, rect in buttons.items():
-            # Couleur de base du texte
+            label = self.button_font.render(text, True, self.COLORS["light_gray"])
+            text_width = label.get_width()
+            text_height = label.get_height()
+
             text_color = self.COLORS["light_gray"]
 
-            # Vérifier si la souris survole le bouton
             if rect.collidepoint(mouse_pos):
                 text_color = (255, 255, 255)
 
-            # Rendu du texte
+            text_x = rect.x + (rect.width - text_width) // 2
+            text_y = rect.y + (rect.height - text_height) // 2
+
             label = self.button_font.render(text, True, text_color)
-            self.screen.blit(label, (rect.x + (rect.width - label.get_width()) // 2,rect.y + (rect.height - label.get_height()) // 2))
+            self.screen.blit(label, (text_x, text_y))
 
             if rect.collidepoint(mouse_pos):
-                image_x = rect.left - 15
+                image_x = text_x - self.hover_image.get_width() - 5
                 image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
                 self.screen.blit(self.hover_image, (image_x, image_y))
 
-                image_x2 = rect.left + (rect.right - rect.left)-30
+                image_x2 = text_x + text_width + 5
                 image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
                 self.screen.blit(self.hover2_image, (image_x2, image_y2))
-
-
 
     def _draw_volume_control(self):
 
         if not self.options_visible:
             return 0
 
-        # Calcul de la position du bouton
         knob_x = self.slider_rect.x + int(self.volume * self.slider_rect.width)
 
-        # Dessiner le slider et le bouton
         py.draw.rect(self.screen, self.COLORS["dark_gray"], self.slider_rect, border_radius=2)
         py.draw.circle(self.screen, self.COLORS["white"],
                        (knob_x, self.slider_rect.centery),
                        self.KNOB_RADIUS)
 
-        # Afficher le texte du volume
         vol_text = self.control_font.render(f"Volume: {int(self.volume * 100)}%", True, self.COLORS["white"])
         self.screen.blit(vol_text, (self.slider_rect.x, self.slider_rect.y - 25))
 
         return knob_x
 
     def _draw_language_dropdown(self):
-        """
-        Dessine le menu déroulant de sélection de langue si les options sont visibles.
 
-        Returns:
-            list: Liste des rectangles des options de langue, vide si le menu n'est pas ouvert
-        """
         if not self.options_visible:
             return []
 
-        # Dessiner le menu déroulant principal
         py.draw.rect(self.screen, self.COLORS["dark_gray"], self.dropdown_rect, border_radius=5)
         lang_text = self.control_font.render(self.selected_language, True, self.COLORS["black"])
         self.screen.blit(lang_text, (self.dropdown_rect.x + 10, self.dropdown_rect.y + 5))
 
-        # Afficher le titre "Language"
         lang_title = self.control_font.render("Language:", True, self.COLORS["white"])
         self.screen.blit(lang_title, (self.dropdown_rect.x, self.dropdown_rect.y - 25))
 
-        # Si le menu est ouvert, afficher les options
         if self.dropdown_expanded:
             option_rects = []
             for i, lang in enumerate(self.languages):
@@ -185,11 +157,9 @@ class Menu:
                 )
                 option_rects.append(option_rect)
 
-                # Couleur de l'option (plus claire si survolée)
                 color = self.COLORS["medium_gray"] if option_rect.collidepoint(py.mouse.get_pos()) else self.COLORS[
                     "light_gray"]
 
-                # Dessiner l'option et son texte
                 py.draw.rect(self.screen, color, option_rect, border_radius=5)
                 option_text = self.control_font.render(lang, True, self.COLORS["black"])
                 self.screen.blit(option_text, (option_rect.x + 10, option_rect.y + 5))
@@ -208,7 +178,7 @@ class Menu:
                 elif text == "QUIT":
                     py.quit()
                     sys.exit()
-                elif text == "RETOUR":
+                elif text == "BACK":
                     self.options_visible = False
                     return True
         return True
@@ -226,7 +196,6 @@ class Menu:
         )
 
         if knob_area.collidepoint(mouse_pos) or self.slider_rect.collidepoint(mouse_pos):
-            # Si clic sur le slider, déplacer directement le volume
             if self.slider_rect.collidepoint(mouse_pos):
                 self.volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
                 self.volume = max(0, min(1, self.volume))
@@ -247,7 +216,6 @@ class Menu:
                     self.dropdown_expanded = False
                     break
             else:
-                # Clic en dehors des options, on ferme le menu
                 self.dropdown_expanded = False
 
     def _handle_volume_drag(self, mouse_x):
@@ -255,22 +223,18 @@ class Menu:
         if not self.options_visible:
             return
 
-        # Limiter la position X entre le début et la fin du slider
         constrained_x = max(self.slider_rect.left, min(mouse_x, self.slider_rect.right))
 
-        # Mettre à jour le volume (valeur entre 0 et 1)
         self.volume = (constrained_x - self.slider_rect.x) / self.slider_rect.width
-        self.volume = max(0, min(1, self.volume))  # S'assurer que le volume reste entre 0 et 1
+        self.volume = max(0, min(1, self.volume))
 
     def _update_options_positions(self, current_screen_size):
 
-        # Définir un panneau pour les options sur le côté gauche
         panel_width = 250
-        panel_height = current_screen_size[1] - 100  # Hauteur presque pleine
-        panel_x = 50  # Position à gauche
-        panel_y = 50  # Un peu d'espace en haut
+        panel_height = current_screen_size[1] - 100
+        panel_x = 50
+        panel_y = 50
 
-        # Mise à jour des positions des contrôles
         control_x = panel_x + 25
         self.slider_rect = py.Rect(control_x, panel_y + 100, 200, 5)
         self.dropdown_rect = py.Rect(control_x, panel_y + 200, 200, 30)
@@ -278,14 +242,18 @@ class Menu:
         return panel_x, panel_y, panel_width, panel_height
 
     def _draw_options_panel(self, current_screen_size):
-
         if not self.options_visible:
             return
 
         panel_x, panel_y, panel_width, panel_height = self._update_options_positions(current_screen_size)
 
-        panel_rect = py.Rect(panel_x, panel_y, panel_width, panel_height)
-        py.draw.rect(self.screen, (40, 40, 40, 220), panel_rect, border_radius=10)
+        panel_surface = py.Surface((panel_width, panel_height), py.SRCALPHA)
+
+        panel_color = (20, 20, 20, 200)
+
+        py.draw.rect(panel_surface, panel_color, (0, 0, panel_width, panel_height), border_radius=10)
+
+        self.screen.blit(panel_surface, (panel_x, panel_y))
 
         options_title = self.button_font.render("OPTIONS", True, self.COLORS["white"])
         self.screen.blit(options_title, (
@@ -340,10 +308,8 @@ class Menu:
                 elif event.type == py.KEYDOWN:
                     if event.key == py.K_ESCAPE:
                         if self.options_visible:
-                            # Si les options sont visibles, les fermer d'abord
                             self.options_visible = False
                         else:
-                            # Sinon, quitter le menu
                             running = False
 
                 elif event.type == py.MOUSEBUTTONDOWN:
@@ -381,7 +347,7 @@ def start_menu():
             continue
 
         frame = cv2.flip(frame, 1)
-        frame = cv2.resize(frame, (1000, 600))  #
+        frame = cv2.resize(frame, (1000, 600))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         frame = np.rot90(frame)
         frame = py.surfarray.make_surface(frame)
