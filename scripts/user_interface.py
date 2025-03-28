@@ -2,7 +2,14 @@ import pygame as py
 import sys
 import numpy as np
 import cv2
+import os
 from scripts.Sound import run_sound
+from scripts.utils import load_images, load_image, load_game_font
+
+
+
+
+
 
 
 class Menu:
@@ -37,8 +44,11 @@ class Menu:
 
         # Initialisation de la police
         py.font.init()
-        self.control_font = py.font.Font(None, 24)
-        self.button_font = py.font.Font(None, 36)
+        self.control_font = load_game_font(size=24)
+        self.button_font = load_game_font(size=36)
+        self.hover_image = load_image("Opera_senza_titolo.png")
+
+        self.button_font.set_bold(True)
 
         # Couleurs
         self.COLORS = {
@@ -72,24 +82,23 @@ class Menu:
 
         return buttons
 
+
+
+
     def _draw_buttons(self, buttons):
-        """
-        Dessine les boutons du menu.
 
-        Args:
-            buttons: Dictionnaire des boutons à dessiner
-        """
+        mouse_pos = py.mouse.get_pos()
         for text, rect in buttons.items():
-            # Couleur du bouton (plus claire si survolé)
-            color = self.COLORS["medium_gray"] if rect.collidepoint(py.mouse.get_pos()) else self.COLORS["white"]
-
-            # Dessiner le bouton et son texte
-            py.draw.rect(self.screen, color, rect, border_radius=10)
-            label = self.button_font.render(text, True, self.COLORS["black"])
+            label = self.button_font.render(text, True, self.COLORS["white"])
             self.screen.blit(label, (
                 rect.x + (rect.width - label.get_width()) // 2,
                 rect.y + (rect.height - label.get_height()) // 2
             ))
+
+            if rect.collidepoint(mouse_pos):
+                image_x = rect.left - 10  # Décalage de 10 pixels à droite du bouton
+                image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
+                self.screen.blit(self.hover_image, (image_x, image_y))
 
     def _draw_volume_control(self):
 
@@ -171,16 +180,7 @@ class Menu:
         return True
 
     def _handle_volume_click(self, knob_x, mouse_pos):
-        """
-        Gère les clics sur le contrôle de volume.
 
-        Args:
-            knob_x: Position X du bouton de volume
-            mouse_pos: Position de la souris lors du clic
-
-        Returns:
-            bool: True si l'utilisateur a commencé à faire glisser le bouton
-        """
         if not self.options_visible:
             return False
 
@@ -200,13 +200,7 @@ class Menu:
         return False
 
     def _handle_language_click(self, option_rects, mouse_pos):
-        """
-        Gère les clics sur le menu déroulant des langues.
 
-        Args:
-            option_rects: Liste des rectangles des options
-            mouse_pos: Position de la souris lors du clic
-        """
         if not self.options_visible:
             return
 
@@ -223,12 +217,7 @@ class Menu:
                 self.dropdown_expanded = False
 
     def _handle_volume_drag(self, mouse_x):
-        """
-        Gère le glissement du bouton de volume.
 
-        Args:
-            mouse_x: Position X de la souris
-        """
         if not self.options_visible:
             return
 
@@ -240,12 +229,7 @@ class Menu:
         self.volume = max(0, min(1, self.volume))  # S'assurer que le volume reste entre 0 et 1
 
     def _update_options_positions(self, current_screen_size):
-        """
-        Met à jour les positions des éléments d'options en fonction de la taille de l'écran.
 
-        Args:
-            current_screen_size: Taille actuelle de l'écran
-        """
         # Définir un panneau pour les options sur le côté gauche
         panel_width = 250
         panel_height = current_screen_size[1] - 100  # Hauteur presque pleine
@@ -260,23 +244,15 @@ class Menu:
         return panel_x, panel_y, panel_width, panel_height
 
     def _draw_options_panel(self, current_screen_size):
-        """
-        Dessine le panneau d'options s'il est visible.
 
-        Args:
-            current_screen_size: Taille actuelle de l'écran
-        """
         if not self.options_visible:
             return
 
-        # Mettre à jour les positions des éléments d'options
         panel_x, panel_y, panel_width, panel_height = self._update_options_positions(current_screen_size)
 
-        # Dessiner le panneau
         panel_rect = py.Rect(panel_x, panel_y, panel_width, panel_height)
         py.draw.rect(self.screen, (40, 40, 40, 220), panel_rect, border_radius=10)
 
-        # Titre du panneau
         options_title = self.button_font.render("OPTIONS", True, self.COLORS["white"])
         self.screen.blit(options_title, (
             panel_x + (panel_width - options_title.get_width()) // 2,
@@ -284,47 +260,34 @@ class Menu:
         ))
 
     def menu_display(self):
-        """
-        Affiche le menu principal et gère les interactions utilisateur.
-        """
-        # Assurez-vous que l'arrière-plan est capturé avant d'afficher le menu
+
         self.capture_background()
 
         running = True
         while running:
             current_screen_size = self.screen.get_size()
 
-            # ---- Rendu de l'arrière-plan ----
             if self.original_background is not None:
-                # Redimensionner l'arrière-plan à la taille actuelle de la fenêtre
                 scaled_bg = py.transform.scale(self.original_background, current_screen_size)
                 self.screen.blit(scaled_bg, (0, 0))
             else:
-                # Solution de secours si l'arrière-plan n'est pas capturé
                 self.screen.fill(self.COLORS["black"])
 
-            # Créer un overlay semi-transparent
             overlay = py.Surface(current_screen_size, py.SRCALPHA)
             overlay.fill(self.COLORS["overlay"])
             self.screen.blit(overlay, (0, 0))
 
-            # ---- Rendu des éléments d'interface ----
-            # Dessiner le panneau d'options s'il est visible
             if self.options_visible:
                 self._draw_options_panel(current_screen_size)
 
-            # Obtenir et dessiner les boutons appropriés
             buttons = self._get_centered_buttons(current_screen_size)
             self._draw_buttons(buttons)
 
-            # Dessiner les contrôles d'options s'ils sont visibles
             knob_x = self._draw_volume_control()
             option_rects = self._draw_language_dropdown()
 
-            # Mettre à jour l'affichage
             py.display.flip()
 
-            # ---- Gestion des événements ----
             for event in py.event.get():
                 if event.type == py.QUIT:
                     py.quit()
@@ -345,15 +308,11 @@ class Menu:
                 elif event.type == py.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
-                    # Gestion des clics sur les boutons
                     running = self._handle_button_click(buttons, mouse_pos)
 
-                    # Si les options sont visibles, gérer les clics sur les contrôles d'options
                     if self.options_visible:
-                        # Gestion du clic sur le contrôle de volume
                         self.dragging_volume = self._handle_volume_click(knob_x, mouse_pos)
 
-                        # Gestion du clic sur la sélection de langue
                         self._handle_language_click(option_rects, mouse_pos)
 
                 elif event.type == py.MOUSEBUTTONUP:

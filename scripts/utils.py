@@ -53,3 +53,28 @@ class Animation:
         return self.images[int(self.frame / self.img_duration)]
 
 
+def load_game_font(font_name=None, size=36):
+
+    RECOMMENDED_FONTS = [
+        'DejaVuSans-Bold.ttf',  # Police système avec style net
+        'FreeMono.ttf',  # Style gothique simple
+        'LiberationMono-Bold.ttf'  # Alternative propre
+    ]
+
+    # Chemins possibles pour les polices
+    font_paths = [
+        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,
+        *[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
+    ]
+
+    for path in font_paths:
+        try:
+            if path and os.path.exists(path):
+                return pygame.font.Font(path, size)
+        except:
+            pass
+
+    # Dernière option : utiliser une police système
+    return pygame.font.SysFont('monospace', size, bold=True)
+
+
