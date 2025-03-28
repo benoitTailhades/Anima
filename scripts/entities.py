@@ -136,8 +136,6 @@ class Enemy(PhysicsEntity):
                 self.is_attacking = False
                 self.is_chasing = False
 
-        print(self.check_if_player_close(self.attack_distance, not self.is_attacking))
-
         if self.distance_with_player() > self.attack_distance and self.is_attacking and self.game.player.is_on_floor():
             self.is_attacking = False
 
