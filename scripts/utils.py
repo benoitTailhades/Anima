@@ -31,12 +31,6 @@ def display_bg(surf, img, pos):
         surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
         surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
 
-def update_bg_pos(img, pos):
-    if pos[0] < 0:
-        return pos[0] + img.get_width()
-    elif pos[0] > 0:
-        return pos[0] - img.get_width()
-
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):
         self.images = images
