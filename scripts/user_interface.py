@@ -49,7 +49,7 @@ class Menu:
             "light_gray": (220, 220, 220),
             "medium_gray": (200, 200, 200),
             "dark_gray": (160, 160, 160),
-            "overlay": (0, 0, 0, 150)
+            "overlay": (0, 0, 0, 200)
         }
 
     def capture_background(self):
