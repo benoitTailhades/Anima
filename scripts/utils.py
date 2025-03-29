@@ -20,12 +20,22 @@ def load_images(path, tile_size=None):
 def round_up(x):
     return int(x) + 1 if x % 1 != 0 and x > 0 else int(x)
 
-def display_bg(surf, img, player_pos, pos):
+def display_bg(surf, img, pos):
     surf.blit(img, pos)
-    if player_pos[0] <= (pos[0] + img.get_width()) / 2:
-        surf.blit(img, (pos[0] - img.get_width(), pos[1]))
-    elif player_pos[0] > (pos[0] + img.get_width()) / 2:
-        surf.blit(img, (pos[0] + img.get_width(), pos[1]))
+    n = pos[0]//img.get_width()
+    print(pos[0] - n*img.get_width())
+    if pos[0] - n*img.get_width() > 0:
+        surf.blit(img, (pos[0] - n* img.get_width(), pos[1]))
+        surf.blit(img, (pos[0] - (n+1)*img.get_width(), pos[1]))
+    elif pos[0] + n*img.get_width() < 0:
+        surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
+        surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
+
+def update_bg_pos(img, pos):
+    if pos[0] < 0:
+        return pos[0] + img.get_width()
+    elif pos[0] > 0:
+        return pos[0] - img.get_width()
 
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):
