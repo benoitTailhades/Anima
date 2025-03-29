@@ -21,9 +21,7 @@ def round_up(x):
     return int(x) + 1 if x % 1 != 0 and x > 0 else int(x)
 
 def display_bg(surf, img, pos):
-    surf.blit(img, pos)
     n = pos[0]//img.get_width()
-    print(pos[0] - n*img.get_width())
     if pos[0] - n*img.get_width() > 0:
         surf.blit(img, (pos[0] - n* img.get_width(), pos[1]))
         surf.blit(img, (pos[0] - (n+1)*img.get_width(), pos[1]))
