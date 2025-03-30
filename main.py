@@ -34,8 +34,9 @@ class Game:
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
-            'enemy/idle': Animation(load_images('entities/enemy/idle'), img_dur=4),
-            'enemy/run': Animation(load_images('entities/enemy/run'), img_dur=4),
+            'enemy/idle': Animation(load_images('entities/enemy/idle'), img_dur=12),
+            'enemy/run': Animation(load_images('entities/enemy/run'), img_dur=8),
+            'enemy/attack': Animation(load_images('entities/enemy/attack'), img_dur=3, loop=False),
             'background': load_image('background_begin.png', self.display.get_size()),
             'background1': load_image('bg1.png'),
             'background2': load_image('bg2.png'),
@@ -75,7 +76,7 @@ class Game:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (8, 15)))
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16)))
 
         self.scroll = [0, 0]
 

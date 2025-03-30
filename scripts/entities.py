@@ -13,7 +13,7 @@ class PhysicsEntity:
         self.collisions = {'up': False, 'down': False, 'right': False, 'left': False}
 
         self.action = ''
-        self.anim_offset = (-3, -3)
+        self.anim_offset = (0, 0)
         self.flip = False
         self.set_action('idle')
 
@@ -84,7 +84,7 @@ class Enemy(PhysicsEntity):
 
         self.walking = 0
 
-        self.attack_distance = 25
+        self.attack_distance = 15
         self.vision_distance = 100
         self.is_attacking = False
         self.is_chasing = False
@@ -130,7 +130,7 @@ class Enemy(PhysicsEntity):
                 if self.check_if_player_close(self.attack_distance, not self.is_attacking) or (not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
-                    print("attaque")
+
             else:
                 self.flip = not self.flip
                 self.is_attacking = False
@@ -143,10 +143,14 @@ class Enemy(PhysicsEntity):
             self.is_chasing = False
 
         super().update(tilemap, movement=movement)
-        if movement[0] != 0:
-            self.set_action("run")
-        else:
-            self.set_action("idle")
+        if not self.is_attacking:
+            if movement[0] != 0:
+                self.set_action("run")
+            else:
+                self.set_action("idle")
+        if self.is_attacking and self.action != "attack":
+            self.set_action("attack")
+
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
@@ -162,7 +166,7 @@ class Enemy(PhysicsEntity):
         return False
 
     def distance_with_player(self):
-        return math.sqrt((self.pos[0] - self.player_x) ** 2 + (
+        return math.sqrt((self.enemy_x - self.player_x) ** 2 + (
                     (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
 
     def render(self, surf, offset=(0, 0)):
