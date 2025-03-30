@@ -103,7 +103,7 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 20, -20))
+            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
 
             self.tilemap.render(self.display, offset=render_scroll)
@@ -115,8 +115,8 @@ class Game:
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
-
-            if self.player.pos[1] > 500:
+            print(self.player.pos[0])
+            if self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152)):
                 player_death(self, self.screen, self.spawn_pos)
 
             for particle in self.particles.copy():

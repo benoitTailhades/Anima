@@ -145,6 +145,8 @@ class Editor:
                     if event.key == pygame.K_o:
                         self.tilemap.save('map.json')
                         print("saved")
+                    if event.key == pygame.K_c:
+                        print((tile_pos[0]*16,tile_pos[1]*16))
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_q:
                         self.movement[0] = False
