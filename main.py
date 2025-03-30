@@ -1,7 +1,9 @@
 import sys
 import math
+
 import pygame
 import random
+import time
 from scripts.entities import player_death, Enemy
 from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
@@ -63,6 +65,7 @@ class Game:
         self.tilemap.load('map.json')
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
+        self.player_hp = 100
 
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
@@ -83,6 +86,13 @@ class Game:
         self.particles = []
 
         self.menu = Menu(self)
+
+    def deal_dmg(self,entity, target, att_speed):
+        current_time = time.time()
+        if target == "player" and current_time - entity.last_attack_time >= 1:
+            entity.last_attack_time = time.time()
+            self.player_hp -= att_speed
+            print("attack")
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -116,8 +126,9 @@ class Game:
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
-            if self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152)):
+            if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
+                self.player_hp = 100
 
             for particle in self.particles.copy():
                 kill = particle.update()

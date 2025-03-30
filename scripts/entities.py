@@ -90,6 +90,8 @@ class Enemy(PhysicsEntity):
         self.is_chasing = False
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
+        self.last_attack_time = 0
+        self.attack_speed = 10
 
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
@@ -130,7 +132,6 @@ class Enemy(PhysicsEntity):
                 if self.check_if_player_close(self.attack_distance, not self.is_attacking) or (not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
-
             else:
                 self.flip = not self.flip
                 self.is_attacking = False
@@ -148,8 +149,10 @@ class Enemy(PhysicsEntity):
                 self.set_action("run")
             else:
                 self.set_action("idle")
-        if self.is_attacking and self.action != "attack":
-            self.set_action("attack")
+        if self.is_attacking:
+            self.game.deal_dmg(self,'player', self.attack_speed)
+            if self.action != "attack":
+                self.set_action("attack")
 
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
