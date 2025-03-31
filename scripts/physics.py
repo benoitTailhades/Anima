@@ -55,8 +55,8 @@ class PhysicsPlayer:
         self.tilemap = tilemap
 
         self.facing = ""
-        self.action = ""
-        self.set_action("idle")
+        self.action = "idle"
+        self.animation = self.game.assets['player/' + "idle"].copy()
         self.collision = {'left': False, 'right': False, 'bottom': False}
         self.get_block_on = {'left': False, 'right': False}
         self.air_time = 0
@@ -120,7 +120,7 @@ class PhysicsPlayer:
                 self.set_action('falling/right')
             elif self.get_direction("x") == -1 or (self.facing == "right" and not self.get_block_on["left"]):
                 self.set_action('falling/left')
-            if self.velocity[1] > 0:
+            if self.velocity[1] > 0 and self.can_walljump["blocks_around"] >= 2:
                 if self.collision["right"] and self.get_block_on["right"]:
                     self.set_action("wall_slide/right")
                     self.facing = "left"
@@ -220,10 +220,11 @@ class PhysicsPlayer:
             self.dashtime_cur -= 1
             if not self.stop_dash_momentum["x"]:
                 self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
-                if self.get_direction("x") == 1:
-                    self.set_action("dash/right")
-                elif self.get_direction("x") == -1:
-                    self.set_action("dash/left")
+                if self.is_on_floor():
+                    if self.get_direction("x") == 1:
+                        self.set_action("dash/right")
+                    elif self.get_direction("x") == -1:
+                        self.set_action("dash/left")
             else:
                 if self.dash_direction[0] == -1:
                     self.set_action("wall_slide/left")
