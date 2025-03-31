@@ -103,7 +103,7 @@ class Game:
             # Blit the transparent red overlay onto the screen
             self.screen.blit(flash_surface, (0, 0))
             pygame.display.update()
-            pygame.time.delay(100)  # Flash effect for 200 milliseconds
+            pygame.time.delay(100)
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -160,6 +160,7 @@ class Game:
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
+
 
             if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
