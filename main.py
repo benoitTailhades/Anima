@@ -32,6 +32,8 @@ class Game:
             'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
+            'dark_vine': load_images('tiles/dark_vine'),
+            'hanging_vine': load_images('tiles/hanging_vine'),
             'stone': load_images('tiles/stone', self.tile_size),
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),

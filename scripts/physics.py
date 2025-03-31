@@ -25,7 +25,7 @@ class PhysicsPlayer:
         self.JUMP_VELOCITY = -6.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
-        self.DASH_COOLDOWN = 30
+        self.DASH_COOLDOWN = 50
 
         #Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
@@ -81,7 +81,6 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-            print(self.collision)
             self.gravity()
             self.jump()
             self.dash()
