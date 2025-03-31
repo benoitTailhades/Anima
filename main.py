@@ -86,6 +86,7 @@ class Game:
         self.particles = []
 
         self.menu = Menu(self)
+        self.keyboard_layout = "azerty"
 
     def deal_dmg(self,entity, target, att_speed):
         current_time = time.time()
@@ -100,6 +101,30 @@ class Game:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.NOFRAME)
         else:
             self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
+
+    def get_key_map(self):
+        if self.keyboard_layout.lower() == "azerty":
+            return {
+                pygame.K_z: "key_up",
+                pygame.K_s: "key_down",
+                pygame.K_q: "key_left",
+                pygame.K_d: "key_right",
+                pygame.K_g: "key_dash",
+                pygame.K_h: "key_attack",
+                pygame.K_SPACE: "key_jump",
+                pygame.K_n: "key_noclip"
+            }
+        elif self.keyboard_layout.lower() == "qwerty":
+            return {
+                pygame.K_w: "key_up",
+                pygame.K_s: "key_down",
+                pygame.K_a: "key_left",
+                pygame.K_d: "key_right",
+                pygame.K_g: "key_dash",
+                pygame.K_h: "key_attack",
+                pygame.K_SPACE: "key_jump",
+                pygame.K_n: "key_noclip"
+            }
 
     def run(self):
         while True:
@@ -151,18 +176,14 @@ class Game:
 
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
-                    key_map = {
-                        pygame.K_z: "key_up",
-                        pygame.K_s: "key_down",
-                        pygame.K_q: "key_left",
-                        pygame.K_d: "key_right",
-                        pygame.K_g: "key_dash",
-                        pygame.K_h: "key_attack",
-                        pygame.K_SPACE: "key_jump",
-                        pygame.K_n: "key_noclip"
-                    }
+                    key_map = self.get_key_map()
+
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
+
+
+
+
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()

@@ -1,5 +1,4 @@
 import pygame
-
 import os
 
 BASE_IMG_PATH = "assets/images/"
@@ -73,5 +72,7 @@ def load_game_font(font_name=None, size=36):
         except:
             pass
     return pygame.font.SysFont('monospace', size, bold=True)
+
+
 
 

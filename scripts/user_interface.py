@@ -7,13 +7,7 @@ from scripts.sound import run_sound
 from scripts.utils import load_images, load_image, load_game_font
 
 
-
-
-
-
-
 class Menu:
-
 
     def __init__(self, game):
         self.game = game
@@ -23,6 +17,9 @@ class Menu:
         self.volume = 0.5
         self.languages = ["Français", "English", "Español"]
         self.selected_language = self.languages[0]
+
+        # Add keyboard layout option
+        self.keyboard_layout = "AZERTY"  # Default keyboard layout
 
         self.dropdown_expanded = False
         self.dragging_volume = False
@@ -34,9 +31,12 @@ class Menu:
 
         self.slider_rect = py.Rect(50, 100, 200, 5)
         self.dropdown_rect = py.Rect(50, 150, 200, 30)
+        # Add keyboard toggle button rect - initial position, will be updated later
+        self.keyboard_button_rect = py.Rect(50, 250, 200, 40)
 
         py.font.init()
         self.control_font = load_game_font(size=24)
+        self.keyboard_font = load_game_font(size=20)  # Smaller font for keyboard button
         self.button_font = load_game_font(size=36)
         self.hover_image = load_image("Opera_senza_titolo.png")
         self.hover2_image = py.transform.flip(load_image("Opera_senza_titolo.png"), True, False)
@@ -75,10 +75,11 @@ class Menu:
             top_image_x = (current_screen_size[0] - top_image.get_width()) // 2
             top_image_y = start_y - top_image.get_height() - 20
 
-
             buttons["RESUME"] = py.Rect(button_x, start_y, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
-            buttons["OPTIONS"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
-            buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,self.BUTTON_HEIGHT)
+            buttons["OPTIONS"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,
+                                         self.BUTTON_HEIGHT)
+            buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,
+                                      self.BUTTON_HEIGHT)
 
             bottom_image_x = (current_screen_size[0] - bottom_image.get_width()) // 2
             bottom_image_y = buttons["QUIT"].bottom + 10
@@ -167,6 +168,30 @@ class Menu:
             return option_rects
         return []
 
+    def _draw_keyboard_button(self):
+        """Draw the AZERTY/QWERTY toggle button"""
+        if not self.options_visible:
+            return False
+
+        mouse_pos = py.mouse.get_pos()
+        is_hovered = self.keyboard_button_rect.collidepoint(mouse_pos)
+
+        # Draw button background
+        button_color = self.COLORS["medium_gray"] if is_hovered else self.COLORS["dark_gray"]
+        py.draw.rect(self.screen, button_color, self.keyboard_button_rect, border_radius=5)
+
+        # Draw button text with smaller font
+        button_text = self.keyboard_font.render(f"Keyboard: {self.keyboard_layout}", True, self.COLORS["black"])
+        text_x = self.keyboard_button_rect.x + 5
+        text_y = self.keyboard_button_rect.y + (self.keyboard_button_rect.height - button_text.get_height()) // 2
+        self.screen.blit(button_text, (text_x, text_y))
+
+        # Draw label
+        keyboard_title = self.control_font.render("Keyboard Layout:", True, self.COLORS["white"])
+        self.screen.blit(keyboard_title, (self.keyboard_button_rect.x, self.keyboard_button_rect.y - 25))
+
+        return is_hovered
+
     def _handle_button_click(self, buttons, mouse_pos):
         for text, rect in buttons.items():
             if rect.collidepoint(mouse_pos):
@@ -218,6 +243,21 @@ class Menu:
             else:
                 self.dropdown_expanded = False
 
+    def _handle_keyboard_click(self, mouse_pos):
+        if not self.options_visible:
+            return False
+
+        if self.keyboard_button_rect.collidepoint(mouse_pos):
+            # Toggle between AZERTY and QWERTY
+            self.keyboard_layout = "QWERTY" if self.keyboard_layout == "AZERTY" else "AZERTY"
+
+            # Mettre à jour également la disposition dans la classe Game
+            self.game.keyboard_layout = self.keyboard_layout.lower()  # Convertir en minuscules pour correspondre à get_key_map
+
+            return True
+
+        return False
+
     def _handle_volume_drag(self, mouse_x):
 
         if not self.options_visible:
@@ -238,6 +278,13 @@ class Menu:
         control_x = panel_x + 25
         self.slider_rect = py.Rect(control_x, panel_y + 100, 200, 5)
         self.dropdown_rect = py.Rect(control_x, panel_y + 200, 200, 30)
+
+        # Calculate max dropdown height when expanded
+        dropdown_expanded_height = len(self.languages) * self.dropdown_rect.height
+
+        # Position keyboard button below dropdown with enough space to avoid collision
+        keyboard_y = self.dropdown_rect.y + dropdown_expanded_height + 70  # Add padding to avoid collision
+        self.keyboard_button_rect = py.Rect(control_x, keyboard_y, 200, 40)
 
         return panel_x, panel_y, panel_width, panel_height
 
@@ -294,6 +341,8 @@ class Menu:
 
             knob_x = self._draw_volume_control()
             option_rects = self._draw_language_dropdown()
+            # Draw the keyboard layout toggle button
+            self._draw_keyboard_button()
 
             py.display.flip()
 
@@ -314,13 +363,13 @@ class Menu:
 
                 elif event.type == py.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
-
                     running = self._handle_button_click(buttons, mouse_pos)
 
                     if self.options_visible:
                         self.dragging_volume = self._handle_volume_click(knob_x, mouse_pos)
-
                         self._handle_language_click(option_rects, mouse_pos)
+                        # Handle keyboard button click
+                        self._handle_keyboard_click(mouse_pos)
 
                 elif event.type == py.MOUSEBUTTONUP:
                     self.dragging_volume = False
