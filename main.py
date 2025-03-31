@@ -161,6 +161,7 @@ class Game:
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
+            self.tilemap.render_over(self.display, offset=render_scroll)
 
             if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
