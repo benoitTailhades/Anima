@@ -58,6 +58,7 @@ class PhysicsPlayer:
         self.action = ""
         self.set_action("idle")
         self.collision = {'left': False, 'right': False, 'bottom': False}
+        self.get_block_on = {'left': False, 'right': False}
         self.air_time = 0
 
     def physics_process(self, tilemap, dict_kb):
@@ -81,6 +82,7 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
+            print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
@@ -115,18 +117,19 @@ class PhysicsPlayer:
 
         # Animations when on the air
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
-            if self.get_direction("x") == 1 or (self.facing == "left" and not self.collision["right"]):
+            if self.get_direction("x") == 1 or (self.facing == "left" and not self.get_block_on["right"]):
                 self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.collision["left"]):
+            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.get_block_on["left"]):
                 self.set_action('falling/left')
             if self.velocity[1] > 0:
-                if self.collision["right"]:
+                if self.collision["right"] and self.get_block_on["right"]:
                     self.set_action("wall_slide/right")
                     self.facing = "left"
-                elif self.collision["left"]:
+                elif self.collision["left"] and self.get_block_on["left"]:
                     self.set_action("wall_slide/left")
                     self.facing = "right"
-        self.facing = ""
+        else:
+            self.facing = ""
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -242,6 +245,8 @@ class PhysicsPlayer:
         """Checks for collision using tilemap"""
         entity_rect = self.rect()
         tilemap = self.tilemap
+        b_r = set()
+        b_l = set()
 
 
         # Handle Vertical Collision First
@@ -255,7 +260,7 @@ class PhysicsPlayer:
             if self.can_walljump["timer"] == 0:
                 self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_under(self.pos,self.size):
+            for rect in tilemap.physics_rects_under(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
                         self.pos[1] = rect.top - entity_rect.height
@@ -264,7 +269,7 @@ class PhysicsPlayer:
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_around(self.pos,self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] < 0:
                         self.pos[1] = rect.bottom
@@ -278,24 +283,31 @@ class PhysicsPlayer:
 
         if axe == "x":
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
-            for rect in tilemap.physics_rects_around(self.pos,self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size):
                 self.can_walljump["blocks_around"] += 1
-
                 if entity_rect.colliderect(rect):
-
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
                         self.collision_check_walljump_helper(1)
-
+                        self.anti_dash_buffer = True
+                        self.dash_cooldown = 5
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
                         self.collision_check_walljump_helper(-1)
-
+                        self.anti_dash_buffer = True
+                        self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
+                if rect.x < entity_rect.x:
+                    b_l.add(True)
+                if rect.x > entity_rect.x:
+                    b_r.add(True)
+
+            self.get_block_on["left"] = bool(b_l)
+            self.get_block_on["right"] = bool(b_r)
 
     def collision_check_walljump_helper(self,axis):
         """Avoids redundancy"""
