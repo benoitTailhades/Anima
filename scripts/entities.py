@@ -146,14 +146,16 @@ class Enemy(PhysicsEntity):
         super().update(tilemap, movement=movement)
         if not self.is_attacking:
             if movement[0] != 0:
-                self.set_action("run")
+                if self.flip:
+                    self.set_action("run/left")
+                else:
+                    self.set_action("run/right")
             else:
                 self.set_action("idle")
         if self.is_attacking:
             self.game.deal_dmg(self,'player', self.attack_speed)
             if self.action != "attack":
                 self.set_action("attack")
-
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
@@ -173,7 +175,7 @@ class Enemy(PhysicsEntity):
                     (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
 
     def render(self, surf, offset=(0, 0)):
-        super().render(surf, offset=offset)
+        surf.blit(self.animation.img(),(self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
 
 
 def blur(surface, span):
