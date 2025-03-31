@@ -316,7 +316,6 @@ class PhysicsPlayer:
             self.can_walljump["wall"] = axis
             self.can_walljump["timer"] = 8
 
-
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
         self.can_walljump["blocks_around"] = 0
