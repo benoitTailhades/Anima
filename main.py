@@ -93,7 +93,14 @@ class Game:
         if target == "player" and current_time - entity.last_attack_time >= 1:
             entity.last_attack_time = time.time()
             self.player_hp -= att_speed
-            print("attack")
+            # Create a transparent surface
+            flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
+            flash_surface.fill((255, 0, 0, 50))  # (R, G, B, Alpha)
+
+            # Blit the transparent red overlay onto the screen
+            self.screen.blit(flash_surface, (0, 0))
+            pygame.display.update()
+            pygame.time.delay(100)  # Flash effect for 200 milliseconds
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
