@@ -82,7 +82,6 @@ class PhysicsPlayer:
                 elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
                     self.velocity[0] = direction * self.SPEED
 
-            print(self.get_block_on)
             self.gravity()
             self.jump()
             self.dash()
