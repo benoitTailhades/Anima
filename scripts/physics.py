@@ -113,7 +113,6 @@ class PhysicsPlayer:
                     self.set_action("run/left")
             else:
                 self.set_action("idle")
-
         # Animations when on the air
         elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
             if self.get_direction("x") == 1 or (self.facing == "left" and not self.get_block_on["right"]):
@@ -170,10 +169,6 @@ class PhysicsPlayer:
                 self.velocity[1] /= self.tech_momentum_mult
 
         elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] >= 2: #Walljump
-            if self.action == "wall_slide/left":
-                self.set_action("falling/right")
-            elif self.action == "wall_slide/right":
-                self.set_action("falling/left")
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3

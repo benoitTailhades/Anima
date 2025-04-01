@@ -13,7 +13,7 @@ class Editor:
 
         pygame.display.set_caption("Editor")
         self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
-        self.display = pygame.Surface((480, 288),pygame.RESIZABLE)
+        self.display = pygame.Surface((480, 288))
 
         self.clock = pygame.time.Clock()
 
@@ -49,6 +49,7 @@ class Editor:
         self.tile_list = list(self.assets)
         self.tile_group = 0
         self.tile_variant = 0
+        self.zoom = 1
 
         self.clicking = False
         self.right_clicking = False
@@ -61,10 +62,11 @@ class Editor:
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
-            render_scroll =(int(self.scroll[0]), int(self.scroll[1]))
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
 
             self.tilemap.render(self.display, offset=render_scroll)
+            self.tilemap.render_over(self.display, offset=render_scroll)
 
             current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
             current_tile_img.set_alpha(100)
