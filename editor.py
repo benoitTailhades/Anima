@@ -49,7 +49,6 @@ class Editor:
         self.tile_list = list(self.assets)
         self.tile_group = 0
         self.tile_variant = 0
-        self.zoom = 1
 
         self.clicking = False
         self.right_clicking = False
