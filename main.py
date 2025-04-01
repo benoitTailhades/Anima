@@ -193,10 +193,6 @@ class Game:
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
 
-
-
-
-
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
             pygame.display.update()
             self.clock.tick(60)
