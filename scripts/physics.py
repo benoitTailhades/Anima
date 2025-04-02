@@ -104,30 +104,72 @@ class PhysicsPlayer:
             self.animation = self.game.assets['player/' + self.action].copy()
 
     def apply_animations(self):
-        # Animation when is on floor
-        if self.is_on_floor():
-            if self.velocity[0] and not (self.collision["right"] or self.collision["left"]):
-                if self.get_direction("x") == 1 and self.action not in ("run/right", "dash/right"):
-                    self.set_action("run/right")
-                elif self.get_direction("x") == -1 and self.action not in ("run/left", "dash/left"):
-                    self.set_action("run/left")
+        """
+        Handles animation state changes based on player movement state.
+        Follows clear priority rules for animations.
+        """
+        # Reset animation flags
+        animation_applied = False
+
+        # HIGHEST PRIORITY: Dash animations
+        if self.dashtime_cur > 0:
+            if self.dash_direction[0] == 1:
+                self.set_action("dash/right")
+                animation_applied = True
+            elif self.dash_direction[0] == -1:
+                self.set_action("dash/left")
+                animation_applied = True
+            elif self.dash_direction[0] == 0:  # Vertical dash
+                if self.last_direction >= 0:
+                    self.set_action("dash/right")
+                else:
+                    self.set_action("dash/left")
+                animation_applied = True
+
+        # SECOND PRIORITY: Wall sliding
+        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor():
+            print(self.get_block_on["right"])
+            if self.collision["right"] and self.get_block_on["right"]:
+                self.set_action("wall_slide/right")
+                self.facing = "left"
+                animation_applied = True
+            elif self.collision["left"] and self.get_block_on["left"]:
+                self.set_action("wall_slide/left")
+                self.facing = "right"
+                animation_applied = True
+
+        if not animation_applied and (self.collision["right"] or self.collision["left"]):
+            self.set_action("idle")
+            animation_applied = True
+
+        # THIRD PRIORITY: Jumping/Falling
+        if not animation_applied and not self.is_on_floor():
+            # Initial jump
+            if self.velocity[1] < 0 and self.air_time < 20:
+                if self.last_direction >= 0:
+                    self.set_action("jump/right")
+                else:
+                    self.set_action("jump/left")
+                animation_applied = True
+            # Falling
             else:
-                self.set_action("idle")
-        # Animations when on the air
-        elif (self.air_time >= 20 or self.velocity[1] > 0) and self.action not in ("dash/right", "dash/left"):
-            if self.get_direction("x") == 1 or (self.facing == "left" and not self.get_block_on["right"]):
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1 or (self.facing == "right" and not self.get_block_on["left"]):
-                self.set_action('falling/left')
-            if self.velocity[1] > 0 and self.can_walljump["blocks_around"] >= 2:
-                if self.collision["right"] and self.get_block_on["right"]:
-                    self.set_action("wall_slide/right")
-                    self.facing = "left"
-                elif self.collision["left"] and self.get_block_on["left"]:
-                    self.set_action("wall_slide/left")
-                    self.facing = "right"
-        else:
-            self.facing = ""
+                if self.get_direction("x") == 1 or self.last_direction >= 0:
+                    self.set_action('falling/right')
+                else:
+                    self.set_action('falling/left')
+                animation_applied = True
+
+        # FOURTH PRIORITY: Running
+        if not animation_applied and self.is_on_floor() and abs(self.velocity[0]) > 0.1:
+            if self.velocity[0] > 0:
+                self.set_action("run/right")
+            else:
+                self.set_action("run/left")
+            animation_applied = True
+
+        # LOWEST PRIORITY: Idle
+        if not animation_applied:
+            self.set_action("idle")
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -185,11 +227,6 @@ class PhysicsPlayer:
         """Avoid code redundancy"""
         self.velocity[1] = self.JUMP_VELOCITY
         self.holding_jump = True
-        if self.air_time == 1:
-            if self.get_direction("x") >= 0:
-                self.set_action("jump/right")
-            elif self.get_direction("x") == -1:
-                self.set_action("jump/left")
 
     def dash(self):
         """Handles player dash."""
@@ -215,26 +252,10 @@ class PhysicsPlayer:
             self.dashtime_cur -= 1
             if not self.stop_dash_momentum["x"]:
                 self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
-                if self.is_on_floor():
-                    if self.get_direction("x") == 1:
-                        self.set_action("dash/right")
-                    elif self.get_direction("x") == -1:
-                        self.set_action("dash/left")
-            else:
-                if self.dash_direction[0] == -1:
-                    self.set_action("wall_slide/left")
-                elif self.dash_direction[0] == 1:
-                    self.set_action("wall_slide/right")
-
             if not self.stop_dash_momentum["y"]:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
-        elif self.velocity[1] > 0:
-            if self.get_direction("x") == 1:
-                self.set_action('falling/right')
-            elif self.get_direction("x") == -1:
-                self.set_action('falling/left')
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
@@ -314,7 +335,7 @@ class PhysicsPlayer:
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
         self.can_walljump["blocks_around"] = 0
-        if self.velocity[0] != 0:
+        if int(self.velocity[0]) != 0:
             self.collision["left"] = False
             self.collision["right"] = False
         if self.velocity[1] > 0:
