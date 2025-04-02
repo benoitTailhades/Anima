@@ -127,8 +127,7 @@ class PhysicsPlayer:
                 animation_applied = True
 
         # SECOND PRIORITY: Wall sliding
-        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor():
-            print(self.get_block_on["right"])
+        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"] >= 2:
             if self.collision["right"] and self.get_block_on["right"]:
                 self.set_action("wall_slide/right")
                 self.facing = "left"
