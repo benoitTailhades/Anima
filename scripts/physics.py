@@ -7,6 +7,9 @@ import sys
 
 import pygame
 
+import random
+
+from scripts.particle import Particle
 from scripts.tilemap import Tilemap
 
 class PhysicsPlayer:
@@ -90,6 +93,7 @@ class PhysicsPlayer:
             self.apply_momentum()
 
             self.apply_animations()
+            self.apply_particle()
 
             self.animation.update()
         else:
@@ -169,6 +173,10 @@ class PhysicsPlayer:
         # LOWEST PRIORITY: Idle
         if not animation_applied:
             self.set_action("idle")
+
+    def apply_particle(self):
+        if self.velocity[1] < 0 and self.air_time < 20:
+            self.game.particles.append(Particle(self.game, 'leaf', self.pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
