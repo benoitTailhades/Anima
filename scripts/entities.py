@@ -129,9 +129,10 @@ class Enemy(PhysicsEntity):
                 else:
                     self.is_chasing = False
 
-                if self.check_if_player_close(self.attack_distance, not self.is_attacking) or (not self.game.player.is_on_floor() and self.is_attacking):
+                if self.check_if_player_close(self.attack_distance, False) or (not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
+                    self.is_chasing = True
             else:
                 self.flip = not self.flip
                 self.is_attacking = False

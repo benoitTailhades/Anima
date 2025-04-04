@@ -178,7 +178,7 @@ class PhysicsPlayer:
         for rect in self.tilemap.physics_rects_under(self.pos,self.size):
             entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
             if entity_rect.colliderect(rect):
-                return self.rect().bottom == rect.top
+                return self.rect().bottom == rect.top and self.velocity[1] >= 0
         return False
 
     def gravity(self):
