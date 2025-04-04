@@ -409,7 +409,10 @@ def start_menu():
                 running = False
             elif event.type == py.MOUSEBUTTONDOWN:
                 running = False
-
+        if not sound_running:
+            run_sound(
+                "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
+            sound_running = True
 
         py.display.flip()
         py.time.wait(50)
