@@ -138,10 +138,10 @@ class Enemy(PhysicsEntity):
                 self.is_attacking = False
                 self.is_chasing = False
 
-        if self.distance_with_player() > self.attack_distance and self.is_attacking and self.game.player.is_on_floor():
+        if self.distance_with_player() > self.attack_distance and self.is_attacking:
             self.is_attacking = False
 
-        if self.distance_with_player() > self.vision_distance and self.is_chasing and self.game.player.is_on_floor():
+        if self.distance_with_player() > self.vision_distance and self.is_chasing:
             self.is_chasing = False
 
         super().update(tilemap, movement=movement)
