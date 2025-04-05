@@ -70,7 +70,7 @@ class Game:
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
 
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (25, 35))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
 
         self.leaf_spawners = []

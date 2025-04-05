@@ -414,6 +414,7 @@ class PhysicsPlayer:
 
     def render(self, surf, offset = (0, 0)):
         r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
+        #pygame.draw.rect(surf, (255, 230, 255), r)
 
         for ghost in self.ghost_images[:]:
             # Calculate transparency based on remaining lifetime
@@ -424,8 +425,8 @@ class PhysicsPlayer:
             ghost_surf.fill((109, 156, 159, 70),  special_flags=pygame.BLEND_RGBA_MIN)
             ghost_surf.set_alpha(alpha)
             # Draw ghost
-            surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 8, ghost["pos"][1] - offset[1] - 5))
+            surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 11, ghost["pos"][1] - offset[1] - 5))
 
-        surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 8, self.pos[1] - offset[1] - 5))
-        #pygame.draw.rect(surf, (255,230,255), r)
+        surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 11, self.pos[1] - offset[1] - 5))
+
 
