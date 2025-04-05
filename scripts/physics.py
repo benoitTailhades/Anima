@@ -146,7 +146,13 @@ class PhysicsPlayer:
                 animation_applied = True
 
         if not animation_applied and (self.collision["right"] or self.collision["left"]):
-            self.set_action("idle")
+            if self.is_on_floor():
+                self.set_action("idle")
+            else:
+                if self.get_direction("x") == 1 or self.last_direction >= 0:
+                    self.set_action('falling/right')
+                else:
+                    self.set_action('falling/left')
             animation_applied = True
 
         # THIRD PRIORITY: Jumping/Falling
