@@ -55,6 +55,7 @@ class Game:
             'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=False),
             'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
             'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
+            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
             'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,
                                                  loop=False),
             'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),

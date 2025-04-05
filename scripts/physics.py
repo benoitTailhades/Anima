@@ -128,11 +128,9 @@ class PhysicsPlayer:
                 self.set_action("dash/left")
                 animation_applied = True
             elif self.dash_direction[0] == 0:  # Vertical dash
-                if self.last_direction >= 0:
-                    self.set_action("dash/right")
-                else:
-                    self.set_action("dash/left")
+                self.set_action("dash/top")
                 animation_applied = True
+
 
         # SECOND PRIORITY: Wall sliding
         if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"] >= 2:
