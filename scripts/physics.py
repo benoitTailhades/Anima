@@ -146,12 +146,13 @@ class PhysicsPlayer:
         if not animation_applied and (self.collision["right"] or self.collision["left"]):
             if self.is_on_floor():
                 self.set_action("idle")
-            else:
+                animation_applied = True
+            elif self.action in ("wall_slide/right", "wall_slide/left"):
                 if self.get_direction("x") == 1 or self.last_direction >= 0:
                     self.set_action('falling/right')
                 else:
                     self.set_action('falling/left')
-            animation_applied = True
+                animation_applied = True
 
         # THIRD PRIORITY: Jumping/Falling
         if not animation_applied and not self.is_on_floor():
@@ -162,14 +163,16 @@ class PhysicsPlayer:
                 elif self.get_direction("x") == -1:
                     self.set_action("jump/left")
                 elif self.get_direction("x") == 0:
-                    self.set_action("dash/top")
+                    self.set_action("jump/top")
                 animation_applied = True
             # Falling
             else:
-                if self.get_direction("x") == 1 or self.last_direction >= 0:
+                if self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1):
                     self.set_action('falling/right')
-                else:
+                elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1):
                     self.set_action('falling/left')
+                elif self.get_direction("x") == 0:
+                    self.set_action('falling/vertical')
                 animation_applied = True
 
         # FOURTH PRIORITY: Running
