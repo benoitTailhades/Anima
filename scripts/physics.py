@@ -393,8 +393,8 @@ class PhysicsPlayer:
         self.ghost_images.append(ghost)
 
         # Max number of ghost images to prevent using too much memory
-        MAX_GHOSTS = 20
-        if len(self.ghost_images) > MAX_GHOSTS:
+        max_ghosts = 20
+        if len(self.ghost_images) > max_ghosts:
             self.ghost_images.pop(0)
 
     def update_ghost_trail(self):
@@ -411,6 +411,8 @@ class PhysicsPlayer:
             alpha = int(255 * (ghost["lifetime"] / 20) ** 2)
             # Create a copy with transparency
             ghost_surf = ghost["img"].copy()
+            ghost_surf.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGBA_MAX)
+            ghost_surf.fill((109, 156, 159, 70),  special_flags=pygame.BLEND_RGBA_MIN)
             ghost_surf.set_alpha(alpha)
             # Draw ghost
             surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 8, ghost["pos"][1] - offset[1] - 5))
