@@ -25,7 +25,7 @@ class PhysicsPlayer:
         #Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -6.0
+        self.JUMP_VELOCITY = -7.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
@@ -157,10 +157,12 @@ class PhysicsPlayer:
         if not animation_applied and not self.is_on_floor():
             # Initial jump
             if self.velocity[1] < 0 and self.air_time < 20:
-                if self.last_direction >= 0:
+                if self.get_direction("x") == 1:
                     self.set_action("jump/right")
-                else:
+                elif self.get_direction("x") == -1:
                     self.set_action("jump/left")
+                elif self.get_direction("x") == 0:
+                    self.set_action("dash/top")
                 animation_applied = True
             # Falling
             else:

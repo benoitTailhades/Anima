@@ -176,7 +176,7 @@ class Tilemap:
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
-                    if tile['type'] in {'vine_transp_back','dark_vine','hanging_vine'}:
+                    if tile['type'] in {'vine_transp_back','dark_vine'}:
                         surf.blit(self.game.assets[tile['type']][tile['variant']], (
                         tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
 
@@ -186,6 +186,6 @@ class Tilemap:
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
-                    if tile['type'] not in {'vine_transp_back','dark_vine', 'hanging_vine'}:
+                    if tile['type'] not in {'vine_transp_back','dark_vine'}:
                         surf.blit(self.game.assets[tile['type']][tile['variant']], (
                             tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
