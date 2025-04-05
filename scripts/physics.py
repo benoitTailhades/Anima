@@ -56,6 +56,7 @@ class PhysicsPlayer:
 
         #Tilemap (stage)
         self.tilemap = tilemap
+        self.ghost_images = []
 
         self.facing = ""
         self.action = "idle"
@@ -115,6 +116,9 @@ class PhysicsPlayer:
         # Reset animation flags
         animation_applied = False
 
+        # Check if we just finished dashing this frame
+        just_finished_dash = self.dashtime_cur == 0 and self.action in ("dash/right", "dash/left")
+
         # HIGHEST PRIORITY: Dash animations
         if self.dashtime_cur > 0:
             if self.dash_direction[0] == 1:
@@ -163,8 +167,12 @@ class PhysicsPlayer:
                 animation_applied = True
 
         # FOURTH PRIORITY: Running
-        if not animation_applied and self.is_on_floor() and abs(self.velocity[0]) > 0.1:
-            if self.velocity[0] > 0:
+        # Check if player is moving OR just finished a dash and is trying to move
+        if not animation_applied and (
+                (self.is_on_floor() and abs(self.velocity[0]) > 0.1) or
+                (just_finished_dash and self.get_direction("x") != 0)
+        ):
+            if self.get_direction("x") > 0 or (just_finished_dash and self.dash_direction[0] > 0):
                 self.set_action("run/right")
             else:
                 self.set_action("run/left")
@@ -175,8 +183,8 @@ class PhysicsPlayer:
             self.set_action("idle")
 
     def apply_particle(self):
-        if self.velocity[1] < 0 and self.air_time < 20:
-            self.game.particles.append(Particle(self.game, 'leaf', self.pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
+        '''if self.velocity[1] < 0 and self.air_time < 20:
+            self.game.particles.append(Particle(self.game, 'leaf', self.pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))'''
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
@@ -256,6 +264,7 @@ class PhysicsPlayer:
     def dash_momentum(self):
         """Applies momentum from dash. Deletes all momentum when the dash ends."""
         if self.dashtime_cur > 0:
+            self.dash_ghost_trail()
             self.dashtime_cur -= 1
             if not self.stop_dash_momentum["x"]:
                 self.velocity[0] = self.dash_direction[0] * self.DASH_SPEED
@@ -263,6 +272,8 @@ class PhysicsPlayer:
                 self.velocity[1] = -self.dash_direction[1] * self.DASH_SPEED
             if self.dashtime_cur == 0:
                 self.velocity = [0, 0]
+
+        self.update_ghost_trail()
 
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
@@ -369,7 +380,41 @@ class PhysicsPlayer:
             print("Error: get_direction() received an invalid axis")
             return 0
 
+    def dash_ghost_trail(self):
+        """Creates ghost images that fade out over time."""
+        # Store current position and image with a timer
+        ghost = {
+            "pos": self.pos.copy(),  # Assuming self.pos is a list or has a copy method
+            "img": self.animation.img().copy(),  # Create a copy of the current image
+            "lifetime": 20  # How long the ghost remains visible (in frames)
+        }
+
+        # Add to list of ghost images
+        self.ghost_images.append(ghost)
+
+        # Max number of ghost images to prevent using too much memory
+        MAX_GHOSTS = 20
+        if len(self.ghost_images) > MAX_GHOSTS:
+            self.ghost_images.pop(0)
+
+    def update_ghost_trail(self):
+        for ghost in self.ghost_images[:]:
+            ghost["lifetime"] -= 1
+            if ghost["lifetime"] <= 0:
+                self.ghost_images.remove(ghost)
+
     def render(self, surf, offset = (0, 0)):
         r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
+
+        for ghost in self.ghost_images[:]:
+            # Calculate transparency based on remaining lifetime
+            alpha = int(255 * (ghost["lifetime"] / 20) ** 2)
+            # Create a copy with transparency
+            ghost_surf = ghost["img"].copy()
+            ghost_surf.set_alpha(alpha)
+            # Draw ghost
+            surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 8, ghost["pos"][1] - offset[1] - 5))
+
         surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 8, self.pos[1] - offset[1] - 5))
         #pygame.draw.rect(surf, (255,230,255), r)
+
