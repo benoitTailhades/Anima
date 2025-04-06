@@ -79,7 +79,7 @@ class PhysicsEntity:
 
 
 class Enemy(PhysicsEntity):
-    def __init__(self, game, pos, size):
+    def __init__(self, game, pos, size, hp, attack_speed):
         super().__init__(game, 'enemy', pos, size)
 
         self.walking = 0
@@ -91,7 +91,8 @@ class Enemy(PhysicsEntity):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
         self.last_attack_time = 0
-        self.attack_speed = 10
+        self.attack_speed = attack_speed
+        self.hp = hp
 
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx

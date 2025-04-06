@@ -85,7 +85,7 @@ class Game:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16)))
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
 
         self.scroll = [0, 0]
 
@@ -186,6 +186,8 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         self.menu.menu_display()
+                        for key in self.dict_kb.keys():
+                            self.dict_kb[key] = 0
                     elif event.key == pygame.K_F11:
                         self.toggle_fullscreen()
 
