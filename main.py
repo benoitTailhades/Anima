@@ -1,5 +1,6 @@
 import sys
 import math
+from importlib.metadata import pass_none
 
 import pygame
 import random
@@ -65,13 +66,16 @@ class Game:
         }
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
-                        "key_noclip": 0}
+                        "key_noclip": 0, "key_attack": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.tilemap.load('map.json')
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
+        self.player_dmg = 50
+        self.player_attack_dist = 40
+        self.player_last_attack_time = 0
 
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
@@ -94,7 +98,7 @@ class Game:
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
 
-    def deal_dmg(self,entity, target, att_speed):
+    def deal_dmg(self, entity, target, att_speed):
         current_time = time.time()
         if target == "player" and current_time - entity.last_attack_time >= 1:
             entity.last_attack_time = time.time()
@@ -107,6 +111,11 @@ class Game:
             self.screen.blit(flash_surface, (0, 0))
             pygame.display.update()
             pygame.time.delay(100)
+
+        elif target != "player" and current_time - self.player_last_attack_time >= 1:
+            self.player_last_attack_time = time.time()
+            target.hp -= self.player_dmg
+            print(target.hp)
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -125,7 +134,8 @@ class Game:
                 pygame.K_g: "key_dash",
                 pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
-                pygame.K_n: "key_noclip"
+                pygame.K_n: "key_noclip",
+                pygame.K_f: "key_attack",
             }
         elif self.keyboard_layout.lower() == "qwerty":
             return {
@@ -136,7 +146,8 @@ class Game:
                 pygame.K_g: "key_dash",
                 pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
-                pygame.K_n: "key_noclip"
+                pygame.K_n: "key_noclip",
+                pygame.K_f: "key_attack",
             }
 
     def run(self):
@@ -160,6 +171,8 @@ class Game:
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
+                if enemy.hp <= 0 and enemy.animation.done:
+                    self.enemies.remove(enemy)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)

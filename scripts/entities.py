@@ -93,10 +93,13 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_speed = attack_speed
         self.hp = hp
+        self.is_attacked = False
+
 
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
+        self.is_attacked = self.game.dict_kb["key_attack"] and self.distance_with_player() <= self.game.player_attack_dist
         if self.walking:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
                 if self.collisions['right'] or self.collisions['left']:
@@ -154,10 +157,14 @@ class Enemy(PhysicsEntity):
                     self.set_action("run/right")
             else:
                 self.set_action("idle")
+
         if self.is_attacking:
-            self.game.deal_dmg(self,'player', self.attack_speed)
+            self.game.deal_dmg(self, 'player', self.attack_speed)
             if self.action != "attack":
                 self.set_action("attack")
+
+        if self.is_attacked:
+            self.game.deal_dmg('player', self, self.game.player_dmg)
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
