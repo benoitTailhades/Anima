@@ -21,6 +21,7 @@ class PhysicsPlayer:
         self.pos = list(pos)  # [x, y]
         self.size = size
         self.velocity = [0, 0]  # [vel_x, vel_y]
+        self.acceleration = [0.0, 0.0]
 
         #Constants for movement
         self.SPEED = 2.5
@@ -32,6 +33,7 @@ class PhysicsPlayer:
 
         #Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
+        self.dash_cooldown = 0
         self.dash_amt = 1
         self.tech_momentum_mult = 0
 
@@ -44,7 +46,7 @@ class PhysicsPlayer:
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
-        self.can_walljump = {"available":False,"wall":-1,"buffer":False,"timer":0,"blocks_around":0}
+        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False}
         #available used to know if you can walljump, wall to know where the wall is located,
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
         self.dash_cooldown_cur = 0
@@ -97,6 +99,7 @@ class PhysicsPlayer:
             self.apply_particle()
 
             self.animation.update()
+            print(self.can_walljump)
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
@@ -133,12 +136,12 @@ class PhysicsPlayer:
 
 
         # SECOND PRIORITY: Wall sliding
-        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"] >= 2:
-            if self.collision["right"] and self.get_block_on["right"]:
+        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"]:
+            if self.collision["right"]:
                 self.set_action("wall_slide/right")
                 self.facing = "left"
                 animation_applied = True
-            elif self.collision["left"] and self.get_block_on["left"]:
+            elif self.collision["left"]:
                 self.set_action("wall_slide/left")
                 self.facing = "right"
                 animation_applied = True
@@ -210,11 +213,13 @@ class PhysicsPlayer:
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
         player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            if self.can_walljump["available"] :
-                max_fallvel = 1
+            if self.can_walljump["available"]:
+                if self.acceleration[1] == 0.6:
+                    self.velocity[1] = 0
+                self.acceleration[1] = 0.05
             else:
-                max_fallvel = 7
-            self.velocity[1] = min(max_fallvel, self.velocity[1] + 0.6)
+                self.acceleration[1] = 0.6
+            self.velocity[1] = min(7, self.velocity[1] + self.acceleration[1])
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
@@ -238,7 +243,7 @@ class PhysicsPlayer:
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                 self.velocity[1] /= self.tech_momentum_mult
 
-        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] >= 2: #Walljump
+        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"]: #Walljump
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
@@ -331,19 +336,16 @@ class PhysicsPlayer:
         if axe == "x":
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
             for rect in tilemap.physics_rects_around(self.pos, self.size):
-                self.can_walljump["blocks_around"] += 1
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
                         self.collision['right'] = True
-                        self.collision_check_walljump_helper(1)
                         self.anti_dash_buffer = True
                         self.dash_cooldown = 5
 
                     if self.velocity[0] < 0:
                         entity_rect.left = rect.right
                         self.collision['left'] = True
-                        self.collision_check_walljump_helper(-1)
                         self.anti_dash_buffer = True
                         self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
@@ -358,23 +360,38 @@ class PhysicsPlayer:
 
     def collision_check_walljump_helper(self,axis):
         """Avoids redundancy"""
-        if not self.can_walljump["buffer"]:
+        if not self.can_walljump["buffer"] and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"]:
             self.can_walljump["available"] = True
             self.can_walljump["wall"] = axis
             self.can_walljump["timer"] = 8
 
+
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
-        self.can_walljump["blocks_around"] = 0
-        if int(self.velocity[0]) != 0:
+        self.can_walljump["blocks_around"] = (self.tilemap.solid_check((self.rect().centerx + 11*self.last_direction, self.pos[1])) and
+                                              self.tilemap.solid_check((self.rect().centerx + 11*self.last_direction, self.pos[1] + self.size[1])))
+
+        if int(self.velocity[0]) > 0 or not self.get_block_on["left"]:
             self.collision["left"] = False
+        if int(self.velocity[0]) < 0 or not self.get_block_on["right"]:
             self.collision["right"] = False
         if self.velocity[1] > 0:
             self.collision["bottom"] = False
+
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
+
         self.pos[1] += self.velocity[1]
         self.collision_check("y")
+
+        if self.collision["right"]:
+            self.collision_check_walljump_helper(1)
+        if self.collision["left"]:
+            self.collision_check_walljump_helper(-1)
+
+        if not( not self.can_walljump["buffer"] and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump[
+            "blocks_around"]):
+            self.can_walljump["available"] = False
 
         if self.is_on_floor():
             self.air_time = 0
