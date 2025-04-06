@@ -210,7 +210,7 @@ class PhysicsPlayer:
         """Handles gravity. Gives downwards momentum (capped at 5) if in the air, negates momentum if on the ground, gives back a dash if the
         player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
-            self.velocity[1] = min(7, self.velocity[1] + 0.4)
+            self.velocity[1] = min(7, self.velocity[1] + 0.6)
         elif self.is_on_floor():
             if self.velocity[1] > 0:
                 self.velocity[1] = 0
