@@ -99,7 +99,6 @@ class PhysicsPlayer:
             self.apply_particle()
 
             self.animation.update()
-            print(self.can_walljump)
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
@@ -364,7 +363,6 @@ class PhysicsPlayer:
             self.can_walljump["available"] = True
             self.can_walljump["wall"] = axis
             self.can_walljump["timer"] = 8
-
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
