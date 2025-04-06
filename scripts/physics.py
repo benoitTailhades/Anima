@@ -215,7 +215,7 @@ class PhysicsPlayer:
             if self.can_walljump["available"]:
                 if self.acceleration[1] == 0.6:
                     self.velocity[1] = 0
-                self.acceleration[1] = 0.05
+                self.acceleration[1] = 0.1
             else:
                 self.acceleration[1] = 0.6
             self.velocity[1] = min(7, self.velocity[1] + self.acceleration[1])
