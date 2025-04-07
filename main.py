@@ -44,6 +44,7 @@ class Game:
             'enemy/run/right': Animation(load_images('entities/enemy/run/right'), img_dur=8),
             'enemy/attack': Animation(load_images('entities/enemy/attack'), img_dur=3, loop=False),
             'enemy/death': Animation(load_images('entities/enemy/death'), img_dur=3, loop=False),
+            'enemy/hit': Animation(load_images('entities/enemy/hit'), img_dur=5, loop=False),
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
             'background1': load_image('bg1.png'),
@@ -63,12 +64,11 @@ class Game:
             'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
             'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
             'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
-            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=3, loop=False),
-            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=3, loop=False),
+            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
+            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
 
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5)
         }
-
 
         self.sound_running = False
         try:
@@ -105,9 +105,10 @@ class Game:
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
         self.player_dmg = 50
-        self.player_attack_dist = 40
+        self.player_attack_dist = 20
         self.player_last_attack_time = 0
         self.holding_attack = False
+        self.attacking = False
         self.player_attacked = False
 
         self.damage_flash_active = False
@@ -126,7 +127,7 @@ class Game:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 1000, 20))
 
         self.scroll = [0, 0]
 
@@ -148,12 +149,18 @@ class Game:
             self.damage_flash_active = True
             self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
 
-        elif target != "player" and current_time - self.player_last_attack_time >= 1:
+        elif target != "player" and current_time - self.player_last_attack_time >= 0.1:
             self.player_last_attack_time = time.time()
             target.hp -= self.player_dmg
             print(target.hp)
             if self.player.animation.done:
                 self.dict_kb["key_attack"] = 0
+
+    def deal_knockback(self, entity, target, strenght):
+        if entity.rect().centerx > target.rect().centerx:
+            target.pos[0] -= strenght
+        elif entity.rect().centerx < target.rect().centerx:
+            target.pos[0] += strenght
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -211,6 +218,13 @@ class Game:
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
 
+            self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
+                              or self.player.action in ("attack/left", "attack/right"))
+            if self.attacking and self.player.animation.done:
+                self.dict_kb["key_attack"] = 0
+                self.player_last_attack_time = time.time()
+
+
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
 
@@ -219,6 +233,8 @@ class Game:
 
             if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
+                for key in self.dict_kb.keys():
+                    self.dict_kb[key] = 0
                 self.player_hp = 100
 
             for particle in self.particles.copy():

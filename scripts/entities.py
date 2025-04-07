@@ -93,6 +93,8 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_speed = attack_speed
         self.hp = hp
+        self.stunned = False
+        self.last_stun_time = 0
         self.is_attacked = False
 
     def update(self, tilemap, movement=(0, 0)):
@@ -151,29 +153,7 @@ class Enemy(PhysicsEntity):
 
             super().update(tilemap, movement=movement)
 
-            if not self.is_attacking:
-                if movement[0] != 0:
-                    if self.flip:
-                        self.set_action("run/left")
-                    else:
-                        self.set_action("run/right")
-                else:
-                    self.set_action("idle")
-
-            if self.is_attacking:
-                self.game.deal_dmg(self, 'player', self.attack_speed)
-                if self.action != "attack":
-                    self.set_action("attack")
-
-            if self.is_attacked:
-                self.game.deal_dmg('player', self, self.game.player_dmg)
-                if self.player_x > self.enemy_x:
-                    self.is_chasing = True
-                    self.pos[0] -= 6
-                elif self.player_x < self.enemy_x:
-                    self.is_chasing = True
-                    self.pos[0] += 6
-                self.pos[1] -= 4
+            self.animations(movement)
 
         else:
             self.animation.update()
@@ -205,6 +185,33 @@ class Enemy(PhysicsEntity):
 
     def render(self, surf, offset=(0, 0)):
         surf.blit(self.animation.img(),(self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
+
+    def animations(self, movement):
+
+        animation_running = False
+
+        if self.is_attacked:
+            self.game.deal_dmg('player', self, self.game.player_dmg)
+            self.game.deal_knockback(self.game.player, self, 6)
+            self.set_action("hit")
+            animation_running = True
+
+        if self.is_attacking and not animation_running:
+            self.game.deal_dmg(self, 'player', self.attack_speed)
+            if self.action != "attack":
+                self.set_action("attack")
+            animation_running = True
+
+        if not self.is_attacking and not animation_running:
+            if movement[0] != 0:
+                if self.flip:
+                    self.set_action("run/left")
+                else:
+                    self.set_action("run/right")
+            else:
+                self.set_action("idle")
+
+
 
 def blur(surface, span):
     for i in range(span):

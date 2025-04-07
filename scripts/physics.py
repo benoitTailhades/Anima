@@ -1,4 +1,5 @@
 #Heavily upgraded basic godot physics code that I then converted to Python --Aymeric
+import time
 from typing import reveal_type
 
 import pygame as pg
@@ -121,13 +122,6 @@ class PhysicsPlayer:
         # Check if we just finished dashing this frame
         just_finished_dash = self.dashtime_cur == 0 and self.action in ("dash/right", "dash/left")
 
-        if self.dict_kb["key_attack"] == 1:
-            if self.last_direction == 1:
-                self.set_action("attack/right")
-            elif self.last_direction == -1:
-                self.set_action("attack/left")
-            animation_applied = True
-
         # HIGHEST PRIORITY: Dash animations
         if self.dashtime_cur > 0:
             if self.dash_direction[0] == 1:
@@ -182,6 +176,15 @@ class PhysicsPlayer:
                     self.set_action('falling/left')
                 elif self.get_direction("x") == 0:
                     self.set_action('falling/vertical')
+                animation_applied = True
+
+        # Attack
+        if not animation_applied and self.game.attacking and not self.animation.done:
+            if self.last_direction == 1:
+                self.set_action("attack/right")
+                animation_applied = True
+            elif self.last_direction == -1:
+                self.set_action("attack/left")
                 animation_applied = True
 
         # FOURTH PRIORITY: Running
