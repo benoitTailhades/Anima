@@ -121,6 +121,13 @@ class PhysicsPlayer:
         # Check if we just finished dashing this frame
         just_finished_dash = self.dashtime_cur == 0 and self.action in ("dash/right", "dash/left")
 
+        if self.dict_kb["key_attack"] == 1:
+            if self.last_direction == 1:
+                self.set_action("attack/right")
+            elif self.last_direction == -1:
+                self.set_action("attack/left")
+            animation_applied = True
+
         # HIGHEST PRIORITY: Dash animations
         if self.dashtime_cur > 0:
             if self.dash_direction[0] == 1:

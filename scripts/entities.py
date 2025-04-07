@@ -129,7 +129,6 @@ class Enemy(PhysicsEntity):
                     if not self.is_attacking:
                         self.is_chasing = True
                         movement = (movement[0] - 1 if self.flip else 1, movement[1])
-                        print("s'approchant")
                 else:
                     self.is_chasing = False
 

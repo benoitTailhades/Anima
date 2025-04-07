@@ -60,9 +60,11 @@ class Game:
             'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
             'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
             'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
-            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,
-                                                 loop=False),
+            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
             'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
+            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=3, loop=False),
+            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=3, loop=False),
+
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5)
         }
 
@@ -77,6 +79,12 @@ class Game:
         self.player_dmg = 50
         self.player_attack_dist = 40
         self.player_last_attack_time = 0
+        self.holding_attack = False
+        self.player_attacked = False
+
+        self.damage_flash_active = False
+        self.damage_flash_end_time = 0
+        self.damage_flash_duration = 100  # milliseconds
 
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
@@ -104,19 +112,15 @@ class Game:
         if target == "player" and current_time - entity.last_attack_time >= 1:
             entity.last_attack_time = time.time()
             self.player_hp -= att_speed
-            # Create a transparent surface
-            flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
-            flash_surface.fill((255, 0, 0, 50))  # (R, G, B, Alpha)
-
-            # Blit the transparent red overlay onto the screen
-            self.screen.blit(flash_surface, (0, 0))
-            pygame.display.update()
-            pygame.time.delay(100)
+            self.damage_flash_active = True
+            self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
 
         elif target != "player" and current_time - self.player_last_attack_time >= 1:
             self.player_last_attack_time = time.time()
             target.hp -= self.player_dmg
             print(target.hp)
+            if self.player.animation.done:
+                self.dict_kb["key_attack"] = 0
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -136,7 +140,6 @@ class Game:
                 pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip",
-                pygame.K_f: "key_attack",
             }
         elif self.keyboard_layout.lower() == "qwerty":
             return {
@@ -148,7 +151,6 @@ class Game:
                 pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip",
-                pygame.K_f: "key_attack",
             }
 
     def run(self):
@@ -206,6 +208,17 @@ class Game:
                             self.dict_kb[key] = 0
                     elif event.key == pygame.K_F11:
                         self.toggle_fullscreen()
+                    if event.key == pygame.K_f:
+                        if not self.holding_attack:
+                            self.dict_kb["key_attack"] = 1
+                        if self.dict_kb["key_attack"] == 1:
+                            self.holding_attack = True
+
+                if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_f:
+                        self.dict_kb["key_attack"] = 0
+                        self.holding_attack = False
+
 
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
@@ -215,6 +228,19 @@ class Game:
                         self.dict_kb[key_map[event.key]] = state
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
+
+            if self.damage_flash_active:
+                # Check if the flash should still be displayed
+                if pygame.time.get_ticks() < self.damage_flash_end_time:
+                    # Create a transparent surface
+                    flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
+                    flash_surface.fill((255, 0, 0, 50))  # (R, G, B, Alpha)
+                    # Blit the transparent red overlay onto the screen
+                    self.screen.blit(flash_surface, (0, 0))
+                else:
+                    # Flash duration has ended
+                    self.damage_flash_active = False
+
             pygame.display.update()
             self.clock.tick(60)
 
