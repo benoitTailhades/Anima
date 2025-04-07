@@ -30,6 +30,7 @@ class PhysicsPlayer:
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
+        self.WALLJUMP_COOLDOWN = 10
 
         #Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
@@ -46,7 +47,7 @@ class PhysicsPlayer:
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
-        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False}
+        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False, "cooldown":0}
         #available used to know if you can walljump, wall to know where the wall is located,
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
         self.dash_cooldown_cur = 0
@@ -97,7 +98,7 @@ class PhysicsPlayer:
 
             self.apply_animations()
             self.apply_particle()
-
+            print(self.can_walljump)
             self.animation.update()
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
@@ -249,7 +250,7 @@ class PhysicsPlayer:
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                 self.velocity[1] /= self.tech_momentum_mult
 
-        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"]: #Walljump
+        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1: #Walljump
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
@@ -341,6 +342,8 @@ class PhysicsPlayer:
 
         if axe == "x":
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
+            if self.can_walljump["available"]:
+                self.can_walljump["cooldown"] = max(self.can_walljump["cooldown"]-1,0)
             for rect in tilemap.physics_rects_around(self.pos, self.size):
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
@@ -367,9 +370,11 @@ class PhysicsPlayer:
     def collision_check_walljump_helper(self,axis):
         """Avoids redundancy"""
         if not self.can_walljump["buffer"] and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"]:
+            if not self.can_walljump["available"]:
+                self.can_walljump["cooldown"] = self.WALLJUMP_COOLDOWN
             self.can_walljump["available"] = True
             self.can_walljump["wall"] = axis
-            self.can_walljump["timer"] = 8
+            self.can_walljump["timer"] = 16
 
     def apply_momentum(self):
         """Applies velocity to the coords of the object. Slows down movement depending on environment"""
@@ -454,4 +459,3 @@ class PhysicsPlayer:
             surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 11, ghost["pos"][1] - offset[1] - 5))
 
         surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 11, self.pos[1] - offset[1] - 5))
-
