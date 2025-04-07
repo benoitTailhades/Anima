@@ -99,7 +99,9 @@ class Enemy(PhysicsEntity):
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
-        self.is_attacked = self.game.dict_kb["key_attack"] and self.distance_with_player() <= self.game.player_attack_dist
+        self.is_attacked = (self.game.dict_kb["key_attack"]
+                            and self.distance_with_player() <= self.game.player_attack_dist
+                            and self.player_looking_at_entity())
         if self.walking:
             if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
                 if self.collisions['right'] or self.collisions['left']:
@@ -181,6 +183,14 @@ class Enemy(PhysicsEntity):
     def distance_with_player(self):
         return math.sqrt((self.enemy_x - self.player_x) ** 2 + (
                     (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
+
+    def player_looking_at_entity(self):
+        if (not (self.game.tilemap.between_check(self.game.player.pos, self.pos))
+                and self.game.player.pos[1] + self.game.player.size[1] == int(self.pos[1] + self.size[1])):
+            if self.game.player.last_direction == 1:
+                return self.enemy_x > self.player_x
+            elif self.game.player.last_direction == -1:
+                return self.enemy_x < self.player_x
 
     def render(self, surf, offset=(0, 0)):
         surf.blit(self.animation.img(),(self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
