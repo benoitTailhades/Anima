@@ -1,6 +1,5 @@
 import sys
 import math
-from importlib.metadata import pass_none
 
 import pygame
 import random
@@ -43,6 +42,7 @@ class Game:
             'enemy/run/left': Animation(load_images('entities/enemy/run/left'), img_dur=8),
             'enemy/run/right': Animation(load_images('entities/enemy/run/right'), img_dur=8),
             'enemy/attack': Animation(load_images('entities/enemy/attack'), img_dur=3, loop=False),
+            'enemy/death': Animation(load_images('entities/enemy/death'), img_dur=3, loop=False),
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
             'background1': load_image('bg1.png'),
@@ -175,8 +175,10 @@ class Game:
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
-                if enemy.hp <= 0 and enemy.animation.done:
-                    self.enemies.remove(enemy)
+                if enemy.hp <= 0:
+                    enemy.set_action("death")
+                    if enemy.animation.done:
+                        self.enemies.remove(enemy)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
