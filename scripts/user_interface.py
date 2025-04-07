@@ -222,8 +222,9 @@ class Menu:
 
         if knob_area.collidepoint(mouse_pos) or self.slider_rect.collidepoint(mouse_pos):
             if self.slider_rect.collidepoint(mouse_pos):
-                self.volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
-                self.volume = max(0, min(1, self.volume))
+                volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
+                volume = max(0, min(1, volume))
+                self.game.set_volume(volume)  # <-- On applique à la classe Game
             return True
         return False
 
@@ -267,6 +268,8 @@ class Menu:
 
         self.volume = (constrained_x - self.slider_rect.x) / self.slider_rect.width
         self.volume = max(0, min(1, self.volume))
+        self.game.set_volume(self.volume)
+
 
     def _update_options_positions(self, current_screen_size):
 
