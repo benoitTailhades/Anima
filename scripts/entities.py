@@ -95,7 +95,6 @@ class Enemy(PhysicsEntity):
         self.hp = hp
         self.is_attacked = False
 
-
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
@@ -168,6 +167,9 @@ class Enemy(PhysicsEntity):
 
             if self.is_attacked:
                 self.game.deal_dmg('player', self, self.game.player_dmg)
+                if self.player_x > self.enemy_x:
+                    self.is_chasing = True
+
         else:
             self.animation.update()
 

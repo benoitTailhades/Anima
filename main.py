@@ -137,7 +137,6 @@ class Game:
                 pygame.K_q: "key_left",
                 pygame.K_d: "key_right",
                 pygame.K_g: "key_dash",
-                pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip",
             }
@@ -148,7 +147,6 @@ class Game:
                 pygame.K_a: "key_left",
                 pygame.K_d: "key_right",
                 pygame.K_g: "key_dash",
-                pygame.K_h: "key_attack",
                 pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip",
             }
