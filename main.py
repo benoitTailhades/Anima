@@ -1,5 +1,6 @@
 import sys
 import math
+import os
 
 import pygame
 import random
@@ -68,6 +69,33 @@ class Game:
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5)
         }
 
+
+        self.sound_running = False
+        try:
+            # Make sure pygame is properly initialized before trying to play sounds
+            if not pygame.mixer.get_init():
+                print("Initializing pygame mixer in Game.__init__...")
+                pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
+                time.sleep(0.1)  # Small delay to ensure initialization completes
+
+            # Verify the sound file path and try different filename variations if needed
+            sound_path = "assets/sounds/v2-level-1-sound-background_W72B8woG.wav"
+            if not os.path.exists(sound_path):
+                print(f"Sound file not found at: {sound_path}")
+                # Try alternative filename from your screenshot
+                sound_path = "assets/sounds/v2-level-1-sound-background_W728Bw06.wav"
+                if not os.path.exists(sound_path):
+                    print(f"Alternative sound file not found either: {sound_path}")
+
+            self.volume = 0.5  # Volume par défaut : 50%
+            self.background_music = pygame.mixer.Sound(sound_path)
+            self.background_music.set_volume(self.volume)
+            self.background_music.play(loops=-1)
+            self.sound_running = True
+            if not self.sound_running:
+                print("Failed to start background music")
+        except Exception as e:
+            print(f"Error initializing sound: {e}")
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
                         "key_noclip": 0, "key_attack": 0}
 
@@ -106,6 +134,11 @@ class Game:
 
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
+
+    def set_volume(self, volume):
+        self.volume = max(0, min(1, volume))  # Clamp entre 0 et 1
+        if self.background_music:
+            self.background_music.set_volume(self.volume)
 
     def deal_dmg(self, entity, target, att_speed):
         current_time = time.time()
