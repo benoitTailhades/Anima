@@ -1,3 +1,5 @@
+import time
+
 import pygame
 import random
 import math
@@ -93,6 +95,7 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_speed = attack_speed
         self.hp = hp
+        self.hit = False
         self.stunned = False
         self.last_stun_time = 0
         self.is_attacked = False
@@ -100,9 +103,10 @@ class Enemy(PhysicsEntity):
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
-        self.is_attacked = (self.game.dict_kb["key_attack"]
+        self.is_attacked = (self.game.attacking
                             and self.distance_with_player() <= self.game.player_attack_dist
-                            and self.player_looking_at_entity())
+                            and self.player_looking_at_entity()
+                            and not self.is_attacked)
         if self.hp > 0:
             if self.walking:
                 if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
@@ -121,39 +125,53 @@ class Enemy(PhysicsEntity):
                 if rand < 0.01:
                     self.walking = random.randint(30, 120)
 
-            if self.distance_with_player() <= self.vision_distance:
-                if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                    if (self.check_if_player_close(self.vision_distance, not self.is_chasing) # if it is not chasing, it becomes mono direction
-                            or (not self.game.player.is_on_floor() and self.is_chasing)):
-                        if self.check_if_player_close(self.vision_distance, not self.is_chasing):
-                            if self.player_x < self.enemy_x:
-                                self.flip = True
-                            elif self.player_x > self.enemy_x:
-                                self.flip = False
-                        if not self.is_attacking:
+            if not self.stunned:
+                if self.distance_with_player() <= self.vision_distance:
+                    if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
+                        if (self.check_if_player_close(self.vision_distance, not self.is_chasing) # if it is not chasing, it becomes mono direction
+                                or (not self.game.player.is_on_floor() and self.is_chasing)):
+                            if self.check_if_player_close(self.vision_distance, not self.is_chasing):
+                                if self.player_x < self.enemy_x:
+                                    self.flip = True
+                                elif self.player_x > self.enemy_x:
+                                    self.flip = False
+                            if not self.is_attacking:
+                                self.is_chasing = True
+                                movement = (movement[0] - 1 if self.flip else 1, movement[1])
+                        else:
+                            self.is_chasing = False
+
+                        if self.check_if_player_close(self.attack_distance, False) or (not self.game.player.is_on_floor() and self.is_attacking):
+                            self.walking = 0
+                            self.is_attacking = True
                             self.is_chasing = True
-                            movement = (movement[0] - 1 if self.flip else 1, movement[1])
                     else:
+                        self.flip = not self.flip
+                        self.is_attacking = False
                         self.is_chasing = False
 
-                    if self.check_if_player_close(self.attack_distance, False) or (not self.game.player.is_on_floor() and self.is_attacking):
-                        self.walking = 0
-                        self.is_attacking = True
-                        self.is_chasing = True
-                else:
-                    self.flip = not self.flip
+                if self.distance_with_player() > self.attack_distance and self.is_attacking:
                     self.is_attacking = False
+
+                if self.distance_with_player() > self.vision_distance and self.is_chasing:
                     self.is_chasing = False
 
-            if self.distance_with_player() > self.attack_distance and self.is_attacking:
-                self.is_attacking = False
+                super().update(tilemap, movement=movement)
 
-            if self.distance_with_player() > self.vision_distance and self.is_chasing:
+            if self.stunned:
                 self.is_chasing = False
+                self.is_attacking = False
+                if time.time() - self.last_stun_time >= 0.5:
+                    self.is_chasing = True
+                    self.is_attacking = True
+                    self.stunned = False
+                    self.last_stun_time = time.time()
+                movement = (0, 0)
 
-            super().update(tilemap, movement=movement)
 
             self.animations(movement)
+
+            print(self.is_attacking)
 
         else:
             self.animation.update()
@@ -191,12 +209,20 @@ class Enemy(PhysicsEntity):
         animation_running = False
 
         if self.is_attacked:
-            self.game.deal_dmg('player', self, self.game.player_dmg)
-            self.game.deal_knockback(self.game.player, self, 6)
-            self.set_action("hit")
+            self.is_attacking = True
+            self.is_chasing = True
+            if time.time() - self.game.player_last_attack_time >= 0.3:
+                self.game.deal_dmg('player', self, self.game.player_dmg)
+                self.game.deal_knockback(self.game.player, self, 6)
+                self.stunned = True
+                self.set_action("hit")
             animation_running = True
 
-        if self.is_attacking and not animation_running:
+        if self.action == "hit" and not self.animation.done:
+            animation_running = True
+
+
+        if self.is_attacking and not animation_running and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_speed)
             if self.action != "attack":
                 self.set_action("attack")
@@ -210,8 +236,6 @@ class Enemy(PhysicsEntity):
                     self.set_action("run/right")
             else:
                 self.set_action("idle")
-
-
 
 def blur(surface, span):
     for i in range(span):
