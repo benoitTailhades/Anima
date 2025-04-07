@@ -98,7 +98,6 @@ class PhysicsPlayer:
 
             self.apply_animations()
             self.apply_particle()
-            print(self.can_walljump)
             self.animation.update()
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")

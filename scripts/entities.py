@@ -169,6 +169,11 @@ class Enemy(PhysicsEntity):
                 self.game.deal_dmg('player', self, self.game.player_dmg)
                 if self.player_x > self.enemy_x:
                     self.is_chasing = True
+                    self.pos[0] -= 6
+                elif self.player_x < self.enemy_x:
+                    self.is_chasing = True
+                    self.pos[0] += 6
+                self.pos[1] -= 4
 
         else:
             self.animation.update()
