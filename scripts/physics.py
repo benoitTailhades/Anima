@@ -30,7 +30,7 @@ class PhysicsPlayer:
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
-        self.WALLJUMP_COOLDOWN = 10
+        self.WALLJUMP_COOLDOWN = 5
 
         #Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
