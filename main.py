@@ -44,9 +44,10 @@ class Game:
             'enemy/run/right': Animation(load_images('entities/enemy/run/right'), img_dur=8),
             'enemy/attack': Animation(load_images('entities/enemy/attack'), img_dur=3, loop=False),
             'background': load_image('background_begin.png', self.display.get_size()),
+            'background0': load_image('bg0.png'),
             'background1': load_image('bg1.png'),
             'background2': load_image('bg2.png'),
-            'brume': load_image('brume_begin.png'),
+            'fog': load_image('fog.png'),
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
             'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
             'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
@@ -163,6 +164,7 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
+            display_bg(self.display, self.assets['background0'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
 
@@ -178,6 +180,7 @@ class Game:
             self.player.render(self.display, offset=render_scroll)
 
             self.tilemap.render_over(self.display, offset=render_scroll)
+            display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
 
             if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)

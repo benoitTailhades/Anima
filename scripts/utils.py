@@ -23,7 +23,8 @@ def display_bg(surf, img, pos):
     n = pos[0]//img.get_width()
     if pos[0] - n*img.get_width() > 0:
         surf.blit(img, (pos[0] - n* img.get_width(), pos[1]))
-        surf.blit(img, (pos[0] - (n+1)*img.get_width(), pos[1]))
+        surf.blit(img, (pos[0] - (n+1)*img.get_width() - 1, pos[1]))
+
     elif pos[0] + n*img.get_width() < 0:
         surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
         surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
