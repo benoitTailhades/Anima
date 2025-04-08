@@ -161,18 +161,14 @@ class Enemy(PhysicsEntity):
             if self.stunned:
                 self.is_chasing = False
                 self.is_attacking = False
-                if time.time() - self.last_stun_time >= 0.5:
+                if time.time() - self.last_stun_time >= 0.3:
                     self.is_chasing = True
                     self.is_attacking = True
                     self.stunned = False
-                    self.last_stun_time = time.time()
                 movement = (0, 0)
 
 
             self.animations(movement)
-
-            print(self.is_attacking)
-
         else:
             self.animation.update()
 
@@ -215,6 +211,7 @@ class Enemy(PhysicsEntity):
                 self.game.deal_dmg('player', self, self.game.player_dmg)
                 self.game.deal_knockback(self.game.player, self, 6)
                 self.stunned = True
+                self.last_stun_time = time.time()
                 self.set_action("hit")
             animation_running = True
 

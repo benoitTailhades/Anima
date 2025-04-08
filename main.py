@@ -127,7 +127,7 @@ class Game:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 1000, 20))
 
         self.scroll = [0, 0]
 
@@ -218,6 +218,12 @@ class Game:
 
             self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
                               or self.player.action in ("attack/left", "attack/right"))
+            if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
+                self.attacking = False
+                self.dict_kb["key_attack"] = 0
+            elif self.attacking and self.player.action == "attack/left" and self.player.get_direction("x") == 1:
+                self.attacking = False
+                self.dict_kb["key_attack"] = 0
             if self.attacking and self.player.animation.done:
                 self.dict_kb["key_attack"] = 0
                 self.player_last_attack_time = time.time()
