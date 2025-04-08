@@ -63,8 +63,7 @@ def load_game_font(font_name=None, size=36):
         'LiberationMono-Bold.ttf'
     ]
     font_paths = [
-        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,
-        *[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
+        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,*[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
     ]
     for path in font_paths:
         try:
