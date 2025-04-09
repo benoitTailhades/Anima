@@ -27,7 +27,6 @@ class Save:
             "timestamp": time.time()
         }
 
-        # Enregistrement des données des ennemis
         for enemy in self.game.enemies:
             enemy_data = {
                 "position": enemy.pos,
@@ -35,7 +34,6 @@ class Save:
             }
             save_data["enemies"].append(enemy_data)
 
-        # Écriture dans le fichier
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
         with open(save_path, 'w') as save_file:
             json.dump(save_data, save_file, indent=4)
@@ -54,15 +52,12 @@ class Save:
             with open(save_path, 'r') as save_file:
                 save_data = json.load(save_file)
 
-            # Chargement des données du joueur
             self.game.player.pos = save_data["player"]["position"]
             self.game.player_hp = save_data["player"]["hp"]
 
-            # Chargement des paramètres
             self.game.set_volume(save_data["settings"]["volume"])
             self.game.keyboard_layout = save_data["settings"]["keyboard_layout"]
 
-            # Suppression des ennemis actuels et chargement des ennemis sauvegardés
             self.game.enemies.clear()
             for enemy_data in save_data["enemies"]:
                 from scripts.entities import Enemy
@@ -86,10 +81,8 @@ class Save:
                     with open(save_path, 'r') as save_file:
                         save_data = json.load(save_file)
 
-                    # Extraire le numéro du slot de sauvegarde
                     slot = int(file.split('_')[1].split('.')[0])
 
-                    # Format de la date
                     from datetime import datetime
                     save_date = datetime.fromtimestamp(save_data["timestamp"]).strftime("%Y-%m-%d %H:%M:%S")
 
