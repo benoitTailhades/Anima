@@ -11,7 +11,7 @@ from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.user_interface import Menu, start_menu
-from scripts.Saving import Save
+from scripts.saving import Save
 
 
 class Game:
@@ -97,11 +97,12 @@ class Game:
                 print("Failed to start background music")
         except Exception as e:
             print(f"Error initializing sound: {e}")
+
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
                         "key_noclip": 0, "key_attack": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
-        self.tilemap.load('map.json')
+        self.level = 0
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
@@ -116,23 +117,9 @@ class Game:
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
 
-        self.leaf_spawners = []
-        for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
-                                           ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
-                                          keep=True):
-            self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
-
-        self.enemies = []
-        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
-            if spawner['variant'] == 0:
-                self.spawn_pos = spawner['pos']
-                self.player.pos = spawner['pos'].copy()
-            else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
-
-        self.scroll = [0, 0]
-
         self.particles = []
+
+        self.load_level(self.level)
 
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
@@ -219,7 +206,35 @@ class Game:
             return success
         return False
 
+    def load_level(self, map_id):
+        self.tilemap.load("data/maps/" + str(map_id) + ".json")
 
+        self.leaf_spawners = []
+        for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
+                                           ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
+                                          keep=True):
+            self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
+
+        self.enemies = []
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
+            if spawner['variant'] == 0:
+                self.spawn_pos = spawner['pos']
+                self.player.pos = spawner['pos'].copy()
+            else:
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
+
+        self.scroll = [0, 0]
+        self.transition = -30
+
+    def display_level_bg(self, map_id):
+        if map_id == 0:
+            display_bg(self.display, self.assets['background0'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
+
+    def display_level_fg(self, map_id):
+        if map_id == 0:
+            display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
 
     def run(self):
         while True:
@@ -234,9 +249,7 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            display_bg(self.display, self.assets['background0'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
+            self.display_level_bg(0)
 
             self.tilemap.render(self.display, offset=render_scroll)
 
@@ -254,7 +267,7 @@ class Game:
             self.player.render(self.display, offset=render_scroll)
 
             self.tilemap.render_over(self.display, offset=render_scroll)
-            display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
+            self.display_level_fg(0)
 
             if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
@@ -287,6 +300,10 @@ class Game:
                             self.dict_kb["key_attack"] = 1
                         if self.dict_kb["key_attack"] == 1:
                             self.holding_attack = True
+                    if event.key == pygame.K_9:
+                        self.load_level(1)
+                    if event.key == pygame.K_8:
+                        self.load_level(0)
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:

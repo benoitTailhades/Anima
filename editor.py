@@ -2,6 +2,8 @@ import sys
 
 import pygame
 
+import json
+
 from scripts.utils import load_images
 from scripts.tilemap import Tilemap
 
@@ -39,8 +41,10 @@ class Editor:
 
         self.tilemap = Tilemap(self, self.tile_size)
 
+        self.level = 0
+
         try:
-            self.tilemap.load('map.json')
+            self.tilemap.load('data/maps/'+str(self.level)+'.json')
         except FileNotFoundError:
             pass
 
@@ -57,6 +61,7 @@ class Editor:
 
     def run(self):
         while True:
+
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -133,6 +138,30 @@ class Editor:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         self.movement[0] = True
+                    if event.key == pygame.K_RIGHT:
+                        if self.tilemap.tilemap != {}:
+                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            self.level += 1
+                            try:
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                            except FileNotFoundError:
+                                f = open('data/maps/' + str(self.level) + '.json', 'w')
+                                json.dump({'tilemap': {},
+                                           'tilesize': 16,
+                                           'offgrid': []}, f)
+                                f.close()
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                            else:
+                                pass
+                    if event.key == pygame.K_LEFT:
+                        if self.level > 0:
+                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            self.level -= 1
+                            try:
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                            except FileNotFoundError:
+                                pass
+
                     if event.key == pygame.K_d:
                         self.movement[1] = True
                     if event.key == pygame.K_z:
@@ -146,7 +175,7 @@ class Editor:
                     if event.key == pygame.K_LSHIFT:
                         self.shift = True
                     if event.key == pygame.K_o:
-                        self.tilemap.save('map.json')
+                        self.tilemap.save('data/maps/' + str(self.level) + '.json')
                         print("saved")
                     if event.key == pygame.K_c:
                         print((tile_pos[0]*16,tile_pos[1]*16))
