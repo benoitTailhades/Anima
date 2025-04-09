@@ -191,6 +191,20 @@ class Game:
                 pygame.K_n: "key_noclip",
             }
 
+    def attacking_update(self):
+        self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
+                          or self.player.action in ("attack/left", "attack/right"))
+        if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
+            self.attacking = False
+            self.dict_kb["key_attack"] = 0
+        elif self.attacking and self.player.action == "attack/left" and self.player.get_direction("x") == 1:
+            self.attacking = False
+            self.dict_kb["key_attack"] = 0
+
+        if self.attacking and self.player.animation.done:
+            self.dict_kb["key_attack"] = 0
+            self.player_last_attack_time = time.time()
+
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
@@ -218,19 +232,7 @@ class Game:
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
 
-            self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
-                              or self.player.action in ("attack/left", "attack/right"))
-            if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
-                self.attacking = False
-                self.dict_kb["key_attack"] = 0
-            elif self.attacking and self.player.action == "attack/left" and self.player.get_direction("x") == 1:
-                self.attacking = False
-                self.dict_kb["key_attack"] = 0
-
-            if self.attacking and self.player.animation.done:
-                self.dict_kb["key_attack"] = 0
-                self.player_last_attack_time = time.time()
-
+            self.attacking_update()
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
