@@ -67,8 +67,9 @@ class Menu:
         else:
             button_x = (current_screen_size[0] - self.BUTTON_WIDTH) // 2
 
-            total_button_height = self.BUTTON_HEIGHT * 3
-            total_spacing = 20 * 2
+            # Updated to include 2 more buttons (SAVE and LOAD)
+            total_button_height = self.BUTTON_HEIGHT * 5  # Changed from 3 to 5
+            total_spacing = 20 * 4  # Changed from 2 to 4
             total_content_height = total_button_height + total_spacing
 
             start_y = (current_screen_size[1] - total_content_height) // 2
@@ -80,9 +81,13 @@ class Menu:
             top_image_y = start_y - top_image.get_height() - 20
 
             buttons["RESUME"] = py.Rect(button_x, start_y, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
-            buttons["OPTIONS"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,
+            buttons["SAVE"] = py.Rect(button_x, start_y + self.BUTTON_HEIGHT + 20, self.BUTTON_WIDTH,
+                                      self.BUTTON_HEIGHT)
+            buttons["LOAD"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,
+                                      self.BUTTON_HEIGHT)
+            buttons["OPTIONS"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 3, self.BUTTON_WIDTH,
                                          self.BUTTON_HEIGHT)
-            buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 2, self.BUTTON_WIDTH,
+            buttons["QUIT"] = py.Rect(button_x, start_y + (self.BUTTON_HEIGHT + 20) * 4, self.BUTTON_WIDTH,
                                       self.BUTTON_HEIGHT)
 
             bottom_image_x = (current_screen_size[0] - bottom_image.get_width()) // 2
@@ -318,6 +323,14 @@ class Menu:
             if rect.collidepoint(mouse_pos):
                 if text == "RESUME":
                     return False
+                elif text == "SAVE":
+                    # Ouvrir le menu de sauvegarde
+                    self.save_menu()
+                    return True
+                elif text == "LOAD":
+                    # Ouvrir le menu de chargement
+                    self.load_menu()
+                    return True
                 elif text == "OPTIONS":
                     self.options_visible = True
                     return True
@@ -491,6 +504,246 @@ class Menu:
 
                 elif event.type == py.MOUSEMOTION and self.dragging_volume and not self.dropdown_expanded:
                     self._handle_volume_drag(event.pos[0])
+
+    def save_menu(self):
+        """Affiche le menu de sauvegarde"""
+        # Capture l'écran actuel
+        current_screen = self.screen.copy()
+
+        # Récupère la liste des sauvegardes existantes
+        saves = self.game.save_system.list_saves()
+
+        # Configure les slots de sauvegarde (1 à 3)
+        slots = [1, 2, 3]
+        save_rects = {}
+
+        # Trouve quels slots sont déjà utilisés
+        used_slots = {save["slot"]: save for save in saves}
+
+        menu_running = True
+        while menu_running:
+            # Affiche l'écran de fond avec une superposition semi-transparente
+            self.screen.blit(current_screen, (0, 0))
+            overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
+            overlay.fill((0, 0, 0, 200))  # Fond semi-transparent
+            self.screen.blit(overlay, (0, 0))
+
+            # Affiche le titre
+            title = self.button_font.render("SAVE GAME", True, self.COLORS["white"])
+            title_x = (self.screen.get_width() - title.get_width()) // 2
+            self.screen.blit(title, (title_x, 50))
+
+            # Affiche les slots de sauvegarde
+            slot_y = 120
+            slot_height = 80
+            slot_width = 300
+            spacing = 20
+
+            for slot in slots:
+                slot_rect = py.Rect(
+                    (self.screen.get_width() - slot_width) // 2,
+                    slot_y,
+                    slot_width,
+                    slot_height
+                )
+                save_rects[slot] = slot_rect
+
+                # Vérifie si le slot est utilisé
+                is_used = slot in used_slots
+                slot_color = (60, 60, 100) if is_used else (60, 60, 60)
+
+                # Dessine le fond du slot
+                py.draw.rect(self.screen, slot_color, slot_rect, border_radius=5)
+
+                # Dessine le texte du slot
+                if is_used:
+                    save_data = used_slots[slot]
+                    # Format du texte: "Slot X - Date - HP: XX"
+                    slot_text = f"Slot {slot} - {save_data['date']}"
+                    hp_text = f"HP: {save_data['player_hp']} - Enemies: {save_data['enemy_count']}"
+
+                    slot_label = self.control_font.render(slot_text, True, self.COLORS["white"])
+                    hp_label = self.control_font.render(hp_text, True, self.COLORS["white"])
+
+                    self.screen.blit(slot_label, (slot_rect.x + 10, slot_rect.y + 10))
+                    self.screen.blit(hp_label, (slot_rect.x + 10, slot_rect.y + 40))
+                else:
+                    slot_text = f"Slot {slot} - Empty"
+                    slot_label = self.control_font.render(slot_text, True, self.COLORS["white"])
+                    self.screen.blit(slot_label,
+                                     (slot_rect.x + 10, slot_rect.y + (slot_height - slot_label.get_height()) // 2))
+
+                slot_y += slot_height + spacing
+
+            # Bouton Retour
+            back_rect = py.Rect(
+                (self.screen.get_width() - 200) // 2,
+                slot_y + 20,
+                200,
+                50
+            )
+            py.draw.rect(self.screen, (80, 80, 80), back_rect, border_radius=5)
+            back_text = self.button_font.render("BACK", True, self.COLORS["white"])
+            back_x = back_rect.x + (back_rect.width - back_text.get_width()) // 2
+            back_y = back_rect.y + (back_rect.height - back_text.get_height()) // 2
+            self.screen.blit(back_text, (back_x, back_y))
+
+            py.display.flip()
+
+            # Gestion des événements
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    py.quit()
+                    sys.exit()
+                elif event.type == py.KEYDOWN:
+                    if event.key == py.K_ESCAPE:
+                        menu_running = False
+                elif event.type == py.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+
+                    # Vérifie si un slot a été cliqué
+                    for slot, rect in save_rects.items():
+                        if rect.collidepoint(mouse_pos):
+                            # Sauvegarde dans ce slot
+                            if self.game.save_game(slot):
+                                # Rafraîchit la liste des sauvegardes
+                                saves = self.game.save_system.list_saves()
+                                used_slots = {save["slot"]: save for save in saves}
+
+                    # Vérifie si le bouton Retour a été cliqué
+                    if back_rect.collidepoint(mouse_pos):
+                        menu_running = False
+
+    def load_menu(self):
+        """Affiche le menu de chargement"""
+        # Capture l'écran actuel
+        current_screen = self.screen.copy()
+
+        # Récupère la liste des sauvegardes existantes
+        saves = self.game.save_system.list_saves()
+
+        # S'il n'y a pas de sauvegardes, affiche un message
+        if not saves:
+            no_saves_menu = True
+            while no_saves_menu:
+                self.screen.blit(current_screen, (0, 0))
+                overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
+                overlay.fill((0, 0, 0, 200))
+                self.screen.blit(overlay, (0, 0))
+
+                message = self.button_font.render("No saves found", True, self.COLORS["white"])
+                msg_x = (self.screen.get_width() - message.get_width()) // 2
+                msg_y = (self.screen.get_height() - message.get_height()) // 2
+                self.screen.blit(message, (msg_x, msg_y))
+
+                back_rect = py.Rect(
+                    (self.screen.get_width() - 200) // 2,
+                    msg_y + 80,
+                    200,
+                    50
+                )
+                py.draw.rect(self.screen, (80, 80, 80), back_rect, border_radius=5)
+                back_text = self.button_font.render("BACK", True, self.COLORS["white"])
+                back_x = back_rect.x + (back_rect.width - back_text.get_width()) // 2
+                back_y = back_rect.y + (back_rect.height - back_text.get_height()) // 2
+                self.screen.blit(back_text, (back_x, back_y))
+
+                py.display.flip()
+
+                for event in py.event.get():
+                    if event.type == py.QUIT:
+                        py.quit()
+                        sys.exit()
+                    elif event.type == py.KEYDOWN:
+                        if event.key == py.K_ESCAPE:
+                            no_saves_menu = False
+                    elif event.type == py.MOUSEBUTTONDOWN:
+                        if back_rect.collidepoint(event.pos):
+                            no_saves_menu = False
+            return
+
+        # Prépare les rectangles pour chaque sauvegarde
+        save_rects = {}
+
+        menu_running = True
+        while menu_running:
+            self.screen.blit(current_screen, (0, 0))
+            overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
+            overlay.fill((0, 0, 0, 200))
+            self.screen.blit(overlay, (0, 0))
+
+            # Affiche le titre
+            title = self.button_font.render("LOAD GAME", True, self.COLORS["white"])
+            title_x = (self.screen.get_width() - title.get_width()) // 2
+            self.screen.blit(title, (title_x, 50))
+
+            # Affiche les sauvegardes disponibles
+            save_y = 120
+            save_height = 80
+            save_width = 300
+            spacing = 20
+
+            for save in saves:
+                save_rect = py.Rect(
+                    (self.screen.get_width() - save_width) // 2,
+                    save_y,
+                    save_width,
+                    save_height
+                )
+                save_rects[save["slot"]] = save_rect
+
+                # Dessine le fond de la sauvegarde
+                py.draw.rect(self.screen, (60, 80, 100), save_rect, border_radius=5)
+
+                # Dessine les informations de la sauvegarde
+                slot_text = f"Slot {save['slot']} - {save['date']}"
+                hp_text = f"HP: {save['player_hp']} - Enemies: {save['enemy_count']}"
+
+                slot_label = self.control_font.render(slot_text, True, self.COLORS["white"])
+                hp_label = self.control_font.render(hp_text, True, self.COLORS["white"])
+
+                self.screen.blit(slot_label, (save_rect.x + 10, save_rect.y + 10))
+                self.screen.blit(hp_label, (save_rect.x + 10, save_rect.y + 40))
+
+                save_y += save_height + spacing
+
+            # Bouton Retour
+            back_rect = py.Rect(
+                (self.screen.get_width() - 200) // 2,
+                save_y + 20,
+                200,
+                50
+            )
+            py.draw.rect(self.screen, (80, 80, 80), back_rect, border_radius=5)
+            back_text = self.button_font.render("BACK", True, self.COLORS["white"])
+            back_x = back_rect.x + (back_rect.width - back_text.get_width()) // 2
+            back_y = back_rect.y + (back_rect.height - back_text.get_height()) // 2
+            self.screen.blit(back_text, (back_x, back_y))
+
+            py.display.flip()
+
+            # Gestion des événements
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    py.quit()
+                    sys.exit()
+                elif event.type == py.KEYDOWN:
+                    if event.key == py.K_ESCAPE:
+                        menu_running = False
+                elif event.type == py.MOUSEBUTTONDOWN:
+                    mouse_pos = event.pos
+
+                    # Vérifie si une sauvegarde a été cliquée
+                    for slot, rect in save_rects.items():
+                        if rect.collidepoint(mouse_pos):
+                            # Charge cette sauvegarde
+                            if self.game.load_game(slot):
+                                menu_running = False
+
+                    # Vérifie si le bouton Retour a été cliqué
+                    if back_rect.collidepoint(mouse_pos):
+                        menu_running = False
+
 def start_menu():
     py.init()
     screen = py.display.set_mode((1000, 600), py.NOFRAME)

@@ -11,6 +11,7 @@ from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.user_interface import Menu, start_menu
+from scripts.Saving import Save
 
 
 class Game:
@@ -135,9 +136,10 @@ class Game:
 
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
+        self.save_system = Save(self)
 
     def set_volume(self, volume):
-        self.volume = max(0, min(1, volume))  # Clamp entre 0 et 1
+        self.volume = max(0, min(1, volume))
         if self.background_music:
             self.background_music.set_volume(self.volume)
 
@@ -204,6 +206,22 @@ class Game:
         if self.attacking and self.player.animation.done:
             self.dict_kb["key_attack"] = 0
             self.player_last_attack_time = time.time()
+
+    def save_game(self, slot=1):
+        """Méthode pour sauvegarder le jeu depuis le menu"""
+        if hasattr(self, 'save_system'):
+            success = self.save_system.save_game(slot)
+            return success
+        return False
+
+    def load_game(self, slot=1):
+        """Méthode pour charger le jeu depuis le menu"""
+        if hasattr(self, 'save_system'):
+            success = self.save_system.load_game(slot)
+            return success
+        return False
+
+
 
     def run(self):
         while True:
