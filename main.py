@@ -127,7 +127,7 @@ class Game:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 1000, 20))
+                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
 
         self.scroll = [0, 0]
 
@@ -152,7 +152,6 @@ class Game:
         elif target != "player" and current_time - self.player_last_attack_time >= 0.3:
             self.player_last_attack_time = time.time()
             target.hp -= self.player_dmg
-            print(target.hp)
 
     def deal_knockback(self, entity, target, strenght):
         stun_elapsed = time.time() - target.last_stun_time

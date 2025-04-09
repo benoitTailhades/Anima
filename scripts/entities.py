@@ -227,13 +227,9 @@ class Enemy(PhysicsEntity):
 
         animation_running = False
 
-        if self.is_attacked:
+        if self.stunned:
             self.set_action("hit")
             animation_running = True
-
-        if self.action == "hit" and not self.animation.done:
-            animation_running = True
-
 
         if self.is_attacking and not animation_running and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_speed)
