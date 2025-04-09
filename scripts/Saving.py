@@ -10,13 +10,10 @@ class Save:
         self.ensure_save_folder_exists()
 
     def ensure_save_folder_exists(self):
-        """Vérifie que le dossier de sauvegarde existe, sinon le crée"""
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
     def save_game(self, slot=1):
-        """Sauvegarde l'état actuel du jeu dans un fichier"""
-        # Création de la structure de données à sauvegarder
         save_data = {
             "player": {
                 "position": self.game.player.pos,
@@ -43,15 +40,14 @@ class Save:
         with open(save_path, 'w') as save_file:
             json.dump(save_data, save_file, indent=4)
 
-        print(f"Jeu sauvegardé dans {save_path}")
+        print(f"Game saved succesfully in  {save_path}")
         return True
 
     def load_game(self, slot=1):
-        """Charge l'état du jeu depuis un fichier"""
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if not os.path.exists(save_path):
-            print(f"Aucune sauvegarde trouvée dans {save_path}")
+            print(f"No save found in  {save_path}")
             return False
 
         try:
@@ -73,15 +69,14 @@ class Save:
                 enemy = Enemy(self.game, enemy_data["position"], (16, 16), enemy_data["hp"], 20)
                 self.game.enemies.append(enemy)
 
-            print(f"Jeu chargé depuis {save_path}")
+            print(f"Game loaded since {save_path}")
             return True
 
         except Exception as e:
-            print(f"Erreur lors du chargement de la sauvegarde: {e}")
+            print(f"Error while loading the save  {e}")
             return False
 
     def list_saves(self):
-        """Liste toutes les sauvegardes disponibles"""
         saves = []
 
         for file in os.listdir(self.save_folder):
@@ -106,19 +101,17 @@ class Save:
                         "keyboard_layout": save_data["settings"]["keyboard_layout"]
                     })
                 except:
-                    # Si le fichier est corrompu, on l'ignore
                     pass
 
         return saves
 
     def delete_save(self, slot=1):
-        """Supprime une sauvegarde"""
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if os.path.exists(save_path):
             os.remove(save_path)
-            print(f"Sauvegarde {slot} supprimée")
+            print(f"Save {slot} deleted")
             return True
         else:
-            print(f"Aucune sauvegarde trouvée dans le slot {slot}")
+            print(f"No save found in the slot {slot}")
             return False

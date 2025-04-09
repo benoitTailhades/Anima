@@ -208,14 +208,12 @@ class Game:
             self.player_last_attack_time = time.time()
 
     def save_game(self, slot=1):
-        """Méthode pour sauvegarder le jeu depuis le menu"""
         if hasattr(self, 'save_system'):
             success = self.save_system.save_game(slot)
             return success
         return False
 
     def load_game(self, slot=1):
-        """Méthode pour charger le jeu depuis le menu"""
         if hasattr(self, 'save_system'):
             success = self.save_system.load_game(slot)
             return success
