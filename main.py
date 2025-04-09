@@ -155,10 +155,13 @@ class Game:
             print(target.hp)
 
     def deal_knockback(self, entity, target, strenght):
-        if entity.rect().centerx > target.rect().centerx:
-            target.pos[0] -= strenght
-        elif entity.rect().centerx < target.rect().centerx:
-            target.pos[0] += strenght
+        stun_elapsed = time.time() - target.last_stun_time
+        stun_duration = 0.5
+
+        knockback_dir_x = 1 if entity.rect().centerx < target.rect().centerx else -1
+        knockback_dir_y = 0
+        knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
+        return knockback_dir_x * knockback_force, knockback_dir_y * knockback_force
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -224,6 +227,7 @@ class Game:
             elif self.attacking and self.player.action == "attack/left" and self.player.get_direction("x") == 1:
                 self.attacking = False
                 self.dict_kb["key_attack"] = 0
+
             if self.attacking and self.player.animation.done:
                 self.dict_kb["key_attack"] = 0
                 self.player_last_attack_time = time.time()

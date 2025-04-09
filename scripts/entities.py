@@ -107,70 +107,93 @@ class Enemy(PhysicsEntity):
                             and self.distance_with_player() <= self.game.player_attack_dist
                             and self.player_looking_at_entity()
                             and not self.is_attacked)
-        if self.hp > 0:
-            if self.walking:
-                if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                    if self.collisions['right'] or self.collisions['left']:
-                        self.flip = not self.flip
-                    else:
-                        movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
-                    self.walking = max(0, self.walking - 1)
-                else:
-                    self.flip = not self.flip
-                    self.is_attacking = False
-                    self.is_chasing = False
 
-            elif not (self.is_attacking or self.is_chasing):
-                rand = random.random()
-                if rand < 0.01:
-                    self.walking = random.randint(30, 120)
-
-            if not self.stunned:
-                if self.distance_with_player() <= self.vision_distance:
-                    if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
-                        if (self.check_if_player_close(self.vision_distance, not self.is_chasing) # if it is not chasing, it becomes mono direction
-                                or (not self.game.player.is_on_floor() and self.is_chasing)):
-                            if self.check_if_player_close(self.vision_distance, not self.is_chasing):
-                                if self.player_x < self.enemy_x:
-                                    self.flip = True
-                                elif self.player_x > self.enemy_x:
-                                    self.flip = False
-                            if not self.is_attacking:
-                                self.is_chasing = True
-                                movement = (movement[0] - 1 if self.flip else 1, movement[1])
-                        else:
-                            self.is_chasing = False
-
-                        if self.check_if_player_close(self.attack_distance, False) or (not self.game.player.is_on_floor() and self.is_attacking):
-                            self.walking = 0
-                            self.is_attacking = True
-                            self.is_chasing = True
-                    else:
-                        self.flip = not self.flip
-                        self.is_attacking = False
-                        self.is_chasing = False
-
-                if self.distance_with_player() > self.attack_distance and self.is_attacking:
-                    self.is_attacking = False
-
-                if self.distance_with_player() > self.vision_distance and self.is_chasing:
-                    self.is_chasing = False
-
-                super().update(tilemap, movement=movement)
-
-            if self.stunned:
-                self.is_chasing = False
-                self.is_attacking = False
-                if time.time() - self.last_stun_time >= 0.3:
-                    self.is_chasing = True
-                    self.is_attacking = True
-                    self.stunned = False
-                movement = (0, 0)
-
-
-            self.animations(movement)
-        else:
+        if self.hp <= 0:
             self.animation.update()
+            return
+
+
+        if self.is_attacked:
+            self.is_attacking = True
+            self.is_chasing = True
+            if time.time() - self.game.player_last_attack_time >= 0.3:
+                self.game.deal_dmg('player', self, self.game.player_dmg)
+                self.stunned = True
+                self.last_stun_time = time.time()
+
+        # Handle stun state first
+        if self.stunned:
+            self.is_chasing = False
+            self.is_attacking = False
+
+            # Calculate time since stun started
+            stun_elapsed = time.time() - self.last_stun_time
+            stun_duration = 0.5
+
+            if stun_elapsed >= stun_duration:
+                self.stunned = False
+                self.is_attacking = True
+                self.is_chasing = True
+
+            else:
+                # Add stun animation/movement here
+                movement = self.game.deal_knockback(self.game.player, self, 1.5)
+                super().update(tilemap, movement=movement)
+                self.flip = self.player_x < self.enemy_x
+                self.animations(movement)
+                return  # Skip the rest of the normal update logic
+
+        # Regular (non-stunned) behavior continues below
+        if self.walking:
+            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
+                if self.collisions['right'] or self.collisions['left']:
+                    self.flip = not self.flip
+                else:
+                    movement = (movement[0] - 0.5 if self.flip else 0.5, movement[1])
+                self.walking = max(0, self.walking - 1)
+            else:
+                self.flip = not self.flip
+                self.is_attacking = False
+                self.is_chasing = False
+
+        elif not (self.is_attacking or self.is_chasing):
+            rand = random.random()
+            if rand < 0.01:
+                self.walking = random.randint(30, 120)
+
+        if self.distance_with_player() <= self.vision_distance:
+            if tilemap.solid_check((self.rect().centerx + (-7 if self.flip else 7), self.pos[1] + 23)):
+                if (self.check_if_player_close(self.vision_distance, not self.is_chasing)
+                        or (not self.game.player.is_on_floor() and self.is_chasing)):
+                    if self.check_if_player_close(self.vision_distance, not self.is_chasing):
+                        if self.player_x < self.enemy_x:
+                            self.flip = True
+                        elif self.player_x > self.enemy_x:
+                            self.flip = False
+                    if not self.is_attacking:
+                        self.is_chasing = True
+                        movement = (movement[0] - 1 if self.flip else 1, movement[1])
+                else:
+                    self.is_chasing = False
+
+                if self.check_if_player_close(self.attack_distance, False) or (
+                        not self.game.player.is_on_floor() and self.is_attacking):
+                    self.walking = 0
+                    self.is_attacking = True
+                    self.is_chasing = True
+            else:
+                self.flip = not self.flip
+                self.is_attacking = False
+                self.is_chasing = False
+
+        if self.distance_with_player() > self.attack_distance and self.is_attacking:
+            self.is_attacking = False
+
+        if self.distance_with_player() > self.vision_distance and self.is_chasing:
+            self.is_chasing = False
+
+        super().update(tilemap, movement=movement)
+        self.animations(movement)
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
@@ -205,14 +228,7 @@ class Enemy(PhysicsEntity):
         animation_running = False
 
         if self.is_attacked:
-            self.is_attacking = True
-            self.is_chasing = True
-            if time.time() - self.game.player_last_attack_time >= 0.3:
-                self.game.deal_dmg('player', self, self.game.player_dmg)
-                self.game.deal_knockback(self.game.player, self, 6)
-                self.stunned = True
-                self.last_stun_time = time.time()
-                self.set_action("hit")
+            self.set_action("hit")
             animation_running = True
 
         if self.action == "hit" and not self.animation.done:
