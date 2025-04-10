@@ -116,3 +116,12 @@ class Save:
         else:
             print(f"No save found in the slot {slot}")
             return False
+
+    def get_latest_save(self):
+        saves = self.list_saves()
+        if not saves:
+            return None
+
+        # Trier les sauvegardes par date (la plus récente en premier)
+        saves.sort(key=lambda x: x["date"], reverse=True)
+        return saves[0]["slot"]  # Retourne le numéro du slot de la sauvegarde la plus récente

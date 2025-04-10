@@ -125,6 +125,10 @@ class Game:
         self.keyboard_layout = "azerty"
         self.save_system = Save(self)
 
+        latest_save_slot = self.save_system.get_latest_save()
+        if latest_save_slot is not None:
+            self.load_game(latest_save_slot)
+
     def set_volume(self, volume):
         self.volume = max(0, min(1, volume))
         if self.background_music:
