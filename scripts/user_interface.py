@@ -18,8 +18,7 @@ class Menu:
         self.languages = ["Français", "English", "Español"]
         self.selected_language = self.languages[1]
 
-        # Add keyboard layout option
-        self.keyboard_layout = "AZERTY"  # Default keyboard layout
+        self.keyboard_layout = "AZERTY"
 
         self.dropdown_expanded = False
         self.dragging_volume = False
@@ -29,7 +28,6 @@ class Menu:
         self.BUTTON_HEIGHT = 50
         self.KNOB_RADIUS = 8
 
-        # Définir des rectangles initiaux, ils seront mis à jour plus tard
         self.slider_rect = py.Rect(50, 100, 200, 5)
         self.dropdown_rect = py.Rect(50, 150, 200, 30)
         self.keyboard_button_rect = py.Rect(50, 250, 200, 40)
@@ -49,10 +47,16 @@ class Menu:
             "light_gray": (220, 220, 220),
             "medium_gray": (200, 200, 200),
             "dark_gray": (160, 160, 160),
-            "highlight": (255, 255, 255, 50),  # Couleur de surlignage semi-transparente
+            "highlight": (255, 255, 255, 50),
             "overlay": (0, 0, 0, 200),
-            "dimmed": (255, 255, 255, 80)  # Couleur pour les options désactivées
+            "dimmed": (255, 255, 255, 80)
         }
+
+    def update_settings_from_game(self):
+        self.volume = self.game.volume
+        self.keyboard_layout = self.game.keyboard_layout
+        if self.game.selected_language in self.languages:
+            self.selected_language = self.game.selected_language
 
     def capture_background(self):#uses the screen.copy of utils to do a screenshot of the game
         self.original_background = self.screen.copy()
@@ -61,15 +65,13 @@ class Menu:
         buttons = {}
 
         if self.options_visible:
-            # Centre le bouton "BACK"
             button_x = (current_screen_size[0] - self.BUTTON_WIDTH) // 2
             buttons["BACK"] = py.Rect(button_x, current_screen_size[1] - 90, self.BUTTON_WIDTH, self.BUTTON_HEIGHT)
         else:
             button_x = (current_screen_size[0] - self.BUTTON_WIDTH) // 2
 
-            # Updated to include 2 more buttons (SAVE and LOAD)
-            total_button_height = self.BUTTON_HEIGHT * 5  # Changed from 3 to 5
-            total_spacing = 20 * 4  # Changed from 2 to 4
+            total_button_height = self.BUTTON_HEIGHT * 5
+            total_spacing = 20 * 4
             total_content_height = total_button_height + total_spacing
 
             start_y = (current_screen_size[1] - total_content_height) // 2

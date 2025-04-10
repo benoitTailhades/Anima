@@ -120,7 +120,7 @@ class Game:
         self.particles = []
 
         self.load_level(self.level)
-
+        self.selected_language = "English"
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
         self.save_system = Save(self)
@@ -183,6 +183,13 @@ class Game:
                 pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip",
             }
+
+    def update_settings_from_game(self):
+        self.volume = self.game.volume
+        self.keyboard_layout = self.game.keyboard_layout
+
+        if hasattr(self.game, "selected_language") and self.game.selected_language in self.languages:
+            self.selected_language = self.game.selected_language
 
     def attacking_update(self):
         self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)

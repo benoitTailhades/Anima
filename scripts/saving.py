@@ -19,11 +19,12 @@ class Save:
                 "position": self.game.player.pos,
                 "hp": self.game.player_hp
             },
-            "level": self.game.level,  # Added level information
+            "level": self.game.level,
             "enemies": [],
             "settings": {
                 "volume": self.game.volume,
-                "keyboard_layout": self.game.keyboard_layout
+                "keyboard_layout": self.game.keyboard_layout,
+                "language": self.game.selected_language
             },
             "timestamp": time.time()
         }
@@ -53,8 +54,7 @@ class Save:
             with open(save_path, 'r') as save_file:
                 save_data = json.load(save_file)
 
-            # Load level first so tile maps and other level-dependent data are loaded correctly
-            level = save_data.get("level", 0)  # Default to level 0 if not found in older saves
+            level = save_data.get("level", 0)
             if self.game.level != level:
                 self.game.level = level
                 self.game.load_level(level)
@@ -64,6 +64,12 @@ class Save:
 
             self.game.set_volume(save_data["settings"]["volume"])
             self.game.keyboard_layout = save_data["settings"]["keyboard_layout"]
+            self.game.set_volume(save_data["settings"]["volume"])
+            self.game.keyboard_layout = save_data["settings"]["keyboard_layout"]
+            self.game.selected_language = save_data["settings"].get("language", "English")
+
+            if hasattr(self.game, "menu"):
+                self.game.menu.update_settings_from_game()
 
             self.game.enemies.clear()
             for enemy_data in save_data["enemies"]:
@@ -122,6 +128,5 @@ class Save:
         if not saves:
             return None
 
-        # Trier les sauvegardes par date (la plus récente en premier)
         saves.sort(key=lambda x: x["date"], reverse=True)
-        return saves[0]["slot"]  # Retourne le numéro du slot de la sauvegarde la plus récente
+        return saves[0]["slot"]
