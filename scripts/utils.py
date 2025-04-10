@@ -37,7 +37,7 @@ class Animation:
         self.done = False
         self.frame = 0
 
-    def copy(self):
+    def copy(self):#will be very useful for the screen.copy when displaying the menu
         return Animation(self.images, self.img_duration, self.loop)
 
     def update(self):

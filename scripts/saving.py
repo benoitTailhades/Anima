@@ -4,16 +4,16 @@ import time
 
 
 class Save:
-    def __init__(self, game):
+    def __init__(self, game):#Initialize the class and ensure that save.py exist
         self.game = game
         self.save_folder = "saves"
         self.ensure_save_folder_exists()
 
-    def ensure_save_folder_exists(self):
+    def ensure_save_folder_exists(self):#just create a litle save if it does not already exist(pretty common)
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
-    def save_game(self, slot=1):
+    def save_game(self, slot=1):#Using a json file(like in the Fort boyard) to save the player data and a bunch od data (settings...)
         save_data = {
             "player": {
                 "position": self.game.player.pos,
@@ -42,7 +42,7 @@ class Save:
         print(f"Game saved successfully in {save_path}")
         return True
 
-    def load_game(self, slot=1):
+    def load_game(self, slot=1):#use the basics of json to open the file, read it, warn if there is no save and use the game class to restaure the data
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if not os.path.exists(save_path):
@@ -78,7 +78,7 @@ class Save:
             print(f"Error while loading the save: {e}")
             return False
 
-    def list_saves(self):
+    def list_saves(self):#keep a list of the saves and what they have into them(what is stored)
         saves = []
 
         for file in os.listdir(self.save_folder):
@@ -106,7 +106,7 @@ class Save:
 
         return saves
 
-    def delete_save(self, slot=1):
+    def delete_save(self, slot=1):#Pretty self-explanatory
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if os.path.exists(save_path):
@@ -117,7 +117,7 @@ class Save:
             print(f"No save found in the slot {slot}")
             return False
 
-    def get_latest_save(self):
+    def get_latest_save(self):#check, among the list of saves which one is the latest. It will be used in the main in order to load the game where the user let it when he closed it
         saves = self.list_saves()
         if not saves:
             return None

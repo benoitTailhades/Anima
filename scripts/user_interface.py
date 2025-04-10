@@ -9,7 +9,7 @@ from scripts.utils import load_images, load_image, load_game_font
 
 class Menu:
 
-    def __init__(self, game):
+    def __init__(self, game):#Basic definnitions: Keyboard layout,languages, volume, screen resolutions,buttons configurations
         self.game = game
         self.screen = game.screen
         self.original_background = None
@@ -54,10 +54,10 @@ class Menu:
             "dimmed": (255, 255, 255, 80)  # Couleur pour les options désactivées
         }
 
-    def capture_background(self):
+    def capture_background(self):#uses the screen.copy of utils to do a screenshot of the game
         self.original_background = self.screen.copy()
 
-    def _get_centered_buttons(self, current_screen_size):
+    def _get_centered_buttons(self, current_screen_size):#compute and return buttons like RESUME SAVE or LOAD centered on the screen.Very boring to read but useful to resize the screen easily
         buttons = {}
 
         if self.options_visible:
@@ -100,8 +100,7 @@ class Menu:
 
         return buttons
 
-    def _draw_buttons(self, buttons):
-        # Ne pas traiter les clics sur les boutons si le dropdown est étendu
+    def _draw_buttons(self, buttons):#Also very long. The function does 3 things: Hover effect, display the "arrows" images at the sides of the buttons, and "blacken" the other buttons when the language menu is expanded
         if self.dropdown_expanded and self.options_visible:
             for text, rect in buttons.items():
                 label = self.button_font.render(text, True, self.COLORS["dimmed"])
@@ -138,32 +137,25 @@ class Menu:
                 image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
                 self.screen.blit(self.hover2_image, (image_x2, image_y2))
 
-    def _draw_volume_control(self):
+    def _draw_volume_control(self):#Draw the volume control option and the Hover effect
         if not self.options_visible:
             return 0
 
-        # Ne pas afficher le contrôle du volume si le dropdown est étendu
         if self.dropdown_expanded:
             return 0
 
         mouse_pos = py.mouse.get_pos()
-        is_hovered = self.slider_rect.collidepoint(mouse_pos) or \
-                     py.Rect(self.slider_rect.x - 10, self.slider_rect.y - 10,
-                             self.slider_rect.width + 20, self.slider_rect.height + 20).collidepoint(mouse_pos)
+        is_hovered = self.slider_rect.collidepoint(mouse_pos) or py.Rect(self.slider_rect.x - 10, self.slider_rect.y - 10,self.slider_rect.width + 20, self.slider_rect.height + 20).collidepoint(mouse_pos)
 
-        # Dessiner le texte du titre
         vol_text = self.control_font.render("Volume:", True, self.COLORS["white"])
         self.screen.blit(vol_text, (self.slider_rect.x, self.slider_rect.centery - vol_text.get_height() // 2))
 
-        # Calculer la position du slider après le texte
         slider_start_x = self.slider_rect.x + vol_text.get_width() + 20
         slider_width = self.slider_rect.width
         slider_y = self.slider_rect.centery
 
-        # Mettre à jour la position du rectangle du slider
         self.slider_rect = py.Rect(slider_start_x, slider_y - 2, slider_width, 4)
 
-        # Dessiner le fond du slider
         py.draw.rect(self.screen, self.COLORS["dark_gray"], self.slider_rect, border_radius=2)
 
         if is_hovered:
@@ -174,36 +166,31 @@ class Menu:
                          (0, 0, highlight_rect.width, highlight_rect.height), border_radius=4)
             self.screen.blit(highlight_surface, (highlight_rect.x, highlight_rect.y))
 
-        # Calculer la position du bouton
         knob_x = self.slider_rect.x + int(self.volume * self.slider_rect.width)
         py.draw.circle(self.screen, self.COLORS["white"],
                        (knob_x, self.slider_rect.centery),
                        self.KNOB_RADIUS)
 
-        # Afficher le pourcentage à côté du slider
         percent_text = self.control_font.render(f"{int(self.volume * 100)}%", True, self.COLORS["white"])
         self.screen.blit(percent_text,
                          (self.slider_rect.right + 10, self.slider_rect.centery - percent_text.get_height() // 2))
 
         return knob_x
 
-    def _draw_language_dropdown(self):
+    def _draw_language_dropdown(self):#Display the current language. If expanded display three buttons. And hover effect over every one of these buttons
         if not self.options_visible:
             return []
 
         mouse_pos = py.mouse.get_pos()
 
-        # Dessiner le texte du titre
         lang_title = self.control_font.render("Language:", True, self.COLORS["white"])
         self.screen.blit(lang_title, (self.dropdown_rect.x, self.dropdown_rect.centery - lang_title.get_height() // 2))
 
-        # Calculer la position du dropdown après le texte
         dropdown_start_x = self.dropdown_rect.x + lang_title.get_width() + 20
         dropdown_width = self.dropdown_rect.width
         dropdown_y = self.dropdown_rect.y
         dropdown_height = self.dropdown_rect.height
 
-        # Mettre à jour la position du rectangle du dropdown
         self.dropdown_rect = py.Rect(dropdown_start_x, dropdown_y, dropdown_width, dropdown_height)
 
         is_hovered = self.dropdown_rect.collidepoint(mouse_pos)
@@ -216,16 +203,13 @@ class Menu:
                          (0, 0, highlight_rect.width, highlight_rect.height), border_radius=4)
             self.screen.blit(highlight_surface, (highlight_rect.x, highlight_rect.y))
 
-        # Dessiner le fond du dropdown avec des bords arrondis au lieu d'utiliser Surface
         py.draw.rect(self.screen, (70, 70, 70), self.dropdown_rect, border_radius=4)
 
-        # Dessiner le texte de la langue sélectionnée
         lang_text = self.control_font.render(self.selected_language, True, self.COLORS["white"])
         text_x = self.dropdown_rect.x + (self.dropdown_rect.width - lang_text.get_width()) // 2
         text_y = self.dropdown_rect.centery - lang_text.get_height() // 2
         self.screen.blit(lang_text, (text_x, text_y))
 
-        # Dessiner une petite flèche pour indiquer qu'il s'agit d'un menu déroulant
         arrow_points = [
             (self.dropdown_rect.right - 15, self.dropdown_rect.centery - 3),
             (self.dropdown_rect.right - 5, self.dropdown_rect.centery - 3),
@@ -238,15 +222,12 @@ class Menu:
             total_height = len(self.languages) * self.dropdown_rect.height
             dropdown_y = self.dropdown_rect.y + self.dropdown_rect.height
 
-            # Dessiner directement le rectangle avec des bords arrondis
             py.draw.rect(self.screen, (50, 50, 50),
                          (self.dropdown_rect.x, dropdown_y, self.dropdown_rect.width, total_height),
                          border_radius=4)
 
-            # Créer une liste pour stocker les rectangles des options
             option_rects = []
 
-            # Dessiner chaque option
             for i, lang in enumerate(self.languages):
                 option_rect = py.Rect(
                     self.dropdown_rect.x,
@@ -270,8 +251,7 @@ class Menu:
 
         return option_rects
 
-    def _draw_keyboard_button(self):
-        """Draw the AZERTY/QWERTY toggle button"""
+    def _draw_keyboard_button(self):#Display the current keyboard layout. Only AZERTY and QWERTY posible. Most of the function is, like the other draw options, a ton of lines to make it slightly better looking
         if not self.options_visible:
             return False
 
@@ -301,12 +281,10 @@ class Menu:
                          (0, 0, highlight_rect.width, highlight_rect.height), border_radius=4)
             self.screen.blit(highlight_surface, (highlight_rect.x, highlight_rect.y))
 
-        # Dessiner le fond du bouton
         keyboard_bg = py.Surface((button_width, button_height), py.SRCALPHA)
         py.draw.rect(keyboard_bg, (70, 70, 70, 200), (0, 0, button_width, button_height), border_radius=4)
         self.screen.blit(keyboard_bg, (self.keyboard_button_rect.x, self.keyboard_button_rect.y))
 
-        # Dessiner le texte du bouton
         button_text = self.keyboard_font.render(self.keyboard_layout, True, self.COLORS["white"])
         text_x = self.keyboard_button_rect.x + (self.keyboard_button_rect.width - button_text.get_width()) // 2
         text_y = self.keyboard_button_rect.centery - button_text.get_height() // 2
@@ -314,8 +292,7 @@ class Menu:
 
         return is_hovered
 
-    def _handle_button_click(self, buttons, mouse_pos):
-        # Ne pas réagir aux clics si le dropdown est étendu
+    def _handle_button_click(self, buttons, mouse_pos):#Here, to detect if a button is clicked we do not use the coordinates but the text displayed on it. It is easier
         if self.dropdown_expanded and self.options_visible:
             return True
 
@@ -324,11 +301,9 @@ class Menu:
                 if text == "RESUME":
                     return False
                 elif text == "SAVE":
-                    # Ouvrir le menu de sauvegarde
                     self.save_menu()
                     return True
                 elif text == "LOAD":
-                    # Ouvrir le menu de chargement
                     self.load_menu()
                     return True
                 elif text == "OPTIONS":
@@ -342,7 +317,7 @@ class Menu:
                     return True
         return True
 
-    def _handle_volume_click(self, knob_x, mouse_pos):
+    def _handle_volume_click(self, knob_x, mouse_pos):#the listle animation of changing the side of the cursor to make it more lively
         if not self.options_visible or self.dropdown_expanded:
             return False
 
@@ -357,11 +332,11 @@ class Menu:
             if self.slider_rect.collidepoint(mouse_pos):
                 volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
                 volume = max(0, min(1, volume))
-                self.game.set_volume(volume)  # <-- On applique à la classe Game
+                self.game.set_volume(volume)
             return True
         return False
 
-    def _handle_language_click(self, option_rects, mouse_pos):
+    def _handle_language_click(self, option_rects, mouse_pos):#just many other functions to diplay, when clicked the language menu
         if not self.options_visible:
             return
 
@@ -374,25 +349,22 @@ class Menu:
                     self.dropdown_expanded = False
                     break
             else:
-                # Cliquer en dehors des options fermera le dropdown
                 self.dropdown_expanded = False
 
-    def _handle_keyboard_click(self, mouse_pos):
+    def _handle_keyboard_click(self, mouse_pos):#Updated to it's other state when clicked
         if not self.options_visible or self.dropdown_expanded:
             return False
 
         if self.keyboard_button_rect.collidepoint(mouse_pos):
-            # Toggle between AZERTY and QWERTY
             self.keyboard_layout = "QWERTY" if self.keyboard_layout == "AZERTY" else "AZERTY"
 
-            # Mettre à jour également la disposition dans la classe Game
             self.game.keyboard_layout = self.keyboard_layout.lower()  # Convertir en minuscules pour correspondre à get_key_map
 
             return True
 
         return False
 
-    def _handle_volume_drag(self, mouse_x):
+    def _handle_volume_drag(self, mouse_x):#Simply,if the volume is clicked update the volume bar with the x coordinates of the user's mouse
         if not self.options_visible or self.dropdown_expanded:
             return
 
@@ -402,27 +374,22 @@ class Menu:
         self.volume = max(0, min(1, self.volume))
         self.game.set_volume(self.volume)
 
-
-    def _update_options_positions(self, current_screen_size):
-        # Positions centrées
+    def _update_options_positions(self, current_screen_size):#keep in mind that we always have to modify the buttons size and positions when the screen is resized
         control_x = (current_screen_size[0] - 300) // 2
         panel_y = 50
 
-        # Espacer les contrôles verticalement
         control_spacing = 60
 
-        # Mettre à jour les positions des contrôles
         self.slider_rect = py.Rect(control_x, panel_y + 100, 200, 5)
         self.dropdown_rect = py.Rect(control_x, panel_y + 100 + control_spacing, 200, 30)
         self.keyboard_button_rect = py.Rect(control_x, panel_y + 100 + control_spacing * 2, 200, 40)
 
-    def _draw_options_panel(self, current_screen_size):
+    def _draw_options_panel(self, current_screen_size):#drax the buttons and option in the option Panel mostly using the previous function
         if not self.options_visible:
             return
 
         self._update_options_positions(current_screen_size)
 
-        # Afficher le titre des options (rendre semi-transparent si le dropdown est étendu)
         options_title_color = self.COLORS["dimmed"] if self.dropdown_expanded else self.COLORS["white"]
         options_title = self.button_font.render("OPTIONS", True, options_title_color)
         self.screen.blit(options_title, (
@@ -430,7 +397,7 @@ class Menu:
             50
         ))
 
-    def menu_display(self):
+    def menu_display(self):#when called: Display the main menu with it's buttons, monitor keyboard and mouse input (keyboard means escape key but it looks cooler), and thirdly displaythe background and optio npanel if needed
         self.capture_background()
 
         running = True
@@ -447,7 +414,6 @@ class Menu:
             overlay.fill(self.COLORS["overlay"])
             self.screen.blit(overlay, (0, 0))
 
-            # Afficher le panneau d'options si nécessaire
             if self.options_visible:
                 self._draw_options_panel(current_screen_size)
 
@@ -461,11 +427,9 @@ class Menu:
 
             self._draw_buttons(buttons)
 
-            # Dessiner les contrôles dans l'ordre : d'abord le volume et le clavier
-            # puis le dropdown des langues (qui sera au-dessus si ouvert)
             knob_x = self._draw_volume_control()
             self._draw_keyboard_button()
-            option_rects = self._draw_language_dropdown()  # Dessiner le dropdown en dernier
+            option_rects = self._draw_language_dropdown()
 
             py.display.flip()
 
@@ -489,7 +453,6 @@ class Menu:
                 elif event.type == py.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
-                    # Si le dropdown est étendu, ne traiter que les clics liés au dropdown
                     if self.dropdown_expanded and self.options_visible:
                         self._handle_language_click(option_rects, mouse_pos)
                     else:
@@ -505,35 +468,27 @@ class Menu:
                 elif event.type == py.MOUSEMOTION and self.dragging_volume and not self.dropdown_expanded:
                     self._handle_volume_drag(event.pos[0])
 
-    def save_menu(self):
-        """Affiche le menu de sauvegarde"""
-        # Capture l'écran actuel
+    def save_menu(self):#Display the three saving slots(buttons),each slots display, if chosen, the informations of each save(date for example). And then monitor the Back button interactions
         current_screen = self.screen.copy()
 
-        # Récupère la liste des sauvegardes existantes
         saves = self.game.save_system.list_saves()
 
-        # Configure les slots de sauvegarde (1 à 3)
         slots = [1, 2, 3]
         save_rects = {}
 
-        # Trouve quels slots sont déjà utilisés
         used_slots = {save["slot"]: save for save in saves}
 
         menu_running = True
         while menu_running:
-            # Affiche l'écran de fond avec une superposition semi-transparente
             self.screen.blit(current_screen, (0, 0))
             overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
-            overlay.fill((0, 0, 0, 200))  # Fond semi-transparent
+            overlay.fill((0, 0, 0, 200))
             self.screen.blit(overlay, (0, 0))
 
-            # Affiche le titre
             title = self.button_font.render("SAVE GAME", True, self.COLORS["white"])
             title_x = (self.screen.get_width() - title.get_width()) // 2
             self.screen.blit(title, (title_x, 50))
 
-            # Affiche les slots de sauvegarde
             slot_y = 120
             slot_height = 80
             slot_width = 300
@@ -548,17 +503,13 @@ class Menu:
                 )
                 save_rects[slot] = slot_rect
 
-                # Vérifie si le slot est utilisé
                 is_used = slot in used_slots
                 slot_color = (60, 60, 100) if is_used else (60, 60, 60)
 
-                # Dessine le fond du slot
                 py.draw.rect(self.screen, slot_color, slot_rect, border_radius=5)
 
-                # Dessine le texte du slot
                 if is_used:
                     save_data = used_slots[slot]
-                    # Format du texte: "Slot X - Date - HP: XX"
                     slot_text = f"Slot {slot} - {save_data['date']}"
                     hp_text = f"HP: {save_data['player_hp']} - Enemies: {save_data['enemy_count']}"
 
@@ -575,7 +526,6 @@ class Menu:
 
                 slot_y += slot_height + spacing
 
-            # Bouton Retour
             back_rect = py.Rect(
                 (self.screen.get_width() - 200) // 2,
                 slot_y + 20,
@@ -590,7 +540,6 @@ class Menu:
 
             py.display.flip()
 
-            # Gestion des événements
             for event in py.event.get():
                 if event.type == py.QUIT:
                     py.quit()
@@ -601,28 +550,22 @@ class Menu:
                 elif event.type == py.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
-                    # Vérifie si un slot a été cliqué
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            # Sauvegarde dans ce slot
+
                             if self.game.save_game(slot):
-                                # Rafraîchit la liste des sauvegardes
+
                                 saves = self.game.save_system.list_saves()
                                 used_slots = {save["slot"]: save for save in saves}
 
-                    # Vérifie si le bouton Retour a été cliqué
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
-    def load_menu(self):
-        """Affiche le menu de chargement"""
-        # Capture l'écran actuel
+    def load_menu(self):#pretty much the same idea as in the save menu but here we load the save(This is just the drawing of those options. If you want more details go to Saving.py)
         current_screen = self.screen.copy()
 
-        # Récupère la liste des sauvegardes existantes
         saves = self.game.save_system.list_saves()
 
-        # S'il n'y a pas de sauvegardes, affiche un message
         if not saves:
             no_saves_menu = True
             while no_saves_menu:
@@ -662,7 +605,6 @@ class Menu:
                             no_saves_menu = False
             return
 
-        # Prépare les rectangles pour chaque sauvegarde
         save_rects = {}
 
         menu_running = True
@@ -672,12 +614,10 @@ class Menu:
             overlay.fill((0, 0, 0, 200))
             self.screen.blit(overlay, (0, 0))
 
-            # Affiche le titre
             title = self.button_font.render("LOAD GAME", True, self.COLORS["white"])
             title_x = (self.screen.get_width() - title.get_width()) // 2
             self.screen.blit(title, (title_x, 50))
 
-            # Affiche les sauvegardes disponibles
             save_y = 120
             save_height = 80
             save_width = 300
@@ -692,10 +632,8 @@ class Menu:
                 )
                 save_rects[save["slot"]] = save_rect
 
-                # Dessine le fond de la sauvegarde
                 py.draw.rect(self.screen, (60, 80, 100), save_rect, border_radius=5)
 
-                # Dessine les informations de la sauvegarde
                 slot_text = f"Slot {save['slot']} - {save['date']}"
                 hp_text = f"HP: {save['player_hp']} - Enemies: {save['enemy_count']}"
 
@@ -707,7 +645,6 @@ class Menu:
 
                 save_y += save_height + spacing
 
-            # Bouton Retour
             back_rect = py.Rect(
                 (self.screen.get_width() - 200) // 2,
                 save_y + 20,
@@ -722,7 +659,6 @@ class Menu:
 
             py.display.flip()
 
-            # Gestion des événements
             for event in py.event.get():
                 if event.type == py.QUIT:
                     py.quit()
@@ -733,18 +669,15 @@ class Menu:
                 elif event.type == py.MOUSEBUTTONDOWN:
                     mouse_pos = event.pos
 
-                    # Vérifie si une sauvegarde a été cliquée
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            # Charge cette sauvegarde
                             if self.game.load_game(slot):
                                 menu_running = False
 
-                    # Vérifie si le bouton Retour a été cliqué
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
-def start_menu():
+def start_menu():#Display a simple welcome screen that diseappear when clicked.
     py.init()
     screen = py.display.set_mode((1000, 600), py.NOFRAME)
     font = py.font.Font(None, 24)
