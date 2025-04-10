@@ -223,6 +223,8 @@ class Game:
             else:
                 self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
 
+        self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
+
         self.scroll = [0, 0]
         self.transition = -30
 
@@ -236,6 +238,17 @@ class Game:
         if map_id == 0:
             display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
 
+    def check_transition(self):
+        for transition in self.transitions:
+            if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
+                    transition['pos'][1] > self.player.rect().centery >= transition['pos'][1] - 16):
+                if transition["variant"] == 0:
+                    self.level -= 1
+                    self.load_level(self.level)
+                elif transition["variant"] == 1:
+                    self.level += 1
+                    self.load_level(self.level)
+
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
@@ -243,12 +256,16 @@ class Game:
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
+            if self.transition < 0:
+                self.transition += 1
+
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:
                     pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
+            self.check_transition()
             self.display_level_bg(0)
 
             self.tilemap.render(self.display, offset=render_scroll)
@@ -317,6 +334,13 @@ class Game:
 
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
+
+            if self.transition:
+                transition_surf = pygame.Surface(self.display.get_size())
+                pygame.draw.circle(transition_surf, (255, 255, 255),(self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
+                transition_surf.set_colorkey((255, 255, 255))
+                self.display.blit(transition_surf, (0, 0))
+
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
 
