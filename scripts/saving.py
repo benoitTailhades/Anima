@@ -19,6 +19,7 @@ class Save:
                 "position": self.game.player.pos,
                 "hp": self.game.player_hp
             },
+            "level": self.game.level,  # Added level information
             "enemies": [],
             "settings": {
                 "volume": self.game.volume,
@@ -38,19 +39,25 @@ class Save:
         with open(save_path, 'w') as save_file:
             json.dump(save_data, save_file, indent=4)
 
-        print(f"Game saved succesfully in  {save_path}")
+        print(f"Game saved successfully in {save_path}")
         return True
 
     def load_game(self, slot=1):
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if not os.path.exists(save_path):
-            print(f"No save found in  {save_path}")
+            print(f"No save found in {save_path}")
             return False
 
         try:
             with open(save_path, 'r') as save_file:
                 save_data = json.load(save_file)
+
+            # Load level first so tile maps and other level-dependent data are loaded correctly
+            level = save_data.get("level", 0)  # Default to level 0 if not found in older saves
+            if self.game.level != level:
+                self.game.level = level
+                self.game.load_level(level)
 
             self.game.player.pos = save_data["player"]["position"]
             self.game.player_hp = save_data["player"]["hp"]
@@ -64,11 +71,11 @@ class Save:
                 enemy = Enemy(self.game, enemy_data["position"], (16, 16), enemy_data["hp"], 20)
                 self.game.enemies.append(enemy)
 
-            print(f"Game loaded since {save_path}")
+            print(f"Game loaded from {save_path}")
             return True
 
         except Exception as e:
-            print(f"Error while loading the save  {e}")
+            print(f"Error while loading the save: {e}")
             return False
 
     def list_saves(self):
@@ -89,6 +96,7 @@ class Save:
                     saves.append({
                         "slot": slot,
                         "date": save_date,
+                        "level": save_data.get("level", "Unknown"),  # Display level info in save list
                         "player_hp": save_data["player"]["hp"],
                         "enemy_count": len(save_data["enemies"]),
                         "keyboard_layout": save_data["settings"]["keyboard_layout"]
