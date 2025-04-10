@@ -342,7 +342,6 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
 
             if self.damage_flash_active:
