@@ -35,7 +35,7 @@ class Editor:
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
             'spawners': load_images('tiles/spawners'),
-            'transitions': load_images('tiles/transitions') 
+            'transitions': load_images('tiles/transitions')
         }
 
         self.movement = [False, False, False, False]
@@ -145,6 +145,7 @@ class Editor:
                             self.level += 1
                             try:
                                 self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
                             except FileNotFoundError:
                                 f = open('data/maps/' + str(self.level) + '.json', 'w')
                                 json.dump({'tilemap': {},
@@ -152,6 +153,7 @@ class Editor:
                                            'offgrid': []}, f)
                                 f.close()
                                 self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
                             else:
                                 pass
                     if event.key == pygame.K_LEFT:
@@ -160,6 +162,7 @@ class Editor:
                             self.level -= 1
                             try:
                                 self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
                             except FileNotFoundError:
                                 pass
 

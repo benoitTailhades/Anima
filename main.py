@@ -227,6 +227,7 @@ class Game:
 
         self.scroll = [0, 0]
         self.transition = -30
+        self.max_falling_depth = 500 if self.level == 0 else 5000
 
     def display_level_bg(self, map_id):
         if map_id == 0:
@@ -286,7 +287,7 @@ class Game:
             self.tilemap.render_over(self.display, offset=render_scroll)
             self.display_level_fg(0)
 
-            if (self.player.pos[1] > 500 and not (int(self.player.pos[0]) in range(736, 1152))) or self.player_hp <= 0:
+            if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_pos)
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
