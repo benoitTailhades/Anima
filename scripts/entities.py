@@ -4,6 +4,8 @@ import pygame
 import random
 import math
 
+from scripts.particle import Particle
+
 
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
@@ -81,7 +83,7 @@ class PhysicsEntity:
 
 class Enemy(PhysicsEntity):
     def __init__(self, game, pos, size, hp, attack_speed):
-        super().__init__(game, 'enemy', pos, size)
+        super().__init__(game, 'picko', pos, size)
 
         self.walking = 0
 
@@ -120,6 +122,9 @@ class Enemy(PhysicsEntity):
                 self.stunned = True
                 self.last_stun_time = time.time()
 
+        if self.is_attacking and not self.stunned:
+            self.game.deal_dmg(self, 'player', self.attack_speed)
+
         # Handle stun state first
         if self.stunned:
             self.is_chasing = False
@@ -141,6 +146,7 @@ class Enemy(PhysicsEntity):
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
+
 
         # Regular (non-stunned) behavior continues below
         if self.walking:
@@ -233,7 +239,6 @@ class Enemy(PhysicsEntity):
             animation_running = True
 
         if self.is_attacking and not animation_running and not self.stunned:
-            self.game.deal_dmg(self, 'player', self.attack_speed)
             if self.action != "attack":
                 self.set_action("attack")
             animation_running = True
@@ -246,6 +251,7 @@ class Enemy(PhysicsEntity):
                     self.set_action("run/right")
             else:
                 self.set_action("idle")
+
 
 def blur(surface, span):
     for i in range(span):

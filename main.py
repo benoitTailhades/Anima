@@ -40,12 +40,14 @@ class Game:
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
-            'enemy/idle': Animation(load_images('entities/enemy/idle'), img_dur=12),
-            'enemy/run/left': Animation(load_images('entities/enemy/run/left'), img_dur=8),
-            'enemy/run/right': Animation(load_images('entities/enemy/run/right'), img_dur=8),
-            'enemy/attack': Animation(load_images('entities/enemy/attack'), img_dur=3, loop=False),
-            'enemy/death': Animation(load_images('entities/enemy/death'), img_dur=3, loop=False),
-            'enemy/hit': Animation(load_images('entities/enemy/hit'), img_dur=5, loop=False),
+            'picko/idle': Animation(load_images('entities/enemies/picko/idle'), img_dur=12),
+            'picko/run/left': Animation(load_images('entities/enemies/picko/run/left'), img_dur=8),
+            'picko/run/right': Animation(load_images('entities/enemies/picko/run/right'), img_dur=8),
+            'picko/attack': Animation(load_images('entities/enemies/picko/attack'), img_dur=3, loop=False),
+            'picko/death': Animation(load_images('entities/enemies/picko/death'), img_dur=3, loop=False),
+            'picko/hit': Animation(load_images('entities/enemies/picko/hit'), img_dur=5, loop=False),
+            'boss/idle': Animation(load_images('entities/boss/idle'), img_dur=5, loop=False),
+
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
             'background1': load_image('bg1.png'),
@@ -185,11 +187,11 @@ class Game:
             }
 
     def update_settings_from_game(self):
-        self.volume = self.game.volume
-        self.keyboard_layout = self.game.keyboard_layout
+        self.volume = self.volume
+        self.keyboard_layout = self.keyboard_layout
 
-        if hasattr(self.game, "selected_language") and self.game.selected_language in self.languages:
-            self.selected_language = self.game.selected_language
+        if hasattr(self, "selected_language") and self.selected_language in self.languages:
+            self.selected_language = self.selected_language
 
     def attacking_update(self):
         self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
@@ -227,12 +229,12 @@ class Game:
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.enemies = []
-        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
             if spawner['variant'] == 0:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
-            else:
-                self.enemies.append(Enemy(self, spawner['pos'], (16, 16), 100, 20))
+            elif spawner['variant'] == 1:
+                self.enemies.append(Enemy(self, spawner['pos'] , (16, 16), 100, 20))
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
