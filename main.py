@@ -329,10 +329,6 @@ class Game:
                             self.dict_kb["key_attack"] = 1
                         if self.dict_kb["key_attack"] == 1:
                             self.holding_attack = True
-                    if event.key == pygame.K_9:
-                        self.load_level(1)
-                    if event.key == pygame.K_8:
-                        self.load_level(0)
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:

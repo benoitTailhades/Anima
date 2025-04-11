@@ -215,7 +215,9 @@ class Enemy(PhysicsEntity):
     def player_looking_at_entity(self):
         if (not (self.game.tilemap.between_check(self.game.player.pos, self.pos))
                 and self.game.player.pos[1] + self.game.player.size[1] == int(self.pos[1] + self.size[1])):
-            if self.game.player.last_direction == 1:
+            if self.pos[0] + self.size[0] >= self.player_x >= self.pos[0]:
+                return True
+            elif self.game.player.last_direction == 1:
                 return self.enemy_x > self.player_x
             elif self.game.player.last_direction == -1:
                 return self.enemy_x < self.player_x

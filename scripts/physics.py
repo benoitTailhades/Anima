@@ -27,7 +27,7 @@ class PhysicsPlayer:
         #Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -7.0
+        self.JUMP_VELOCITY = -5.0
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
@@ -227,7 +227,7 @@ class PhysicsPlayer:
                     self.velocity[1] = 0
                 self.acceleration[1] = 0.1
             else:
-                self.acceleration[1] = 0.6
+                self.acceleration[1] = 0.4
             self.velocity[1] = min(7, self.velocity[1] + self.acceleration[1])
         elif self.is_on_floor():
             if self.velocity[1] > 0:
