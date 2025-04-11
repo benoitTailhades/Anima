@@ -27,7 +27,7 @@ class PhysicsPlayer:
         #Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -5.0
+        self.JUMP_VELOCITY = -6
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
@@ -256,7 +256,7 @@ class PhysicsPlayer:
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
-                self.velocity[1] *= 1.3
+                self.velocity[1] *= 1.18
             else: #Jumping away from the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
 

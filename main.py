@@ -329,12 +329,13 @@ class Game:
                             self.dict_kb["key_attack"] = 1
                         if self.dict_kb["key_attack"] == 1:
                             self.holding_attack = True
+                    if event.key == pygame.K_j:
+                        self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:
                         self.dict_kb["key_attack"] = 0
                         self.holding_attack = False
-
 
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
