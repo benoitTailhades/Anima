@@ -679,6 +679,86 @@ class Menu:
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
+    def start_menu_newgame(self):
+        has_saves = len(self.game.save_system.list_saves()) > 0
+
+        if not has_saves:
+            return False
+
+        background = py.image.load("assets/images/image_bg_resume.png").convert()
+        background = py.transform.scale(background, self.screen.get_size())
+
+        running = True
+        while running:
+            self.screen.blit(background, (0, 0))
+
+            overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
+            overlay.fill((0, 0, 0, 150))
+            self.screen.blit(overlay, (0, 0))
+
+            button_width = 250
+            button_height = 60
+            button_spacing = 30
+
+            total_buttons_height = (button_height * 2) + button_spacing
+
+            start_y = (self.screen.get_height() - total_buttons_height) // 2
+            buttons = {}
+
+            resume_rect = py.Rect(
+                (self.screen.get_width() - button_width) // 2,
+                start_y,
+                button_width,
+                button_height
+            )
+            buttons["RESUME"] = resume_rect
+
+            new_game_rect = py.Rect(
+                (self.screen.get_width() - button_width) // 2,
+                start_y + button_height + button_spacing,
+                button_width,
+                button_height
+            )
+            buttons["NEW GAME"] = new_game_rect
+
+            mouse_pos = py.mouse.get_pos()
+            for text, rect in buttons.items():
+                button_text = self.button_font.render(text, True, self.COLORS["white"])
+                text_x = rect.x + (rect.width - button_text.get_width()) // 2
+                text_y = rect.y + (rect.height - button_text.get_height()) // 2
+                self.screen.blit(button_text, (text_x, text_y))
+
+                if rect.collidepoint(mouse_pos):
+                    image_x = text_x - self.hover_image.get_width() - 5
+                    image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
+                    self.screen.blit(self.hover_image, (image_x, image_y))
+
+                    image_x2 = text_x + button_text.get_width() + 5
+                    image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
+                    self.screen.blit(self.hover2_image, (image_x2, image_y2))
+
+            py.display.flip()
+
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    py.quit()
+                    sys.exit()
+                elif event.type == py.MOUSEBUTTONDOWN:
+                    for text, rect in buttons.items():
+                        if rect.collidepoint(event.pos):
+                            if text == "RESUME":
+                                latest_save = self.game.save_system.get_latest_save()
+                                if latest_save:
+                                    self.game.load_game(latest_save)
+                                return True
+                            elif text == "NEW GAME":
+                                self.game.level = 0
+                                self.game.load_level(0)
+                                self.game.player_hp = 100
+                                return True
+
+        return True
+
 def start_menu():#Display a simple welcome screen that diseappear when clicked.
     py.init()
     screen = py.display.set_mode((1000, 600), py.NOFRAME)
