@@ -6,10 +6,17 @@ import random
 
 from scripts.entities import Enemy, PhysicsEntity
 
+import pygame
+import time
+import math
+import random
+
+from scripts.entities import Enemy, PhysicsEntity
+
 
 class Boss(Enemy):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
-        super.__init__(game, boss_type, pos, size, hp, attack_info)
+        super().__init__(game, boss_type, pos, size, hp, attack_info)
         self.max_hp = hp
         self.phase = 1
         self.phases = {
@@ -20,6 +27,11 @@ class Boss(Enemy):
         self.next_phase_timer = 0
         self.transitioning_phase = False
 
+        # Jump and movement variables
+        self.is_jumping = False
+        self.current_destination = None
+        self.has_performed_initial_jump = False  # Track if we've done the initial jump
+
         # Attack patterns
         self.attack_patterns = []
         self.current_attack = None
@@ -27,6 +39,7 @@ class Boss(Enemy):
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
+        self.enemy_y = self.rect().centery
         self.is_attacked = (self.game.attacking
                             and self.distance_with_player() <= self.game.player_attack_dist
                             and self.player_looking_at_entity()
@@ -37,17 +50,19 @@ class Boss(Enemy):
             return
 
         if self.is_attacked:
-            self.is_attacking = True
-            self.is_chasing = True
             if time.time() - self.game.player_last_attack_time >= 0.3:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
                 self.last_stun_time = time.time()
+                print(self.hp)
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-            self.game.player.is_stunned = True
-            self.game.player.velocity = list(self.game.deal_knockback(self, self.game.player, 4))
+            if self.is_dealing_damage:
+                self.game.player.velocity = list(self.game.deal_knockback(self, self.game.player, 4))
+                self.game.player.is_stunned = True
+                self.game.player.stunned_by = self
+                self.game.player.last_stun_time = time.time()
 
         # Handle stun state first
         if self.stunned:
@@ -60,28 +75,67 @@ class Boss(Enemy):
 
             if stun_elapsed >= stun_duration:
                 self.stunned = False
-                self.is_attacking = True
-                self.is_chasing = True
-
             else:
                 # Add stun animation/movement here
-                movement = self.game.deal_knockback(self.game.player, self, 1.5)
+                movement = self.game.deal_knockback(self.game.player, self, 0.4)
                 PhysicsEntity.update(self, tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
 
+        # Phase 1 behavior - Jump to position once
+        if self.phase == 1 and not self.stunned:
+            if not self.has_performed_initial_jump:
+                if not self.is_jumping:
+                    self.current_destination = (32, 464)
+                    self.last_dest = self.current_destination
+                    print("Starting initial jump to:", self.current_destination)
+
+                if self.current_destination is not None:
+                    reached = self.move_to(self.current_destination, jump_height=100)
+
+                    if reached:
+                        print('Reached initial position')
+                        self.current_destination = None
+                        self.has_performed_initial_jump = True
+                        # Next action after reaching position
+                        # For example, start attacking the player
+            else:
+                # Behavior after first jump is complete (attack patterns, etc.)
+                # For example:
+                if not self.is_jumping and time.time() - self.last_attack_time > 3.0:
+                    # Maybe jump to a new position
+                    possible_positions = [(32, 464), (144, 544), (304, 480)]
+                    r = random.choice(possible_positions)
+                    while r == self.last_dest:
+                        r = random.choice(possible_positions)
+                    self.current_destination = r
+                    self.last_dest = self.current_destination
+                    print("Starting new jump to:", self.current_destination)
+                    self.last_attack_time = time.time()
+
+                if self.current_destination is not None:
+                    reached = self.move_to(self.current_destination, jump_height=100)
+
+                    if reached:
+                        print('Reached new position')
+                        self.current_destination = None
+                        # Maybe start an attack sequence
+
+        self.update_phase()
+
         if self.distance_with_player() > self.attack_distance and self.is_attacking:
             self.is_attacking = False
 
-        PhysicsEntity.update(self, tilemap, movement=movement)
-        self.animations(movement)
+        # Only update animations if not jumping (handled in move_to)
+        if not self.is_jumping:
+            self.animations(movement)
 
     def update_phase(self):
         hp_percentage = self.hp / self.max_hp
-        for phase_nb, phase_data in self.phases.keys(), self.phases.values():
+        for phase_nb, phase_data in self.phases.items():  # Fixed the iteration syntax
             if hp_percentage <= phase_data['threshold']:
-                if self.phase > phase_nb:
+                if self.phase < phase_nb:  # Changed condition to trigger when phases are different
                     self.transition_to_phase(phase_nb)
 
     def transition_to_phase(self, new_phase):
@@ -92,8 +146,91 @@ class Boss(Enemy):
             self.transitioning_phase = True
             self.next_phase_timer = time.time()
             # Play transition animation
-            self.set_action('phase_transition')
+            #self.set_action('phase_transition')
             # Could trigger special effects, sounds, etc.
 
-    def move_to(self):
-        pass
+    def move_to(self, target_pos, speed=None, jump_height=80):
+        # Initialize movement tracking variables if first call
+        if not self.is_jumping:
+            self.is_jumping = True
+            self.move_progress = 0.0
+            self.move_start_pos = (self.pos[0], self.pos[1])
+            print("Starting jump from", self.move_start_pos, "to", target_pos)
+
+        if speed is None:
+            speed = 0.8 * self.current_phase_data['speed']
+
+        # Increment progress based on speed
+        self.move_progress += 0.02 * speed
+
+        # Cap progress at 1.0 (100%)
+        if self.move_progress >= 1.0:
+            # Set exact position and reset progress
+            self.pos[0] = target_pos[0] - self.size[0] / 2
+            self.pos[1] = target_pos[1]
+            self.velocity = [0, 0]  # Reset velocity
+            self.is_jumping = False  # End the jumping state
+            self.move_progress = 0.0
+            self.set_action("idle")  # Return to idle animation
+            print("Jump completed")
+            return True  # Destination reached
+
+        # Calculate horizontal movement (linear)
+        target_x = target_pos[0] - self.size[0] / 2
+        distance_x = target_x - self.move_start_pos[0]
+        new_x = self.move_start_pos[0] + (distance_x * self.move_progress)
+
+        # Calculate vertical movement (parabolic)
+        target_y = target_pos[1]
+        distance_y = target_y - self.move_start_pos[1]
+
+        # Parabolic arc: y = ax² + bx + c
+        # At x=0: y=start_y, at x=1: y=target_y, at x=0.5: y=start_y-jump_height
+
+        # Calculate parabola coefficients
+        a = 2 * (self.move_start_pos[1] + target_y - 2 * (self.move_start_pos[1] - jump_height))
+        b = -3 * self.move_start_pos[1] - target_y + 4 * (self.move_start_pos[1] - jump_height)
+        c = self.move_start_pos[1]
+
+        # Calculate y position on parabola
+        t = self.move_progress
+        new_y = a * (t * t) + b * t + c
+
+        # Calculate movement from current position to new position
+        movement_x = new_x - self.pos[0]
+        movement_y = new_y - self.pos[1]
+
+        # Set position directly to follow the parabolic path
+        self.pos[0] = new_x
+        self.pos[1] = new_y
+
+        # Update flip based on horizontal movement direction
+        if movement_x < 0:
+            self.flip = True
+        elif movement_x > 0:
+            self.flip = False
+
+        # Create a movement tuple for animation updates
+        movement = (movement_x, movement_y)
+
+        # Set appropriate animation based on jump phase
+        if self.move_progress < 0.5:
+            # Rising part of jump
+            try:
+                self.set_action("jump_up")
+            except KeyError:
+                # If jump_up animation doesn't exist
+                pass
+        else:
+            # Falling part of jump
+            try:
+                self.set_action("jump_down")
+            except KeyError:
+                # If jump_down animation doesn't exist
+                pass
+
+        return False  # Still moving
+
+    def render(self, surf, offset=(0, 0)):
+        r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
+        pygame.draw.rect(surf, (255, 230, 255), r)

@@ -10,6 +10,7 @@ from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
+from scripts.boss import Boss
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 
@@ -249,7 +250,10 @@ class Game:
         self.bosses = []
         for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
             if spawner['variant'] == 2:
-                pass
+                self.bosses.append(Boss(self, "picko", spawner['pos'], (16, 16), 200,
+                                          {"attack_distance": 20,
+                                           "attack_dmg": 5,
+                                           "attack_time": 2}))
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
@@ -310,11 +314,6 @@ class Game:
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
-                # Check if player is attacking the boss
-                if self.attacking and not self.player_attacked:
-                    if self.player.rect().colliderect(boss.rect()):
-                        boss.take_damage(self.player_dmg)
-                        self.player_attacked = True
                 # Remove dead bosses
                 if boss.hp <= 0 and boss.animation.done:
                     self.bosses.remove(boss)
