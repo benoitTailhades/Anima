@@ -315,7 +315,7 @@ class Game:
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
                 # Remove dead bosses
-                if boss.hp <= 0 and boss.animation.done:
+                if boss.hp <= 0:
                     self.bosses.remove(boss)
 
             self.attacking_update()
