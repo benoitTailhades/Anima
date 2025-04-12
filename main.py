@@ -46,13 +46,14 @@ class Game:
             'picko/attack': Animation(load_images('entities/enemies/picko/attack'), img_dur=3, loop=False),
             'picko/death': Animation(load_images('entities/enemies/picko/death'), img_dur=3, loop=False),
             'picko/hit': Animation(load_images('entities/enemies/picko/hit'), img_dur=5, loop=False),
-            'boss/idle': Animation(load_images('entities/boss/idle'), img_dur=5, loop=False),
+            'melee_boss/idle': Animation(load_images('entities/melee_boss/idle'), img_dur=5, loop=False),
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
             'background1': load_image('bg1.png'),
             'background2': load_image('bg2.png'),
             'fog': load_image('fog.png'),
+
             'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
             'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
             'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
@@ -109,6 +110,7 @@ class Game:
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
         self.player_dmg = 50
+        self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
         self.holding_attack = False
@@ -136,15 +138,15 @@ class Game:
         if self.background_music:
             self.background_music.set_volume(self.volume)
 
-    def deal_dmg(self, entity, target, att_speed):
+    def deal_dmg(self, entity, target, att_dmg=5, att_time=1):
         current_time = time.time()
-        if target == "player" and current_time - entity.last_attack_time >= 1:
+        if target == "player" and current_time - entity.last_attack_time >= att_time:
             entity.last_attack_time = time.time()
-            self.player_hp -= att_speed
+            self.player_hp -= att_dmg
             self.damage_flash_active = True
             self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
 
-        elif target != "player" and current_time - self.player_last_attack_time >= 0.3:
+        elif target != "player" and current_time - self.player_last_attack_time >= self.player_attack_time:
             self.player_last_attack_time = time.time()
             target.hp -= self.player_dmg
 
@@ -229,12 +231,20 @@ class Game:
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.enemies = []
-        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
             if spawner['variant'] == 0:
                 self.spawn_pos = spawner['pos']
                 self.player.pos = spawner['pos'].copy()
             elif spawner['variant'] == 1:
-                self.enemies.append(Enemy(self, spawner['pos'] , (16, 16), 100, 20))
+                self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
+                                          {"attack_distance" : 20,
+                                           "attack_dmg": 5,
+                                           "attack_time": 1}))
+
+        self.bosses = []
+        for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
+            if spawner['variant'] == 2:
+                pass
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
@@ -291,6 +301,18 @@ class Game:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
+
+            for boss in self.bosses.copy():
+                boss.update(self.tilemap, (0, 0))
+                boss.render(self.display, offset=render_scroll)
+                # Check if player is attacking the boss
+                if self.attacking and not self.player_attacked:
+                    if self.player.rect().colliderect(boss.rect()):
+                        boss.take_damage(self.player_dmg)
+                        self.player_attacked = True
+                # Remove dead bosses
+                if boss.hp <= 0 and boss.animation.done:
+                    self.bosses.remove(boss)
 
             self.attacking_update()
 

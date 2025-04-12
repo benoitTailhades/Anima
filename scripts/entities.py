@@ -4,9 +4,6 @@ import pygame
 import random
 import math
 
-from scripts.particle import Particle
-
-
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
         self.game = game
@@ -19,7 +16,10 @@ class PhysicsEntity:
         self.action = ''
         self.anim_offset = (0, 0)
         self.flip = False
-        self.set_action('idle')
+        try:
+            self.set_action('idle')
+        except AttributeError:
+            pass
 
         self.last_movement = [0, 0]
 
@@ -82,24 +82,27 @@ class PhysicsEntity:
                   (self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
 
 class Enemy(PhysicsEntity):
-    def __init__(self, game, pos, size, hp, attack_speed):
-        super().__init__(game, 'picko', pos, size)
+    def __init__(self, game, enemy_type, pos, size, hp, attack_info):
+        super().__init__(game, 'enemy', pos, size)
 
         self.walking = 0
+        self.enemy_type = enemy_type
 
-        self.attack_distance = 15
+        self.attack_distance = attack_info["attack_distance"]
         self.vision_distance = 100
         self.is_attacking = False
         self.is_chasing = False
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
         self.last_attack_time = 0
-        self.attack_speed = attack_speed
+        self.attack_dmg = attack_info["attack_dmg"]
+        self.attack_time = attack_info["attack_time"]
         self.hp = hp
         self.hit = False
         self.stunned = False
         self.last_stun_time = 0
         self.is_attacked = False
+        self.animation = self.game.assets[self.enemy_type + '/idle'].copy()
 
     def update(self, tilemap, movement=(0, 0)):
         self.player_x = self.game.player.rect().centerx
@@ -113,17 +116,16 @@ class Enemy(PhysicsEntity):
             self.animation.update()
             return
 
-
         if self.is_attacked:
             self.is_attacking = True
             self.is_chasing = True
             if time.time() - self.game.player_last_attack_time >= 0.3:
-                self.game.deal_dmg('player', self, self.game.player_dmg)
+                self.game.deal_dmg('player', self)
                 self.stunned = True
                 self.last_stun_time = time.time()
 
         if self.is_attacking and not self.stunned:
-            self.game.deal_dmg(self, 'player', self.attack_speed)
+            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
         # Handle stun state first
         if self.stunned:
@@ -146,7 +148,6 @@ class Enemy(PhysicsEntity):
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
-
 
         # Regular (non-stunned) behavior continues below
         if self.walking:
@@ -199,6 +200,11 @@ class Enemy(PhysicsEntity):
 
         super().update(tilemap, movement=movement)
         self.animations(movement)
+
+    def set_action(self, action):
+        if action != self.action:
+            self.action = action
+            self.animation = self.game.assets[self.enemy_type + '/' + self.action].copy()
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))

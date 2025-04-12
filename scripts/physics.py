@@ -38,6 +38,7 @@ class PhysicsPlayer:
         self.dash_cooldown = 0
         self.dash_amt = 1
         self.tech_momentum_mult = 0
+        self.last_stun_time = 0
 
         #Direction vars
         self.last_direction = 1
