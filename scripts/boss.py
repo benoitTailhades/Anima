@@ -83,45 +83,6 @@ class Boss(Enemy):
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
 
-        # Phase 1 behavior - Jump to position once
-        if self.phase == 1 and not self.stunned:
-            if not self.has_performed_initial_jump:
-                if not self.is_jumping:
-                    self.current_destination = (32, 464)
-                    self.last_dest = self.current_destination
-                    print("Starting initial jump to:", self.current_destination)
-
-                if self.current_destination is not None:
-                    reached = self.move_to(self.current_destination, jump_height=100)
-
-                    if reached:
-                        print('Reached initial position')
-                        self.current_destination = None
-                        self.has_performed_initial_jump = True
-                        # Next action after reaching position
-                        # For example, start attacking the player
-            else:
-                # Behavior after first jump is complete (attack patterns, etc.)
-                # For example:
-                if not self.is_jumping and time.time() - self.last_attack_time > 3.0:
-                    # Maybe jump to a new position
-                    possible_positions = [(32, 464), (144, 544), (304, 480)]
-                    r = random.choice(possible_positions)
-                    while r == self.last_dest:
-                        r = random.choice(possible_positions)
-                    self.current_destination = r
-                    self.last_dest = self.current_destination
-                    print("Starting new jump to:", self.current_destination)
-                    self.last_attack_time = time.time()
-
-                if self.current_destination is not None:
-                    reached = self.move_to(self.current_destination, jump_height=100)
-
-                    if reached:
-                        print('Reached new position')
-                        self.current_destination = None
-                        # Maybe start an attack sequence
-
         self.update_phase()
 
         if self.distance_with_player() > self.attack_distance and self.is_attacking:
@@ -167,7 +128,7 @@ class Boss(Enemy):
         if self.move_progress >= 1.0:
             # Set exact position and reset progress
             self.pos[0] = target_pos[0] - self.size[0] / 2
-            self.pos[1] = target_pos[1]
+            self.pos[1] = target_pos[1] - self.size[1] / 2
             self.velocity = [0, 0]  # Reset velocity
             self.is_jumping = False  # End the jumping state
             self.move_progress = 0.0
@@ -181,7 +142,7 @@ class Boss(Enemy):
         new_x = self.move_start_pos[0] + (distance_x * self.move_progress)
 
         # Calculate vertical movement (parabolic)
-        target_y = target_pos[1]
+        target_y = target_pos[1] - self.size[1] / 2
         distance_y = target_y - self.move_start_pos[1]
 
         # Parabolic arc: y = ax² + bx + c
@@ -231,6 +192,131 @@ class Boss(Enemy):
 
         return False  # Still moving
 
-    def render(self, surf, offset=(0, 0)):
-        r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
-        pygame.draw.rect(surf, (255, 230, 255), r)
+class FirstBoss(Boss):
+    def __init__(self, game, boss_type, pos, size, hp, attack_info):
+        super().__init__(game, boss_type, pos, size, hp, attack_info)
+
+    def update(self, tilemap, movement=(0, 0)):
+        super().update(tilemap, movement)
+
+        # Phase 1 behavior - Jump to position once
+        if self.phase == 1:
+            if not self.stunned:
+                if not self.has_performed_initial_jump:
+                    if not self.is_jumping:
+                        self.current_destination = (32, 464)
+                        self.last_dest = self.current_destination
+                        print("Starting initial jump to:", self.current_destination)
+
+                    if self.current_destination is not None:
+                        reached = self.move_to(self.current_destination, jump_height=100)
+
+                        if reached:
+                            print('Reached initial position')
+                            self.current_destination = None
+                            self.has_performed_initial_jump = True
+                            # Next action after reaching position
+                            # For example, start attacking the player
+                else:
+                    # Behavior after first jump is complete (attack patterns, etc.)
+                    # For example:
+                    if not self.is_jumping and time.time() - self.last_attack_time > 3.0:
+                        # Maybe jump to a new position
+                        possible_positions = [(32, 464), (144, 544), (304, 480)]
+                        r = random.choice(possible_positions)
+                        while r == self.last_dest:
+                            r = random.choice(possible_positions)
+                        self.current_destination = r
+                        self.last_dest = self.current_destination
+                        print("Starting new jump to:", self.current_destination)
+                        self.last_attack_time = time.time()
+
+                    if self.current_destination is not None:
+                        reached = self.move_to(self.current_destination, jump_height=100)
+
+                        if reached:
+                            print('Reached new position')
+                            self.current_destination = None
+                            # Maybe start an attack sequence=]]=
+
+    def update_animation(self, movement):
+        animation_running = False
+
+        if self.stunned:
+            self.set_action("hit")
+            animation_running = True
+
+        if self.is_attacking and not animation_running and not self.stunned:
+            if self.action != "attack":
+                self.set_action("attack")
+            animation_running = True
+
+        if not self.is_attacking and not animation_running:
+            if movement[0] != 0:
+                if self.flip:
+                    self.set_action("run/left")
+                else:
+                    self.set_action("run/right")
+            else:
+                self.set_action("idle")
+
+class Vine:
+    def __init__(self, size, pos, attack_time, attack_dmg, game):
+        self.game = game
+        self.size = size
+        self.pos = pos
+        self.attack_time = attack_time
+        self.attack_dmg = attack_dmg
+        self.warning_duration = 10
+
+        # Animation and state handling
+        self.animation = self.game.assets['vine/warning'].copy()
+        self.action = 'warning'
+
+        # Timers for state management
+        self.timer = 0
+        self.state = 'warning'  # States: 'warning', 'attack', 'retreat', 'done'
+
+    def update(self):
+        # Update animation
+        self.animation.update()
+
+        # State machine logic
+        self.timer += 1
+
+        if self.state == 'warning':
+            if self.timer >= self.warning_duration:
+                self.set_action('attack')
+                self.state = 'attack'
+                self.timer = 0
+
+        elif self.state == 'attack':
+            if self.timer == 1:  # Just entered attack state
+                # attacking
+                self.deal_damage()
+
+            if self.timer >= self.attack_time:
+                self.set_action('retreat')
+                self.state = 'retreat'
+                self.timer = 0
+
+        elif self.state == 'retreat':
+            # Assuming retreat animation has a fixed duration
+            retreat_duration = 10  # Adjust as needed
+            if self.timer >= retreat_duration:
+                self.state = 'done'
+                self.timer = 0
+
+        # Could add code here to remove the vine when 'done'
+
+    def set_action(self, action):
+        if action != self.action:
+            self.action = action
+            self.animation = self.game.assets['vine/' + self.action].copy()
+
+    def render(self, surf, offset):
+        surf.blit(self.animation.img(), (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+
+    def is_finished(self):
+        # Helper method to check if the vine has completed its sequence
+        return self.state == 'done'

@@ -14,7 +14,6 @@ class PhysicsEntity:
         self.collisions = {'up': False, 'down': False, 'right': False, 'left': False}
 
         self.action = ''
-        self.anim_offset = (0, 0)
         self.flip = False
         try:
             self.set_action('idle')
@@ -79,7 +78,7 @@ class PhysicsEntity:
 
     def render(self, surf, offset=(0, 0)):
         surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False),
-                  (self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
+                  (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
 class Enemy(PhysicsEntity):
     def __init__(self, game, enemy_type, pos, size, hp, attack_info):
@@ -237,7 +236,7 @@ class Enemy(PhysicsEntity):
                 return self.enemy_x < self.player_x
 
     def render(self, surf, offset=(0, 0)):
-        surf.blit(self.animation.img(),(self.pos[0] - offset[0] + self.anim_offset[0], self.pos[1] - offset[1] + self.anim_offset[1]))
+        surf.blit(self.animation.img(),(self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
     def animations(self, movement):
 

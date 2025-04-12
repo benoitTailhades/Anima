@@ -10,7 +10,7 @@ from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
-from scripts.boss import Boss
+from scripts.boss import FirstBoss
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 
@@ -47,7 +47,13 @@ class Game:
             'picko/attack': Animation(load_images('entities/enemies/picko/attack'), img_dur=3, loop=False),
             'picko/death': Animation(load_images('entities/enemies/picko/death'), img_dur=3, loop=False),
             'picko/hit': Animation(load_images('entities/enemies/picko/hit'), img_dur=5, loop=False),
-            'melee_boss/idle': Animation(load_images('entities/melee_boss/idle'), img_dur=5, loop=False),
+
+            'boss/idle': Animation(load_images('entities/enemies/picko/idle', 32), img_dur=12),
+            'boss/run/left': Animation(load_images('entities/enemies/picko/run/left', 32), img_dur=8),
+            'boss/run/right': Animation(load_images('entities/enemies/picko/run/right', 32), img_dur=8),
+            'boss/attack': Animation(load_images('entities/enemies/picko/attack', 32), img_dur=3, loop=False),
+            'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
+            'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
@@ -107,6 +113,7 @@ class Game:
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
+        self.in_bossfight = False
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
@@ -135,7 +142,6 @@ class Game:
         else:
             self.menu = Menu(self)
             self.menu.start_menu_newgame()
-
 
 
     def set_volume(self, volume):
@@ -250,7 +256,7 @@ class Game:
         self.bosses = []
         for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
             if spawner['variant'] == 2:
-                self.bosses.append(Boss(self, "picko", spawner['pos'], (16, 16), 200,
+                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 200,
                                           {"attack_distance": 20,
                                            "attack_dmg": 5,
                                            "attack_time": 2}))
@@ -316,7 +322,9 @@ class Game:
                 boss.render(self.display, offset=render_scroll)
                 # Remove dead bosses
                 if boss.hp <= 0:
-                    self.bosses.remove(boss)
+                    boss.set_action("death")
+                    if boss.animation.done:
+                        self.bosses.remove(boss)
 
             self.attacking_update()
 
