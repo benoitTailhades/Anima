@@ -4,16 +4,16 @@ import time
 
 
 class Save:
-    def __init__(self, game):#Initialize the class and ensure that save.py exist
+    def __init__(self, game):  # Initialize the class and ensure that save.py exist
         self.game = game
         self.save_folder = "saves"
         self.ensure_save_folder_exists()
 
-    def ensure_save_folder_exists(self):#just create a litle save if it does not already exist(pretty common)
+    def ensure_save_folder_exists(self):  # just create a litle save if it does not already exist(pretty common)
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
-    def save_game(self, slot=1):#Using a json file(like in the Fort boyard) to save the player data and a bunch od data (settings...)
+    def save_game(self,slot=1):  # Using a json file(like in the Fort boyard) to save the player data and a bunch od data (settings...)
         save_data = {
             "player": {
                 "position": self.game.player.pos,
@@ -30,9 +30,25 @@ class Save:
         }
 
         for enemy in self.game.enemies:
+            # Extraction des attributs avec vérification des attributs existants
+            attributes = {}
+            if hasattr(enemy, "attack_distance"):
+                attributes["attack_distance"] = enemy.attack_distance
+            if hasattr(enemy, "attack_dmg"):
+                attributes["attack_dmg"] = enemy.attack_dmg
+            if hasattr(enemy, "attack_time"):
+                attributes["attack_time"] = enemy.attack_time
+
+            # Si les attributs sont stockés dans un dictionnaire
+            if hasattr(enemy, "attributes"):
+                attributes = enemy.attributes
+
             enemy_data = {
                 "position": enemy.pos,
-                "hp": enemy.hp
+                "hp": enemy.hp,
+                "type": enemy.type if hasattr(enemy, "type") else "picko",
+                "size": enemy.size if hasattr(enemy, "size") else (16, 16),
+                "attributes": attributes
             }
             save_data["enemies"].append(enemy_data)
 
@@ -43,48 +59,116 @@ class Save:
         print(f"Game saved successfully in {save_path}")
         return True
 
-    def load_game(self, slot=1):#use the basics of json to open the file, read it, warn if there is no save and use the game class to restaure the data
+    def load_game(self, slot=1):
+        """
+        Charge une sauvegarde à partir du slot spécifié.
+        Restaure l'état du jeu, y compris la position du joueur, son HP,
+        le niveau, les ennemis et les paramètres.
+        """
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
+        # Vérification de l'existence du fichier de sauvegarde
         if not os.path.exists(save_path):
             print(f"No save found in {save_path}")
             return False
 
         try:
+            # Chargement des données de sauvegarde
             with open(save_path, 'r') as save_file:
                 save_data = json.load(save_file)
 
+            # 1. Chargement du niveau
             level = save_data.get("level", 0)
-            if self.game.level != level:
-                self.game.level = level
-                self.game.load_level(level)
+            self.game.level = level
+            self.game.load_level(level)
 
-            self.game.player.pos = save_data["player"]["position"]
-            self.game.player_hp = save_data["player"]["hp"]
+            # 2. Restauration des données du joueur
+            if "player" in save_data:
+                if "position" in save_data["player"]:
+                    self.game.player.pos = save_data["player"]["position"]
+                if "hp" in save_data["player"]:
+                    self.game.player_hp = save_data["player"]["hp"]
 
-            self.game.set_volume(save_data["settings"]["volume"])
-            self.game.keyboard_layout = save_data["settings"]["keyboard_layout"]
-            self.game.set_volume(save_data["settings"]["volume"])
-            self.game.keyboard_layout = save_data["settings"]["keyboard_layout"]
-            self.game.selected_language = save_data["settings"].get("language", "English")
+            # 3. Restauration des paramètres
+            if "settings" in save_data:
+                # Volume
+                volume = save_data["settings"].get("volume", 0.5)
+                self.game.set_volume(volume)
 
-            if hasattr(self.game, "menu"):
-                self.game.menu.update_settings_from_game()
+                # Disposition clavier
+                self.game.keyboard_layout = save_data["settings"].get("keyboard_layout", "qwerty")
 
-            self.game.enemies.clear()
-            for enemy_data in save_data["enemies"]:
-                from scripts.entities import Enemy
-                enemy = Enemy(self.game, enemy_data["position"], (16, 16), enemy_data["hp"], 20)
-                self.game.enemies.append(enemy)
+                # Langue
+                self.game.selected_language = save_data["settings"].get("language", "English")
 
-            print(f"Game loaded from {save_path}")
+                # Mise à jour du menu si nécessaire
+                if hasattr(self.game, "menu") and hasattr(self.game.menu, "update_settings_from_game"):
+                    self.game.menu.update_settings_from_game()
+
+            # 4. Traitement des ennemis
+            if "enemies" in save_data and isinstance(save_data["enemies"], list):
+                # Seulement effacer les ennemis existants si nous avons des ennemis à charger
+                if save_data["enemies"]:
+                    # Sauvegarde temporaire des ennemis actuels au cas où le chargement échoue
+                    backup_enemies = self.game.enemies.copy()
+                    self.game.enemies.clear()
+
+                    try:
+                        from scripts.entities import Enemy
+
+                        # Recréation des ennemis depuis la sauvegarde
+                        # Dans la boucle de création des ennemis
+                        for enemy_data in save_data["enemies"]:
+                            try:
+                                # Vérification que le type d'ennemi est valide
+                                enemy_type = enemy_data.get("type", "picko")
+
+                                # Vérifier si le type d'ennemi existe dans les assets
+                                if f"{enemy_type}/idle" not in self.game.assets:
+                                    print(
+                                        f"Warning: Enemy type '{enemy_type}' not found in assets, using 'picko' instead")
+                                    enemy_type = "picko"  # Utiliser un type par défaut qui existe dans les assets
+
+                                default_attributes = {
+                                    "attack_distance": 20,
+                                    "attack_dmg": 5,
+                                    "attack_time": 1
+                                }
+
+                                attributes = default_attributes.copy()
+                                if "attributes" in enemy_data and isinstance(enemy_data["attributes"], dict):
+                                    attributes.update(enemy_data["attributes"])
+
+                                enemy = Enemy(
+                                    self.game,
+                                    enemy_type,  # Utiliser le type validé
+                                    enemy_data["position"],
+                                    enemy_data.get("size", (16, 16)),
+                                    enemy_data.get("hp", 100),
+                                    attributes
+                                )
+
+                                self.game.enemies.append(enemy)
+
+                            except Exception as e:
+                                print(f"Error creating enemy: {e}")
+
+                    except Exception as e:
+                        # En cas d'erreur, restauration des ennemis d'origine
+                        print(f"Error recreating enemies: {e}")
+                        self.game.enemies = backup_enemies
+                        import traceback
+                        traceback.print_exc()
+
+            print(f"Game loaded successfully from {save_path}")
             return True
 
         except Exception as e:
             print(f"Error while loading the save: {e}")
+            import traceback
+            traceback.print_exc()
             return False
-
-    def list_saves(self):#keep a list of the saves and what they have into them(what is stored)
+    def list_saves(self):  # keep a list of the saves and what they have into them(what is stored)
         saves = []
 
         for file in os.listdir(self.save_folder):
@@ -103,16 +187,16 @@ class Save:
                         "slot": slot,
                         "date": save_date,
                         "level": save_data.get("level", "Unknown"),  # Display level info in save list
-                        "player_hp": save_data["player"]["hp"],
-                        "enemy_count": len(save_data["enemies"]),
-                        "keyboard_layout": save_data["settings"]["keyboard_layout"]
+                        "player_hp": save_data["player"].get("hp", 0),
+                        "enemy_count": len(save_data.get("enemies", [])),
+                        "keyboard_layout": save_data.get("settings", {}).get("keyboard_layout", "unknown")
                     })
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Error reading save file {file}: {e}")
 
         return saves
 
-    def delete_save(self, slot=1):#Pretty self-explanatory
+    def delete_save(self, slot=1):  # Pretty self-explanatory
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
 
         if os.path.exists(save_path):
@@ -123,7 +207,7 @@ class Save:
             print(f"No save found in the slot {slot}")
             return False
 
-    def get_latest_save(self):#check, among the list of saves which one is the latest. It will be used in the main in order to load the game where the user let it when he closed it
+    def get_latest_save(self):  # check, among the list of saves which one is the latest. It will be used in the main in order to load the game where the user let it when he closed it
         saves = self.list_saves()
         if not saves:
             return None
