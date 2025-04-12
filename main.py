@@ -148,6 +148,7 @@ class Game:
             entity.last_attack_time = time.time()
             self.player_hp -= att_dmg
             self.damage_flash_active = True
+            entity.is_dealing_damage = True
             self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
 
         elif target != "player" and current_time - self.player_last_attack_time >= self.player_attack_time:
@@ -201,7 +202,7 @@ class Game:
 
     def attacking_update(self):
         self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
-                          or self.player.action in ("attack/left", "attack/right"))
+                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned
         if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
             self.attacking = False
             self.dict_kb["key_attack"] = 0
@@ -243,7 +244,7 @@ class Game:
                 self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
                                           {"attack_distance" : 20,
                                            "attack_dmg": 5,
-                                           "attack_time": 1}))
+                                           "attack_time": 2}))
 
         self.bosses = []
         for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses

@@ -97,6 +97,7 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_dmg = attack_info["attack_dmg"]
         self.attack_time = attack_info["attack_time"]
+        self.is_dealing_damage = False
         self.hp = hp
         self.hit = False
         self.stunned = False
@@ -126,6 +127,12 @@ class Enemy(PhysicsEntity):
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+            if self.is_dealing_damage:
+                self.game.player.velocity = list(self.game.deal_knockback(self, self.game.player, 4))
+                self.game.player.is_stunned = True
+                self.game.player.stunned_by = self
+                self.game.player.last_stun_time = time.time()
+            self.is_dealing_damage = False
 
         # Handle stun state first
         if self.stunned:

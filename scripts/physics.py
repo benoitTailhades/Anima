@@ -38,7 +38,6 @@ class PhysicsPlayer:
         self.dash_cooldown = 0
         self.dash_amt = 1
         self.tech_momentum_mult = 0
-        self.last_stun_time = 0
 
         #Direction vars
         self.last_direction = 1
@@ -56,6 +55,10 @@ class PhysicsPlayer:
         self.noclip = False
         self.noclip_buffer = False
 
+        self.is_stunned = False
+        self.last_stun_time = 0
+        self.stunned_by = None
+
 
         self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
@@ -70,11 +73,30 @@ class PhysicsPlayer:
         self.get_block_on = {'left': False, 'right': False}
         self.air_time = 0
 
+
     def physics_process(self, tilemap, dict_kb):
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
 
+        if self.is_stunned:
+            # Calculate time since stun started
+            stun_elapsed = time.time() - self.last_stun_time
+            stun_duration = 0.2
+
+            if stun_elapsed < stun_duration:
+                if self.stunned_by:
+                    self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+
+                # When stunned, only apply knockback and gravity
+                self.gravity()
+                self.apply_momentum()
+                self.apply_animations()
+                self.animation.update()
+                return  # Skip the rest of the normal update logic
+            else:
+                self.stunned_by = None
+                self.is_stunned = False
 
         if not self.noclip:
             if self.dict_kb["key_noclip"] == 1 and self.allowNoClip:
@@ -236,7 +258,7 @@ class PhysicsPlayer:
             if self.dashtime_cur < 5 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
-            if self.get_direction("x") == 0:
+            if self.get_direction("x") == 0 and not self.is_stunned:
                 self.velocity[0] = 0
 
     def jump(self):
@@ -390,7 +412,6 @@ class PhysicsPlayer:
             self.collision["right"] = False
         if self.velocity[1] > 0:
             self.collision["bottom"] = False
-
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
 
@@ -406,11 +427,14 @@ class PhysicsPlayer:
             "blocks_around"]):
             self.can_walljump["available"] = False
 
-        if self.is_on_floor():
-            self.air_time = 0
-            self.velocity[0] *= 0.2
-        elif self.get_direction("x") == 0:
-            self.velocity[0] *= 0.8
+        if not self.is_stunned:
+            if self.is_on_floor():
+                self.air_time = 0
+                self.velocity[0] *= 0.2
+            elif self.get_direction("x") == 0:
+                self.velocity[0] *= 0.8
+        else:
+            self.velocity[0] *= 0.95
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')

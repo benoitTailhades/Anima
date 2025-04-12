@@ -4,7 +4,7 @@ import time
 import math
 import random
 
-from scripts.entities import Enemy
+from scripts.entities import Enemy, PhysicsEntity
 
 
 class Boss(Enemy):
@@ -46,6 +46,8 @@ class Boss(Enemy):
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+            self.game.player.is_stunned = True
+            self.game.player.velocity = list(self.game.deal_knockback(self, self.game.player, 4))
 
         # Handle stun state first
         if self.stunned:
@@ -64,10 +66,16 @@ class Boss(Enemy):
             else:
                 # Add stun animation/movement here
                 movement = self.game.deal_knockback(self.game.player, self, 1.5)
-                super().update(tilemap, movement=movement)
+                PhysicsEntity.update(self, tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
+
+        if self.distance_with_player() > self.attack_distance and self.is_attacking:
+            self.is_attacking = False
+
+        PhysicsEntity.update(self, tilemap, movement=movement)
+        self.animations(movement)
 
     def update_phase(self):
         hp_percentage = self.hp / self.max_hp
@@ -86,3 +94,6 @@ class Boss(Enemy):
             # Play transition animation
             self.set_action('phase_transition')
             # Could trigger special effects, sounds, etc.
+
+    def move_to(self):
+        pass
