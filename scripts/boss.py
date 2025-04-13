@@ -195,9 +195,16 @@ class Boss(Enemy):
 class FirstBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
+        self.vine_attack_cycle_time = 2
+        self.last_vine_attack = time.time()
+        self.vines = []
+        self.available_vines_positions = [(x*16, 576) for x in range(-2, 29)]
+
 
     def update(self, tilemap, movement=(0, 0)):
         super().update(tilemap, movement)
+
+        print(self.vines)
 
         # Phase 1 behavior - Jump to position once
         if self.phase == 1:
@@ -238,6 +245,23 @@ class FirstBoss(Boss):
                             print('Reached new position')
                             self.current_destination = None
                             # Maybe start an attack sequence=]]=
+            if time.time() - self.last_vine_attack >= self.vine_attack_cycle_time and len(self.vines) == 0:
+                for i in range(13):
+                    selected_pos = random.choice(self.available_vines_positions)
+                    self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.game))
+                    self.available_vines_positions.remove(selected_pos)
+                self.available_vines_positions = [(x * 16, 576) for x in range(-2, 29)]
+
+            for vine in self.vines:
+                vine.update()
+                vine.render(self.game.display, (int(self.game.scroll[0]), int(self.game.scroll[1])))
+                if vine.action == 'retreat' and vine.animation.done:
+                    if len(self.vines) == 1:
+                        self.last_vine_attack = time.time()
+                    self.vines.remove(vine)
+
+
+
 
     def update_animation(self, movement):
         animation_running = False
@@ -266,8 +290,9 @@ class Vine:
         self.size = size
         self.pos = pos
         self.attack_time = attack_time
+        self.last_attack_time = 0
         self.attack_dmg = attack_dmg
-        self.warning_duration = 10
+        self.warning_duration = 100
 
         # Animation and state handling
         self.animation = self.game.assets['vine/warning'].copy()
@@ -291,11 +316,12 @@ class Vine:
                 self.timer = 0
 
         elif self.state == 'attack':
-            if self.timer == 1:  # Just entered attack state
-                # attacking
-                self.deal_damage()
+            # attacking
+            if self.animation.done:
+                if self.rect().colliderect(self.game.player.rect()):
+                    self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
-            if self.timer >= self.attack_time:
+            if self.timer >= self.attack_time and self.animation.done:
                 self.set_action('retreat')
                 self.state = 'retreat'
                 self.timer = 0
@@ -313,6 +339,9 @@ class Vine:
         if action != self.action:
             self.action = action
             self.animation = self.game.assets['vine/' + self.action].copy()
+
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
     def render(self, surf, offset):
         surf.blit(self.animation.img(), (self.pos[0] - offset[0], self.pos[1] - offset[1]))

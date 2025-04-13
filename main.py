@@ -10,7 +10,7 @@ from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
-from scripts.boss import FirstBoss
+from scripts.boss import FirstBoss, Vine
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 
@@ -54,6 +54,10 @@ class Game:
             'boss/attack': Animation(load_images('entities/enemies/picko/attack', 32), img_dur=3, loop=False),
             'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
             'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
+
+            'vine/warning': Animation(load_images('entities/elements/vine/warning', (16, 48)), img_dur=12),
+            'vine/attack': Animation(load_images('entities/elements/vine/attack', (16, 48)), img_dur=1, loop=False),
+            'vine/retreat': Animation(load_images('entities/elements/vine/retreat', (16, 48)), img_dur=3, loop=False),
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
@@ -317,6 +321,12 @@ class Game:
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
 
+
+            self.attacking_update()
+
+            self.player.physics_process(self.tilemap, self.dict_kb)
+            self.player.render(self.display, offset=render_scroll)
+
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
@@ -325,11 +335,6 @@ class Game:
                     boss.set_action("death")
                     if boss.animation.done:
                         self.bosses.remove(boss)
-
-            self.attacking_update()
-
-            self.player.physics_process(self.tilemap, self.dict_kb)
-            self.player.render(self.display, offset=render_scroll)
 
             self.tilemap.render_over(self.display, offset=render_scroll)
             self.display_level_fg(0)
