@@ -49,7 +49,7 @@ class Boss(Enemy):
             return
 
         if self.is_attacked:
-            if time.time() - self.game.player_last_attack_time >= 0.3:
+            if time.time() - self.game.player_last_attack_time >= 0.03:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
                 self.last_stun_time = time.time()
@@ -191,6 +191,7 @@ class Boss(Enemy):
 
         return False  # Still moving
 
+
 class FirstBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
@@ -198,16 +199,18 @@ class FirstBoss(Boss):
         self.last_vine_attack = time.time()
         self.vines = []
         self.available_vines_positions = [(x*16, 576) for x in range(-2, 29)]
+        self.available_summoned_entities_pos = [(x*16, 336) for x in range(-2, 29)
+                                                if x not in {1,2,3,4,8,9,10,18,19,20}]
         self.bottom = True
         self.time_bottom = 3
         self.last_time_bottom = 0
         self.vines_cyles = 0
+        self.vine_warning_time = 100
         self.max_cycles = 3
         self.phases = {
             1: {'threshold': 1.0, 'speed': 1.0, 'attack_cooldown': 2.0},
             2: {'threshold': 0.5, 'speed': 1.0, 'attack_cooldown': 1.5},
         }
-
 
     def update(self, tilemap, movement=(0, 0)):
         super().update(tilemap, movement)
@@ -218,7 +221,7 @@ class FirstBoss(Boss):
 
         if self.phase == 2:
             self.max_cycles = 6
-            self.vine_attack_cycle_time = 1
+            self.vine_warning_time = 25
 
         if time.time() - self.last_time_bottom >= self.time_bottom:
             if not self.has_performed_initial_jump and self.bottom:
@@ -265,9 +268,20 @@ class FirstBoss(Boss):
                 self.vines) == 0 and not self.bottom:
             for i in range(13):
                 selected_pos = random.choice(self.available_vines_positions)
-                self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.game))
+                self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.vine_warning_time, self.game))
                 self.available_vines_positions.remove(selected_pos)
             self.available_vines_positions = [(x * 16, 576) for x in range(-2, 29)]
+        if self.phase == 2:
+            if len(self.game.enemies) == 0:
+                for i in range(5):
+                    selected_pos = random.choice(self.available_summoned_entities_pos)
+                    self.game.enemies.append(Enemy(self.game, "picko", selected_pos, (16, 16), 100,
+                                          {"attack_distance" : 20,
+                                           "attack_dmg": 5,
+                                           "attack_time": 2}))
+                    self.available_summoned_entities_pos.remove(selected_pos)
+                self.available_summoned_entities_pos = [(x*16, 336) for x in range(-2, 29)
+                                                        if x not in {1,2,3,4,8,9,10,18,19,20}]
 
         for vine in self.vines:
             vine.update()
@@ -301,8 +315,6 @@ class FirstBoss(Boss):
             if self.rect().colliderect(self.game.player.rect()):
                 self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
-
-
     def update_animation(self, movement):
         animation_running = False
 
@@ -325,14 +337,14 @@ class FirstBoss(Boss):
                 self.set_action("idle")
 
 class Vine:
-    def __init__(self, size, pos, attack_time, attack_dmg, game):
+    def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):
         self.game = game
         self.size = size
         self.pos = pos
         self.attack_time = attack_time
         self.last_attack_time = 0
         self.attack_dmg = attack_dmg
-        self.warning_duration = 100
+        self.warning_duration = warning_duration
 
         # Animation and state handling
         self.animation = self.game.assets['vine/warning'].copy()

@@ -121,7 +121,7 @@ class Game:
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
-        self.player_dmg = 50
+        self.player_dmg = 150
         self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
@@ -264,7 +264,7 @@ class Game:
         self.bosses = []
         for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
             if spawner['variant'] == 2:
-                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 1000,
+                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                           {"attack_distance": 20,
                                            "attack_dmg": 5,
                                            "attack_time": 2}))
