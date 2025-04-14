@@ -12,8 +12,10 @@ def load_image(path, size=None):
 
 def load_images(path, tile_size=None):
     images = []
+    if type(tile_size) is not tuple and tile_size:
+        tile_size = (tile_size, tile_size)
     for img_name in sorted(os.listdir(BASE_IMG_PATH + path)):
-        images.append(load_image(path + '/' + img_name, (tile_size, tile_size) if tile_size else None))
+        images.append(load_image(path + '/' + img_name, (tile_size[0], tile_size[1]) if tile_size else None))
     return images
 
 def round_up(x):
@@ -37,7 +39,7 @@ class Animation:
         self.done = False
         self.frame = 0
 
-    def copy(self):
+    def copy(self):#will be very useful for the screen.copy when displaying the menu
         return Animation(self.images, self.img_duration, self.loop)
 
     def update(self):
@@ -63,8 +65,7 @@ def load_game_font(font_name=None, size=36):
         'LiberationMono-Bold.ttf'
     ]
     font_paths = [
-        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,
-        *[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
+        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,*[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
     ]
     for path in font_paths:
         try:

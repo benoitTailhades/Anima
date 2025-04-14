@@ -1,4 +1,5 @@
 #Heavily upgraded basic godot physics code that I then converted to Python --Aymeric
+import time
 from typing import reveal_type
 
 import pygame as pg
@@ -26,11 +27,11 @@ class PhysicsPlayer:
         #Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -7.0
+        self.JUMP_VELOCITY = -5.8
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50
-        self.WALLJUMP_COOLDOWN = 10
+        self.WALLJUMP_COOLDOWN = 5
 
         #Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
@@ -54,6 +55,10 @@ class PhysicsPlayer:
         self.noclip = False
         self.noclip_buffer = False
 
+        self.is_stunned = False
+        self.last_stun_time = 0
+        self.stunned_by = None
+
 
         self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
@@ -68,11 +73,30 @@ class PhysicsPlayer:
         self.get_block_on = {'left': False, 'right': False}
         self.air_time = 0
 
+
     def physics_process(self, tilemap, dict_kb):
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
 
+        if self.is_stunned:
+            # Calculate time since stun started
+            stun_elapsed = time.time() - self.last_stun_time
+            stun_duration = 0.2
+
+            if stun_elapsed < stun_duration:
+                if self.stunned_by:
+                    self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+
+                # When stunned, only apply knockback and gravity
+                self.gravity()
+                self.apply_momentum()
+                self.apply_animations()
+                self.animation.update()
+                return  # Skip the rest of the normal update logic
+            else:
+                self.stunned_by = None
+                self.is_stunned = False
 
         if not self.noclip:
             if self.dict_kb["key_noclip"] == 1 and self.allowNoClip:
@@ -98,7 +122,6 @@ class PhysicsPlayer:
 
             self.apply_animations()
             self.apply_particle()
-            print(self.can_walljump)
             self.animation.update()
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
@@ -121,13 +144,6 @@ class PhysicsPlayer:
 
         # Check if we just finished dashing this frame
         just_finished_dash = self.dashtime_cur == 0 and self.action in ("dash/right", "dash/left")
-
-        if self.dict_kb["key_attack"] == 1:
-            if self.last_direction == 1:
-                self.set_action("attack/right")
-            elif self.last_direction == -1:
-                self.set_action("attack/left")
-            animation_applied = True
 
         # HIGHEST PRIORITY: Dash animations
         if self.dashtime_cur > 0:
@@ -185,6 +201,15 @@ class PhysicsPlayer:
                     self.set_action('falling/vertical')
                 animation_applied = True
 
+        # Attack
+        if not animation_applied and self.game.attacking and not self.animation.done:
+            if self.last_direction == 1:
+                self.set_action("attack/right")
+                animation_applied = True
+            elif self.last_direction == -1:
+                self.set_action("attack/left")
+                animation_applied = True
+
         # FOURTH PRIORITY: Running
         # Check if player is moving OR just finished a dash and is trying to move
         if not animation_applied and (
@@ -221,11 +246,11 @@ class PhysicsPlayer:
         player is missing some. Stops movement if no input is given."""
         if not self.is_on_floor() and not self.dashtime_cur > 0:
             if self.can_walljump["available"]:
-                if self.acceleration[1] == 0.6:
+                if self.acceleration[1] == 0.45:
                     self.velocity[1] = 0
                 self.acceleration[1] = 0.1
             else:
-                self.acceleration[1] = 0.6
+                self.acceleration[1] = 0.45
             self.velocity[1] = min(7, self.velocity[1] + self.acceleration[1])
         elif self.is_on_floor():
             if self.velocity[1] > 0:
@@ -233,7 +258,7 @@ class PhysicsPlayer:
             if self.dashtime_cur < 5 and self.dash_amt == 0:
                 self.dash_amt = 1
             # Stop unintended horizontal movement if no input is given
-            if self.get_direction("x") == 0:
+            if self.get_direction("x") == 0 and not self.is_stunned:
                 self.velocity[0] = 0
 
     def jump(self):
@@ -254,7 +279,7 @@ class PhysicsPlayer:
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
-                self.velocity[1] *= 1.3
+                self.velocity[1] *= 1.18
             else: #Jumping away from the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
 
@@ -387,7 +412,6 @@ class PhysicsPlayer:
             self.collision["right"] = False
         if self.velocity[1] > 0:
             self.collision["bottom"] = False
-
         self.pos[0] += self.velocity[0]
         self.collision_check("x")
 
@@ -403,11 +427,14 @@ class PhysicsPlayer:
             "blocks_around"]):
             self.can_walljump["available"] = False
 
-        if self.is_on_floor():
-            self.air_time = 0
-            self.velocity[0] *= 0.2
-        elif self.get_direction("x") == 0:
-            self.velocity[0] *= 0.8
+        if not self.is_stunned:
+            if self.is_on_floor():
+                self.air_time = 0
+                self.velocity[0] *= 0.2
+            elif self.get_direction("x") == 0:
+                self.velocity[0] *= 0.8
+        else:
+            self.velocity[0] *= 0.95
 
     def get_direction(self, axis):
         """Gets the current direction the player is holding towards. Takes an axis as argument ('x' or 'y')

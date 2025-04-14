@@ -2,6 +2,8 @@ import sys
 
 import pygame
 
+import json
+
 from scripts.utils import load_images
 from scripts.tilemap import Tilemap
 
@@ -32,15 +34,18 @@ class Editor:
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
-            'spawners': load_images('tiles/spawners')
+            'spawners': load_images('tiles/spawners'),
+            'transitions': load_images('tiles/transitions')
         }
 
         self.movement = [False, False, False, False]
 
         self.tilemap = Tilemap(self, self.tile_size)
 
+        self.level = 0
+
         try:
-            self.tilemap.load('map.json')
+            self.tilemap.load('data/maps/'+str(self.level)+'.json')
         except FileNotFoundError:
             pass
 
@@ -57,6 +62,7 @@ class Editor:
 
     def run(self):
         while True:
+
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -85,6 +91,7 @@ class Editor:
                 self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {'type': self.tile_list[self.tile_group],
                                                                                    'variant': self.tile_variant,
                                                                                    'pos': tile_pos}
+                print(self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])])
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
@@ -133,6 +140,33 @@ class Editor:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_q:
                         self.movement[0] = True
+                    if event.key == pygame.K_RIGHT:
+                        if self.tilemap.tilemap != {}:
+                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            self.level += 1
+                            try:
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
+                            except FileNotFoundError:
+                                f = open('data/maps/' + str(self.level) + '.json', 'w')
+                                json.dump({'tilemap': {},
+                                           'tilesize': 16,
+                                           'offgrid': []}, f)
+                                f.close()
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
+                            else:
+                                pass
+                    if event.key == pygame.K_LEFT:
+                        if self.level > 0:
+                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            self.level -= 1
+                            try:
+                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                self.scroll = [0, 0]
+                            except FileNotFoundError:
+                                pass
+
                     if event.key == pygame.K_d:
                         self.movement[1] = True
                     if event.key == pygame.K_z:
@@ -146,7 +180,7 @@ class Editor:
                     if event.key == pygame.K_LSHIFT:
                         self.shift = True
                     if event.key == pygame.K_o:
-                        self.tilemap.save('map.json')
+                        self.tilemap.save('data/maps/' + str(self.level) + '.json')
                         print("saved")
                     if event.key == pygame.K_c:
                         print((tile_pos[0]*16,tile_pos[1]*16))
