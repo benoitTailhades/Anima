@@ -75,7 +75,7 @@ class Boss(Enemy):
                 self.stunned = False
             else:
                 # Add stun animation/movement here
-                movement = self.game.deal_knockback(self.game.player, self, 0.4)
+                movement = self.game.deal_knockback(self.game.player, self, 0.05)
                 PhysicsEntity.update(self, tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
@@ -265,6 +265,24 @@ class FirstBoss(Boss):
                         self.last_vine_attack = time.time()
                         self.vines_cyles += 1
                     self.vines.remove(vine)
+
+            if self.vines_cyles == 3:
+                self.current_destination = (208, 608)
+                print("Starting initial jump to:", self.current_destination)
+
+                if self.current_destination is not None:
+                    reached = self.move_to(self.current_destination, jump_height=100)
+
+                    if reached:
+                        self.game.screen_shake(16)
+                        print('Reached bottom')
+                        self.last_time_bottom = time.time()
+                        self.bottom = True
+                        self.vines_cyles = 0
+
+            if self.bottom:
+                if time.time() - self.last_time_bottom >= self.time_bottom:
+                    self.bottom = False
 
 
 
