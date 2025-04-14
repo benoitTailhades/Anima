@@ -735,28 +735,34 @@ class Menu:
         if not has_saves:
             return False
 
+        # Store the original window size to handle resizing
+        self.original_size = self.screen.get_size()
+        self.fullscreen = False
+
         background = py.image.load("assets/images/image_bg_resume.png").convert()
-        background = py.transform.scale(background, self.screen.get_size())
 
         running = True
         while running:
-            self.screen.blit(background, (0, 0))
+            # Adjust background to current screen size
+            current_size = self.screen.get_size()
+            scaled_background = py.transform.scale(background, current_size)
+            self.screen.blit(scaled_background, (0, 0))
 
-            overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
-            overlay.fill((0, 0, 0, 100))  # Changé de 150 à 100 pour plus de transparence
+            overlay = py.Surface(current_size, py.SRCALPHA)
+            overlay.fill((0, 0, 0, 100))  # Semi-transparent overlay
             self.screen.blit(overlay, (0, 0))
 
-            button_width = 250
+            button_width = min(250, current_size[0] * 0.4)  # Make buttons responsive
             button_height = 60
             button_spacing = 30
 
             total_buttons_height = (button_height * 3) + (button_spacing * 2)
 
-            start_y = (self.screen.get_height() - total_buttons_height) // 2
+            start_y = (current_size[1] - total_buttons_height) // 2
             buttons = {}
 
             resume_rect = py.Rect(
-                (self.screen.get_width() - button_width) // 2,
+                (current_size[0] - button_width) // 2,
                 start_y,
                 button_width,
                 button_height
@@ -764,7 +770,7 @@ class Menu:
             buttons["RESUME"] = resume_rect
 
             load_rect = py.Rect(
-                (self.screen.get_width() - button_width) // 2,
+                (current_size[0] - button_width) // 2,
                 start_y + button_height + button_spacing,
                 button_width,
                 button_height
@@ -772,7 +778,7 @@ class Menu:
             buttons["LOAD"] = load_rect
 
             new_game_rect = py.Rect(
-                (self.screen.get_width() - button_width) // 2,
+                (current_size[0] - button_width) // 2,
                 start_y + (button_height + button_spacing) * 2,
                 button_width,
                 button_height
@@ -787,13 +793,16 @@ class Menu:
                 self.screen.blit(button_text, (text_x, text_y))
 
                 if rect.collidepoint(mouse_pos):
-                    image_x = text_x - self.hover_image.get_width() - 5
-                    image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
-                    self.screen.blit(self.hover_image, (image_x, image_y))
+                    # Only show hover images if they will fit on screen
+                    if text_x > self.hover_image.get_width() + 5:
+                        image_x = text_x - self.hover_image.get_width() - 5
+                        image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
+                        self.screen.blit(self.hover_image, (image_x, image_y))
 
-                    image_x2 = text_x + button_text.get_width() + 5
-                    image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
-                    self.screen.blit(self.hover2_image, (image_x2, image_y2))
+                    if text_x + button_text.get_width() + self.hover2_image.get_width() + 5 < current_size[0]:
+                        image_x2 = text_x + button_text.get_width() + 5
+                        image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
+                        self.screen.blit(self.hover2_image, (image_x2, image_y2))
 
             py.display.flip()
 
@@ -801,6 +810,19 @@ class Menu:
                 if event.type == py.QUIT:
                     py.quit()
                     sys.exit()
+                elif event.type == py.KEYDOWN:
+                    if event.key == py.K_F11:
+                        # Toggle fullscreen mode
+                        self.fullscreen = not self.fullscreen
+                        if self.fullscreen:
+                            self.screen = py.display.set_mode((0, 0), py.FULLSCREEN)
+                        else:
+                            self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
+                elif event.type == py.VIDEORESIZE:
+                    # Handle window resize events
+                    if not self.fullscreen:
+                        self.original_size = (event.w, event.h)
+                        self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
                 elif event.type == py.MOUSEBUTTONDOWN:
                     for text, rect in buttons.items():
                         if rect.collidepoint(event.pos):
@@ -817,7 +839,7 @@ class Menu:
                                 self.game.player_hp = 100
                                 return True
 
-        return Truez
+        return True
 
 def start_menu():#Display a simple welcome screen that diseappear when clicked.
     py.init()
