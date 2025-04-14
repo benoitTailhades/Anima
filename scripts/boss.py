@@ -1,4 +1,3 @@
-# scripts/boss.py
 import pygame
 import time
 import math
@@ -54,7 +53,6 @@ class Boss(Enemy):
                 self.game.deal_dmg('player', self)
                 self.stunned = True
                 self.last_stun_time = time.time()
-                print(self.hp)
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
@@ -84,6 +82,7 @@ class Boss(Enemy):
                 return  # Skip the rest of the normal update logic
 
         self.update_phase()
+        PhysicsEntity.update(self, tilemap, movement=movement)
 
         if self.distance_with_player() > self.attack_distance and self.is_attacking:
             self.is_attacking = False
@@ -199,19 +198,21 @@ class FirstBoss(Boss):
         self.last_vine_attack = time.time()
         self.vines = []
         self.available_vines_positions = [(x*16, 576) for x in range(-2, 29)]
+        self.bottom = True
+        self.time_bottom = 3
+        self.last_time_bottom = 0
+        self.vines_cyles = 0
 
 
     def update(self, tilemap, movement=(0, 0)):
         super().update(tilemap, movement)
 
-        print(self.vines)
-
         # Phase 1 behavior - Jump to position once
         if self.phase == 1:
-            if not self.stunned:
-                if not self.has_performed_initial_jump:
+            if time.time() - self.last_time_bottom >= self.time_bottom:
+                if not self.has_performed_initial_jump and self.bottom:
                     if not self.is_jumping:
-                        self.current_destination = (32, 464)
+                        self.current_destination = (144, 480)
                         self.last_dest = self.current_destination
                         print("Starting initial jump to:", self.current_destination)
 
@@ -219,9 +220,11 @@ class FirstBoss(Boss):
                         reached = self.move_to(self.current_destination, jump_height=100)
 
                         if reached:
+                            self.game.screen_shake(16)
                             print('Reached initial position')
                             self.current_destination = None
                             self.has_performed_initial_jump = True
+                            self.bottom = False
                             # Next action after reaching position
                             # For example, start attacking the player
                 else:
@@ -229,7 +232,7 @@ class FirstBoss(Boss):
                     # For example:
                     if not self.is_jumping and time.time() - self.last_attack_time > 3.0:
                         # Maybe jump to a new position
-                        possible_positions = [(32, 464), (144, 544), (304, 480)]
+                        possible_positions = [(144, 480),(32, 496),(304, 496)]
                         r = random.choice(possible_positions)
                         while r == self.last_dest:
                             r = random.choice(possible_positions)
@@ -242,10 +245,12 @@ class FirstBoss(Boss):
                         reached = self.move_to(self.current_destination, jump_height=100)
 
                         if reached:
+                            self.game.screen_shake(16)
                             print('Reached new position')
                             self.current_destination = None
-                            # Maybe start an attack sequence=]]=
-            if time.time() - self.last_vine_attack >= self.vine_attack_cycle_time and len(self.vines) == 0:
+                            # Maybe start an attack sequence
+
+            if time.time() - self.last_vine_attack >= self.vine_attack_cycle_time and len(self.vines) == 0 and not self.bottom:
                 for i in range(13):
                     selected_pos = random.choice(self.available_vines_positions)
                     self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.game))
@@ -258,6 +263,7 @@ class FirstBoss(Boss):
                 if vine.action == 'retreat' and vine.animation.done:
                     if len(self.vines) == 1:
                         self.last_vine_attack = time.time()
+                        self.vines_cyles += 1
                     self.vines.remove(vine)
 
 

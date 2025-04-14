@@ -128,6 +128,7 @@ class Game:
         self.holding_attack = False
         self.attacking = False
         self.player_attacked = False
+        self.screenshake = 0
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
@@ -225,6 +226,9 @@ class Game:
             self.dict_kb["key_attack"] = 0
             self.player_last_attack_time = time.time()
 
+    def screen_shake(self, strenght):
+        self.screenshake = max(strenght, self.screenshake)
+
     def save_game(self, slot=1):
         if hasattr(self, 'save_system'):
             success = self.save_system.save_game(slot)
@@ -260,7 +264,7 @@ class Game:
         self.bosses = []
         for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
             if spawner['variant'] == 2:
-                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 200,
+                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 1000,
                                           {"attack_distance": 20,
                                            "attack_dmg": 5,
                                            "attack_time": 2}))
@@ -295,6 +299,9 @@ class Game:
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
+
+            self.screenshake = max(0, self.screenshake - 1)
+
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
@@ -391,7 +398,9 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), (0, 0))
+            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
+                                  random.random() * self.screenshake - self.screenshake / 2)
+            self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
             if self.damage_flash_active:
                 # Check if the flash should still be displayed
