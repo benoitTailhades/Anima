@@ -48,7 +48,7 @@ class PhysicsPlayer:
         self.anti_dash_buffer = False
         self.stop_dash_momentum = {"y": False,"x": False}
         self.holding_jump = False
-        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False, "cooldown":0}
+        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False, "cooldown":0,"allowed":True}
         #available used to know if you can walljump, wall to know where the wall is located,
         #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
         self.dash_cooldown_cur = 0
@@ -275,7 +275,7 @@ class PhysicsPlayer:
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                 self.velocity[1] /= self.tech_momentum_mult
 
-        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1: #Walljump
+        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1 and self.can_walljump["allowed"]: #Walljump
             self.jump_logic_helper()
             if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
