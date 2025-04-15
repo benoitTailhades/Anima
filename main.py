@@ -83,7 +83,10 @@ class Game:
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
             'lever': load_images('tiles/lever'),
-            'particle/leaf': Animation(load_images('particles/leaf'), loop=5)
+            'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
+            'full_heart': load_image('full_heart.png', (16, 16)),
+            'half_heart': load_image('half_heart.png', (16, 16)),
+            'empty_heart': load_image('empty_heart.png', (16, 16 ))
         }
 
         self.sound_running = False
@@ -190,6 +193,26 @@ class Game:
             self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.NOFRAME)
         else:
             self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
+
+    def draw_health_bar(self, max_hearts=5):
+        full_hearts = self.player_hp // 20
+        half_heart = 1 if self.player_hp % 20 >= 10 else 0
+
+        start_x = 20
+        start_y = 20
+        heart_spacing = 22
+
+        for i in range(full_hearts):
+            self.display.blit(self.assets['full_heart'], (start_x + (i * heart_spacing), start_y))
+
+        # Dessiner le demi-cœur si nécessaire
+        if half_heart:
+            self.display.blit(self.assets['half_heart'], (start_x + (full_hearts * heart_spacing), start_y))
+
+        empty_hearts = max_hearts - full_hearts - half_heart
+        for i in range(empty_hearts):
+            pos = start_x + ((full_hearts + half_heart + i) * heart_spacing)
+            self.display.blit(self.assets['empty_heart'], (pos, start_y))
 
     def get_key_map(self):
         if self.keyboard_layout.lower() == "azerty":
@@ -451,6 +474,8 @@ class Game:
 
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
                                   random.random() * self.screenshake - self.screenshake / 2)
+            self.draw_health_bar()
+
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
             if self.damage_flash_active:
