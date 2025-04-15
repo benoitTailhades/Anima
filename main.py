@@ -126,7 +126,7 @@ class Game:
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
-        self.player_dmg = 200
+        self.player_dmg = 50
         self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0

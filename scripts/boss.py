@@ -220,7 +220,6 @@ class FirstBoss(Boss):
         self.intro_duration = 6  # Duration in seconds for the intro animation
 
     def update(self, tilemap, movement=(0, 0)):
-        super().update(tilemap, movement)
         self.start_condition = self.game.player.is_on_floor()
         if self.start_condition and not self.started:
             self.intro_start_time = time.time()
@@ -231,7 +230,6 @@ class FirstBoss(Boss):
                 if time.time() - self.intro_start_time <= self.intro_duration:
                     if not self.pos[0] > 336:
                         movement = (movement[0] + 0.5, movement[1])
-                        super().update(tilemap, movement)
                     else:
                         self.flip = True
                 else:
@@ -331,6 +329,8 @@ class FirstBoss(Boss):
                 else:
                     if self.rect().colliderect(self.game.player.rect()):
                         self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+
+        super().update(tilemap, movement)
 
     def update_animation(self, movement):
         animation_running = False
