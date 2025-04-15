@@ -195,8 +195,12 @@ class Game:
             self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
 
     def draw_health_bar(self, max_hearts=5):
-        full_hearts = self.player_hp // 20
-        half_heart = 1 if self.player_hp % 20 >= 10 else 0
+        # Ensure player always has at least 0.5 health if they're alive
+        # The actual health points are unchanged, this is only for display
+        display_hp = max(10, self.player_hp) if self.player_hp > 0 else 0
+
+        full_hearts = display_hp // 20
+        half_heart = 1 if display_hp % 20 >= 10 else 0
 
         start_x = 20
         start_y = 20
@@ -205,7 +209,6 @@ class Game:
         for i in range(full_hearts):
             self.display.blit(self.assets['full_heart'], (start_x + (i * heart_spacing), start_y))
 
-        # Dessiner le demi-cœur si nécessaire
         if half_heart:
             self.display.blit(self.assets['half_heart'], (start_x + (full_hearts * heart_spacing), start_y))
 
@@ -213,7 +216,6 @@ class Game:
         for i in range(empty_hearts):
             pos = start_x + ((full_hearts + half_heart + i) * heart_spacing)
             self.display.blit(self.assets['empty_heart'], (pos, start_y))
-
     def get_key_map(self):
         if self.keyboard_layout.lower() == "azerty":
             return {

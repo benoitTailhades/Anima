@@ -735,7 +735,6 @@ class Menu:
         if not has_saves:
             return False
 
-        # Store the original window size to handle resizing
         self.original_size = self.screen.get_size()
         self.fullscreen = False
 
@@ -833,6 +832,7 @@ class Menu:
                                 return True
                             elif text == "LOAD":
                                 self.load_menu()
+                                running = False
                             elif text == "NEW GAME":
                                 self.game.level = 0
                                 self.game.load_level(0)
