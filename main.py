@@ -84,9 +84,9 @@ class Game:
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
             'lever': load_images('tiles/lever'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
-            'empty_heart': load_image('full_heart.png', (16, 16)),
+            'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
-            'full_heart': load_image('empty_heart.png', (16, 16 ))
+            'empty_heart': load_image('empty_heart.png', (16, 16 ))
         }
 
         self.sound_running = False
