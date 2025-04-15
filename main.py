@@ -358,13 +358,10 @@ class Game:
             self.display_level_bg(0)
             self.player.can_walljump["allowed"] = not (self.level == 1)
 
-
-
             self.tilemap.render(self.display, offset=render_scroll)
 
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
-
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
