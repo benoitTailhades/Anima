@@ -150,19 +150,6 @@ class Tilemap:
                 rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
         return rects
 
-    def extract_levers(self, game):
-        levers = []
-        lever_tiles = self.extract([('lever', 0), ('lever', 1)], keep=False)
-
-        for tile in lever_tiles:
-            pos = tile['pos'] if isinstance(tile['pos'][0], int) else (
-            tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size)
-            lever = Lever(game, pos)
-            lever.state = True if tile['variant'] == 1 else False
-            levers.append(lever)
-
-        return levers
-
     def physics_rects_under(self, pos, size):
         u_rects = []
         for tile in self.tiles_under(pos, size):

@@ -370,6 +370,7 @@ class Vine:
                     self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
             if self.timer >= self.attack_time and self.animation.done:
+                self.game.screen_shake(16)
                 self.set_action('retreat')
                 self.state = 'retreat'
                 self.timer = 0

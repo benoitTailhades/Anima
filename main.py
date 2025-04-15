@@ -11,6 +11,7 @@ from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.boss import FirstBoss, Vine
+from scripts.activators import Lever
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 
@@ -150,9 +151,6 @@ class Game:
             self.menu = Menu(self)
             self.menu.start_menu_newgame()
 
-
-
-
     def set_volume(self, volume):
         self.volume = max(0, min(1, volume))
         if self.background_music:
@@ -278,7 +276,12 @@ class Game:
         self.scroll = [0, 0]
         self.transition = -30
         self.max_falling_depth = 500 if self.level == 0 else 5000
-        self.levers = self.tilemap.extract_levers(self)
+
+        self.levers = []
+        for lever in self.tilemap.extract([('lever', 0), ('lever', 1)]):
+            l = Lever(self, lever['pos'])
+            l.state = lever["variant"]
+            self.levers.append(l)
 
     def display_level_bg(self, map_id):
         if map_id == 0:
@@ -301,8 +304,6 @@ class Game:
                     self.level += 1
                     self.load_level(self.level)
 
-
-
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
@@ -324,6 +325,9 @@ class Game:
 
             self.check_transition()
             self.display_level_bg(0)
+            self.player.can_walljump["allowed"] = not (self.level == 1)
+
+
 
             self.tilemap.render(self.display, offset=render_scroll)
 
@@ -381,16 +385,14 @@ class Game:
                         for key in self.dict_kb.keys():
                             self.dict_kb[key] = 0
 
-                    if event.type == pygame.KEYDOWN:
-                        if event.key == pygame.K_e:
-                            for lever in self.levers:
-                                if lever.can_interact(self.player.rect()):
-                                    if lever.toggle():
-                                        self.screenshake = 5
-                                        self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                    if event.key == pygame.K_e:
+                        for lever in self.levers:
+                            if lever.can_interact(self.player.rect()):
+                                if lever.toggle():
+                                    self.screen_shake(10)
+                                    self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
 
-
-                    elif event.key == pygame.K_F11:
+                    if event.key == pygame.K_F11:
                         self.toggle_fullscreen()
                     if event.key == pygame.K_f:
                         if not self.holding_attack:
