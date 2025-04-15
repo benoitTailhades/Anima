@@ -137,6 +137,12 @@ class Game:
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
 
+        self.last_visual_movement_time = 0
+        self.moving_visual = False
+        self.visual_pos = (0, 0)
+        self.visual_movement_duration = 0
+        self.visual_start_time = 0
+
         self.particles = []
 
         self.load_level(self.level)
@@ -304,14 +310,39 @@ class Game:
                     self.level += 1
                     self.load_level(self.level)
 
+    def move_visual(self, duration, pos):
+        self.moving_visual = True
+        self.visual_pos = pos
+        self.visual_movement_duration = duration
+        self.visual_start_time = time.time()
+
+    def update_camera(self):
+        current_time = time.time()
+
+        # Check if we're in a visual movement mode
+        if self.moving_visual:
+            elapsed_time = current_time - self.visual_start_time
+
+            if elapsed_time < self.visual_movement_duration:
+                # Smoothly move to target position while duration is active
+                self.scroll[0] += (self.visual_pos[0] - self.display.get_width() / 2 - self.scroll[0]) / 20
+                self.scroll[1] += (self.visual_pos[1] - self.display.get_height() / 2 - self.scroll[1]) / 20
+            else:
+                # Duration completed, return to following player
+                self.moving_visual = False
+
+        # Default camera behavior - follow player
+        if not self.moving_visual:
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
+
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
 
             self.screenshake = max(0, self.screenshake - 1)
 
-            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
-            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
+            self.update_camera()
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
             if self.transition < 0:
@@ -390,6 +421,7 @@ class Game:
                             if lever.can_interact(self.player.rect()):
                                 if lever.toggle():
                                     self.screen_shake(10)
+                                    self.move_visual(2, (928, 208))
                                     self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
 
                     if event.key == pygame.K_F11:
