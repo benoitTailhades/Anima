@@ -291,7 +291,7 @@ class Game:
                 self.player.pos = spawner['pos'].copy()
             elif spawner['variant'] == 1:
                 self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
-                                          {"attack_distance" : 20,
+                                          {"attack_distance" : 15,
                                            "attack_dmg": 10,
                                            "attack_time": 2}))
 
@@ -301,7 +301,7 @@ class Game:
                 self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                           {"attack_distance": 20,
                                            "attack_dmg": 20,
-                                           "attack_time": 2}))
+                                           "attack_time": 0.5}))
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 

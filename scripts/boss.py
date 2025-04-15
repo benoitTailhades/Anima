@@ -122,7 +122,6 @@ class Boss(Enemy):
 
         # Increment progress based on speed
         self.move_progress += 0.02 * speed
-        print(self.move_progress)
 
         # Cap progress at 1.0 (100%)
         if self.move_progress >= 1.0:
@@ -306,22 +305,22 @@ class FirstBoss(Boss):
                         self.vines.remove(vine)
 
                 if self.vines_cyles == self.phases[self.phase]["max_cycles"]:
-                    if not self.bottom and not self.is_jumping:
+                    if self.rect().colliderect(self.game.player.rect()):
+                        self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                    if not self.bottom:
                         self.current_destination = (208, 608)
                         print("Starting initial jump to:", self.current_destination)
                         self.last_time_bottom = time.time()
 
                     if self.current_destination is not None:
                         reached = self.move_to(self.current_destination, jump_height=100)
-                        if self.rect().colliderect(self.game.player.rect()):
-                            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
                         if reached:
                             self.game.screen_shake(16)
                             print('Reached bottom')
                             self.bottom = True
-                            self.vines_cyles = 0
                             self.current_destination = None
+                            self.vines_cyles = 0
 
                 if self.bottom:
                     if time.time() - self.last_time_bottom >= self.time_bottom:
