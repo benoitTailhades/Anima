@@ -306,8 +306,6 @@ class FirstBoss(Boss):
                         self.vines.remove(vine)
 
                 if self.vines_cyles == self.phases[self.phase]["max_cycles"]:
-                    if self.rect().colliderect(self.game.player.rect()):
-                        self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
                     if not self.bottom and not self.is_jumping:
                         self.current_destination = (208, 608)
                         print("Starting initial jump to:", self.current_destination)
@@ -315,6 +313,8 @@ class FirstBoss(Boss):
 
                     if self.current_destination is not None:
                         reached = self.move_to(self.current_destination, jump_height=100)
+                        if self.rect().colliderect(self.game.player.rect()):
+                            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
                         if reached:
                             self.game.screen_shake(16)
@@ -328,30 +328,9 @@ class FirstBoss(Boss):
                         self.bottom = False
                 else:
                     if self.rect().colliderect(self.game.player.rect()):
-                        self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                        self.game.deal_dmg(self, 'player', self.attack_dmg//2, self.attack_time)
 
         super().update(tilemap, movement)
-
-    def update_animation(self, movement):
-        animation_running = False
-
-        if self.stunned:
-            self.set_action("hit")
-            animation_running = True
-
-        if self.is_attacking and not animation_running and not self.stunned:
-            if self.action != "attack":
-                self.set_action("attack")
-            animation_running = True
-
-        if not self.is_attacking and not animation_running:
-            if movement[0] != 0:
-                if self.flip:
-                    self.set_action("run/left")
-                else:
-                    self.set_action("run/right")
-            else:
-                self.set_action("idle")
 
 class Vine:
     def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):

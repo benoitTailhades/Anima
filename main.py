@@ -216,6 +216,7 @@ class Game:
         for i in range(empty_hearts):
             pos = start_x + ((full_hearts + half_heart + i) * heart_spacing)
             self.display.blit(self.assets['empty_heart'], (pos, start_y))
+
     def get_key_map(self):
         if self.keyboard_layout.lower() == "azerty":
             return {
@@ -291,7 +292,7 @@ class Game:
             elif spawner['variant'] == 1:
                 self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
                                           {"attack_distance" : 20,
-                                           "attack_dmg": 5,
+                                           "attack_dmg": 10,
                                            "attack_time": 2}))
 
         self.bosses = []
@@ -299,7 +300,7 @@ class Game:
             if spawner['variant'] == 2:
                 self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                           {"attack_distance": 20,
-                                           "attack_dmg": 5,
+                                           "attack_dmg": 20,
                                            "attack_time": 2}))
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
