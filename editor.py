@@ -35,7 +35,8 @@ class Editor:
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
             'spawners': load_images('tiles/spawners'),
-            'transitions': load_images('tiles/transitions')
+            'transitions': load_images('tiles/transitions'),
+            'lever': load_images('tiles/lever'),
         }
 
         self.movement = [False, False, False, False]

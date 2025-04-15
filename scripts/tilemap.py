@@ -3,6 +3,7 @@ import pygame
 import json
 
 from scripts.utils import round_up
+from scripts.activators import Lever
 
 AUTOTILE_MAP = {
     tuple(sorted([(1, 0), (0, 1)])): 0,
@@ -20,6 +21,7 @@ AUTOTILE_MAP = {
 PHYSICS_TILES = {'grass','stone', 'vine','mossy_stone'}
 TRANSPARENT_TILES = {'vine_transp':[0,1,2], 'vine_transp_back':[0,1,2], 'dark_vine':[0,1,2],'hanging_vine':[0,1,2]}
 AUTOTILE_TYPES = {'grass', 'stone', 'mossy_stone'}
+LEVER_TILES = {'lever': [0, 1]}
 
 class Tilemap:
     def __init__(self, game, tile_size = 16):
@@ -147,6 +149,19 @@ class Tilemap:
             if tile['type'] in PHYSICS_TILES:
                 rects.append(pygame.Rect(tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size, self.tile_size, self.tile_size))
         return rects
+
+    def extract_levers(self, game):
+        levers = []
+        lever_tiles = self.extract([('lever', 0), ('lever', 1)], keep=False)
+
+        for tile in lever_tiles:
+            pos = tile['pos'] if isinstance(tile['pos'][0], int) else (
+            tile['pos'][0] * self.tile_size, tile['pos'][1] * self.tile_size)
+            lever = Lever(game, pos)
+            lever.state = True if tile['variant'] == 1 else False
+            levers.append(lever)
+
+        return levers
 
     def physics_rects_under(self, pos, size):
         u_rects = []

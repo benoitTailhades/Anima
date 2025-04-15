@@ -81,7 +81,7 @@ class Game:
             'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
-
+            'lever': load_images('tiles/lever'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5)
         }
 
@@ -117,6 +117,7 @@ class Game:
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
+        self.levers = []
         self.in_bossfight = False
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
@@ -129,6 +130,7 @@ class Game:
         self.attacking = False
         self.player_attacked = False
         self.screenshake = 0
+
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
@@ -147,6 +149,8 @@ class Game:
         else:
             self.menu = Menu(self)
             self.menu.start_menu_newgame()
+
+
 
 
     def set_volume(self, volume):
@@ -274,6 +278,7 @@ class Game:
         self.scroll = [0, 0]
         self.transition = -30
         self.max_falling_depth = 500 if self.level == 0 else 5000
+        self.levers = self.tilemap.extract_levers(self)
 
     def display_level_bg(self, map_id):
         if map_id == 0:
@@ -295,6 +300,8 @@ class Game:
                 elif transition["variant"] == 1:
                     self.level += 1
                     self.load_level(self.level)
+
+
 
     def run(self):
         while True:
@@ -320,6 +327,10 @@ class Game:
 
             self.tilemap.render(self.display, offset=render_scroll)
 
+            for lever in self.levers:
+                lever.render(self.display, offset=render_scroll)
+
+
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
@@ -327,7 +338,6 @@ class Game:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
-
 
             self.attacking_update()
 
@@ -370,6 +380,16 @@ class Game:
                         self.menu.menu_display()
                         for key in self.dict_kb.keys():
                             self.dict_kb[key] = 0
+
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_e:
+                            for lever in self.levers:
+                                if lever.can_interact(self.player.rect()):
+                                    if lever.toggle():
+                                        self.screenshake = 5
+                                        self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+
+
                     elif event.key == pygame.K_F11:
                         self.toggle_fullscreen()
                     if event.key == pygame.K_f:
