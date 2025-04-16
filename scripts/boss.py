@@ -61,6 +61,7 @@ class Boss(Enemy):
                 self.game.player.is_stunned = True
                 self.game.player.stunned_by = self
                 self.game.player.last_stun_time = time.time()
+            self.is_dealing_damage = False
 
         # Handle stun state first
         if self.stunned:
@@ -308,7 +309,8 @@ class FirstBoss(Boss):
 
                 if self.vines_cyles == self.phases[self.phase]["max_cycles"]:
                     if self.rect().colliderect(self.game.player.rect()):
-                        self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                        self.is_attacking = True
+
                     if not self.bottom:
                         self.current_destination = (208, 608)
                         print("Starting initial jump to:", self.current_destination)
@@ -321,6 +323,7 @@ class FirstBoss(Boss):
                             self.game.screen_shake(16)
                             print('Reached bottom')
                             self.bottom = True
+                            self.is_attacking = False
                             self.current_destination = None
                             self.vines_cyles = 0
 
@@ -328,8 +331,8 @@ class FirstBoss(Boss):
                     if time.time() - self.last_time_bottom >= self.time_bottom:
                         self.bottom = False
                 else:
-                    if self.rect().colliderect(self.game.player.rect()):
-                        self.game.deal_dmg(self, 'player', self.attack_dmg//2, self.attack_time)
+                    self.is_attacking = self.rect().colliderect(self.game.player.rect())
+
 
         super().update(tilemap, movement)
 

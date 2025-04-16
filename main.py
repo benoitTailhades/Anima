@@ -298,8 +298,8 @@ class Game:
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
                     self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                                  {"attack_distance": 20,
-                                                  "attack_dmg": 200,
-                                                  "attack_time": 2}))
+                                                  "attack_dmg": 50,
+                                                  "attack_time": 0.1}))
 
             self.levers = []
             for lever in self.tilemap.extract([('lever', 0), ('lever', 1)]):
