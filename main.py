@@ -124,7 +124,7 @@ class Game:
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
-        self.player_dmg = 50
+        self.player_dmg = 500
         self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
@@ -310,7 +310,10 @@ class Game:
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
         else:
-            self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)])
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+                if spawner['variant'] == 0:
+                    self.spawner_pos = spawner["pos"]
+                    self.player.pos = spawner["pos"].copy()
             self.tilemap.extract([('lever', 0), ('lever', 1)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
