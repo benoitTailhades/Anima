@@ -94,18 +94,12 @@ class Game:
         try:
             # Make sure pygame is properly initialized before trying to play sounds
             if not pygame.mixer.get_init():
-                print("Initializing pygame mixer in Game.__init__...")
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
                 time.sleep(0.1)  # Small delay to ensure initialization completes
 
             # Verify the sound file path and try different filename variations if needed
             sound_path = "assets/sounds/v2-level-1-sound-background_W72B8woG.wav"
-            if not os.path.exists(sound_path):
-                print(f"Sound file not found at: {sound_path}")
-                # Try alternative filename from your screenshot
-                sound_path = "assets/sounds/v2-level-1-sound-background_W728Bw06.wav"
-                if not os.path.exists(sound_path):
-                    print(f"Alternative sound file not found either: {sound_path}")
+
 
             self.volume = 0.5  # Volume par défaut : 50%
             self.background_music = pygame.mixer.Sound(sound_path)
@@ -334,6 +328,67 @@ class Game:
             display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
 
+    def draw_boss_health_bar(self, boss):
+        if not self.bosses or boss.hp <= 0:
+            return
+
+        bar_width = 200
+        bar_height = 6
+        border_thickness = 1
+        border_radius = 3
+
+        bar_x = (self.display.get_width() - bar_width) // 2
+        bar_y = 25
+
+        health_percentage = max(0, boss.hp / boss.max_hp)
+        current_bar_width = int(bar_width * health_percentage)
+
+        border_color = (30, 30, 30)
+        bg_color = (60, 60, 60)
+        health_color = (133, 6, 6)
+
+        shadow_offset = 2
+        pygame.draw.rect(
+            self.display,
+            (20, 20, 20),
+            (bar_x - border_thickness + shadow_offset,
+             bar_y - border_thickness + shadow_offset,
+             bar_width + (border_thickness * 2),
+             bar_height + (border_thickness * 2)),
+            0,
+            border_radius + border_thickness
+        )
+
+        pygame.draw.rect(self.display,border_color,(bar_x - border_thickness,bar_y - border_thickness,bar_width + (border_thickness * 2),bar_height + (border_thickness * 2)),0, border_radius + border_thickness)
+
+        pygame.draw.rect(self.display,bg_color,(bar_x, bar_y, bar_width, bar_height),0,border_radius)
+
+        if current_bar_width > 0:
+            right_radius = border_radius if current_bar_width >= border_radius * 2 else 0
+            pygame.draw.rect(self.display,health_color,(bar_x, bar_y, current_bar_width, bar_height),0,border_radius, right_radius, border_radius, right_radius)
+
+        if current_bar_width > 5:
+            highlight_height = max(2, bar_height // 3)
+            highlight_width = current_bar_width - 4
+            pygame.draw.rect(self.display,(220, 60, 60),  (bar_x + 2, bar_y + 1, highlight_width, highlight_height),0,border_radius // 2)
+
+
+        try:
+            font = pygame.font.SysFont("Arial", 15)  # Arial est généralement plus fin que la police par défaut
+        except:
+            font = pygame.font.Font(None, 26)
+
+        boss_name = boss.name if hasattr(boss, 'name') else "Wrath"
+
+        text_surface = font.render(boss_name, True, (255, 255, 255))
+        text_rect = text_surface.get_rect(centerx=bar_x + bar_width // 2, bottom=bar_y - 4)
+
+        shadow_surface = font.render(boss_name, True, (0, 0, 0))
+        shadow_rect = shadow_surface.get_rect(centerx=text_rect.centerx + 1, centery=text_rect.centery + 1)
+
+        self.display.blit(shadow_surface, shadow_rect)
+        self.display.blit(text_surface, text_rect)
+
     def display_level_fg(self, map_id):
         if map_id == 0:
             display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
@@ -502,6 +557,8 @@ class Game:
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
                                   random.random() * self.screenshake - self.screenshake / 2)
             self.draw_health_bar()
+            if self.bosses:
+                self.draw_boss_health_bar(self.bosses[0])
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 

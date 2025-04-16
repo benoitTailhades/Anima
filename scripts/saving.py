@@ -27,7 +27,8 @@ class Save:
                 "keyboard_layout": self.game.keyboard_layout,
                 "language": self.game.selected_language
             },
-            "timestamp": time.time()
+            "timestamp": time.time(),
+
         }
 
         for enemy in self.game.enemies:

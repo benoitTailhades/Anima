@@ -122,6 +122,7 @@ class Boss(Enemy):
 
         # Increment progress based on speed
         self.move_progress += 0.02 * speed
+        print(self.move_progress)
 
         # Cap progress at 1.0 (100%)
         if self.move_progress >= 1.0:
@@ -219,6 +220,7 @@ class FirstBoss(Boss):
         self.intro_duration = 6  # Duration in seconds for the intro animation
 
     def update(self, tilemap, movement=(0, 0)):
+        super().update(tilemap, movement)
         self.start_condition = self.game.player.is_on_floor()
         if self.start_condition and not self.started:
             self.intro_start_time = time.time()
@@ -226,16 +228,15 @@ class FirstBoss(Boss):
         if self.started or self.start_condition:
             self.started = True
             if not self.intro_complete:
-                self.game.cutscene = True
                 if time.time() - self.intro_start_time <= self.intro_duration:
                     if not self.pos[0] > 336:
                         movement = (movement[0] + 0.5, movement[1])
+                        super().update(tilemap, movement)
                     else:
                         self.flip = True
                 else:
                     self.intro_complete = True
             else:
-                self.game.cutscene = False
                 if time.time() - self.last_time_bottom >= self.time_bottom:
                     if not self.has_performed_initial_jump and self.bottom:
                         if not self.is_jumping:
@@ -309,7 +310,7 @@ class FirstBoss(Boss):
                 if self.vines_cyles == self.phases[self.phase]["max_cycles"]:
                     if self.rect().colliderect(self.game.player.rect()):
                         self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-                    if not self.bottom:
+                    if not self.bottom and not self.is_jumping:
                         self.current_destination = (208, 608)
                         print("Starting initial jump to:", self.current_destination)
                         self.last_time_bottom = time.time()
@@ -321,17 +322,36 @@ class FirstBoss(Boss):
                             self.game.screen_shake(16)
                             print('Reached bottom')
                             self.bottom = True
-                            self.current_destination = None
                             self.vines_cyles = 0
+                            self.current_destination = None
 
                 if self.bottom:
                     if time.time() - self.last_time_bottom >= self.time_bottom:
                         self.bottom = False
                 else:
                     if self.rect().colliderect(self.game.player.rect()):
-                        self.game.deal_dmg(self, 'player', self.attack_dmg//2, self.attack_time)
+                        self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
-        super().update(tilemap, movement)
+    def update_animation(self, movement):
+        animation_running = False
+
+        if self.stunned:
+            self.set_action("hit")
+            animation_running = True
+
+        if self.is_attacking and not animation_running and not self.stunned:
+            if self.action != "attack":
+                self.set_action("attack")
+            animation_running = True
+
+        if not self.is_attacking and not animation_running:
+            if movement[0] != 0:
+                if self.flip:
+                    self.set_action("run/left")
+                else:
+                    self.set_action("run/right")
+            else:
+                self.set_action("idle")
 
 class Vine:
     def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):

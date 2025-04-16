@@ -450,9 +450,7 @@ class PhysicsPlayer:
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
             return self.dict_kb["key_up"] - self.dict_kb["key_down"]
-        else:
-            print("Error: get_direction() received an invalid axis")
-            return 0
+
 
     def dash_ghost_trail(self):
         """Creates ghost images that fade out over time."""
