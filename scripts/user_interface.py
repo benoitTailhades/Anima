@@ -582,9 +582,8 @@ class Menu:
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
-    def load_menu(self):  # pretty much the same idea as in the save menu but here we load the save(This is just the drawing of those options. If you want more details go to Saving.py)
+    def load_menu(self):
         current_screen = self.screen.copy()
-
         saves = self.game.save_system.list_saves()
 
         if not saves:
@@ -600,21 +599,14 @@ class Menu:
                 msg_y = (self.screen.get_height() - message.get_height()) // 2
                 self.screen.blit(message, (msg_x, msg_y))
 
-                back_rect = py.Rect(
-                    (self.screen.get_width() - 200) // 2,
-                    msg_y + 80,
-                    200,
-                    50
-                )
+                back_rect = py.Rect((self.screen.get_width() - 200) // 2, msg_y + 80, 200, 50)
 
-                # Get mouse position for hover effect
                 mouse_pos = py.mouse.get_pos()
                 is_back_hovered = back_rect.collidepoint(mouse_pos)
 
                 if is_back_hovered:
-                    py.draw.rect(self.screen, (120, 120, 120), back_rect, border_radius=5)  # Lighter when hovered
+                    py.draw.rect(self.screen, (120, 120, 120), back_rect, border_radius=5)
                 else:
-                    # Draw just a border for the back button when not hovered
                     py.draw.rect(self.screen, (80, 80, 80), back_rect, width=1, border_radius=5)
 
                 back_text = self.button_font.render("BACK", True, self.COLORS["white"])
@@ -634,10 +626,9 @@ class Menu:
                     elif event.type == py.MOUSEBUTTONDOWN:
                         if back_rect.collidepoint(event.pos):
                             no_saves_menu = False
-            return
+            return False
 
         save_rects = {}
-
         menu_running = True
         while menu_running:
             self.screen.blit(current_screen, (0, 0))
@@ -654,27 +645,19 @@ class Menu:
             save_width = 300
             spacing = 20
 
-            # Get mouse position for hover effect
             mouse_pos = py.mouse.get_pos()
 
             for save in saves:
-                save_rect = py.Rect(
-                    (self.screen.get_width() - save_width) // 2,
-                    save_y,
-                    save_width,
-                    save_height
-                )
+                save_rect = py.Rect((self.screen.get_width() - save_width) // 2,save_y,save_width,save_height)
                 save_rects[save["slot"]] = save_rect
 
-                # Check if mouse is hovering over the button
                 is_hovered = save_rect.collidepoint(mouse_pos)
 
                 if is_hovered:
-                    hover_color = (100, 100, 140, 150)  # Semi-transparent light blue/purple
+                    hover_color = (100, 100, 140, 150)
                     py.draw.rect(self.screen, hover_color, save_rect, border_radius=5)
                 else:
-                    # For non-hovered state, draw just a thin border
-                    border_color = (80, 80, 80, 150)  # Semi-transparent gray
+                    border_color = (80, 80, 80, 150)
                     py.draw.rect(self.screen, border_color, save_rect, width=1, border_radius=5)
 
                 slot_text = f"Slot {save['slot']} - {save['date']}"
@@ -689,19 +672,13 @@ class Menu:
                 save_y += save_height + spacing
 
             back_rect = py.Rect(
-                (self.screen.get_width() - 200) // 2,
-                save_y + 20,
-                200,
-                50
-            )
+                (self.screen.get_width() - 200) // 2,save_y + 20,200,50)
 
-            # Check if mouse is hovering over the back button
             is_back_hovered = back_rect.collidepoint(mouse_pos)
 
             if is_back_hovered:
-                py.draw.rect(self.screen, (120, 120, 120), back_rect, border_radius=5)  # Lighter when hovered
+                py.draw.rect(self.screen, (120, 120, 120), back_rect, border_radius=5)
             else:
-                # Draw just a border for the back button when not hovered
                 py.draw.rect(self.screen, (80, 80, 80), back_rect, width=1, border_radius=5)
 
             back_text = self.button_font.render("BACK", True, self.COLORS["white"])
@@ -724,10 +701,12 @@ class Menu:
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
                             if self.game.load_game(slot):
-                                menu_running = False
+                                return True
 
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
+
+        return False
 
     def start_menu_newgame(self):
         has_saves = len(self.game.save_system.list_saves()) > 0
@@ -742,16 +721,15 @@ class Menu:
 
         running = True
         while running:
-            # Adjust background to current screen size
             current_size = self.screen.get_size()
             scaled_background = py.transform.scale(background, current_size)
             self.screen.blit(scaled_background, (0, 0))
 
             overlay = py.Surface(current_size, py.SRCALPHA)
-            overlay.fill((0, 0, 0, 100))  # Semi-transparent overlay
+            overlay.fill((0, 0, 0, 100))
             self.screen.blit(overlay, (0, 0))
 
-            button_width = min(250, current_size[0] * 0.4)  # Make buttons responsive
+            button_width = min(250, current_size[0] * 0.4)
             button_height = 60
             button_spacing = 30
 
@@ -792,7 +770,6 @@ class Menu:
                 self.screen.blit(button_text, (text_x, text_y))
 
                 if rect.collidepoint(mouse_pos):
-                    # Only show hover images if they will fit on screen
                     if text_x > self.hover_image.get_width() + 5:
                         image_x = text_x - self.hover_image.get_width() - 5
                         image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
@@ -811,14 +788,12 @@ class Menu:
                     sys.exit()
                 elif event.type == py.KEYDOWN:
                     if event.key == py.K_F11:
-                        # Toggle fullscreen mode
                         self.fullscreen = not self.fullscreen
                         if self.fullscreen:
                             self.screen = py.display.set_mode((0, 0), py.FULLSCREEN)
                         else:
                             self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
                 elif event.type == py.VIDEORESIZE:
-                    # Handle window resize events
                     if not self.fullscreen:
                         self.original_size = (event.w, event.h)
                         self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
@@ -831,8 +806,9 @@ class Menu:
                                     self.game.load_game(latest_save)
                                 return True
                             elif text == "LOAD":
-                                self.load_menu()
-                                running = False
+                                load_result = self.load_menu()
+                                if load_result:
+                                    return True
                             elif text == "NEW GAME":
                                 self.game.level = 0
                                 self.game.load_level(0)

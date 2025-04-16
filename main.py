@@ -428,7 +428,6 @@ class Game:
                 # Duration completed, return to following player
                 self.moving_visual = False
 
-        # Default camera behavior - follow player
         if not self.moving_visual:
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
