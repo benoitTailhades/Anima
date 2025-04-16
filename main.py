@@ -90,6 +90,7 @@ class Game:
         }
 
         self.sound_running = False
+
         try:
             # Make sure pygame is properly initialized before trying to play sounds
             if not pygame.mixer.get_init():
@@ -281,7 +282,6 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
-        print(self.in_boss_level)
 
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
@@ -294,9 +294,9 @@ class Game:
             self.bosses = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawn = {"pos": spawner['pos'] if not self.in_boss_level else self.spawn['pos'],
+                    self.spawn = {"pos": spawner['pos'] if not self.in_boss_level else self.spawn["pos"],
                                   "level": map_id if not self.in_boss_level else map_id-1}
-                    self.player.pos = spawner['pos'].copy()
+                    self.player.pos = spawner["pos"].copy()
                 elif spawner['variant'] == 1:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
                                               {"attack_distance": 20,
@@ -305,7 +305,7 @@ class Game:
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
                     self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                                  {"attack_distance": 20,
-                                                  "attack_dmg": 20,
+                                                  "attack_dmg": 200,
                                                   "attack_time": 2}))
 
             self.levers = []
@@ -314,7 +314,8 @@ class Game:
                 l.state = lever["variant"]
                 self.levers.append(l)
 
-            self.levels[map_id]["charged"] = True
+            if not self.in_boss_level:
+                self.levels[map_id]["charged"] = True
         else:
             self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)])
             self.tilemap.extract([('lever', 0), ('lever', 1)])
@@ -380,7 +381,6 @@ class Game:
 
     def run(self):
         while True:
-            print(self.spawn)
             self.display.blit(self.assets['background'], (0, 0))
 
             self.screenshake = max(0, self.screenshake - 1)
@@ -432,7 +432,7 @@ class Game:
             self.display_level_fg(0)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
-                player_death(self, self.screen, self.spawn["pos"])
+                player_death(self, self.screen, self.spawn["pos"], self.spawn["level"])
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
