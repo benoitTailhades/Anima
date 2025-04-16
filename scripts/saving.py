@@ -71,6 +71,7 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
+            self.game.levels[level]["charged"] = False
             self.game.load_level(level)
 
             if "player" in save_data:
