@@ -1,6 +1,7 @@
 import sys
 import math
 import os
+import json
 
 import pygame
 import random
@@ -119,6 +120,7 @@ class Game:
         self.levels = {i:{"charged": False} for i in range(len(os.listdir("data/maps")))}
 
         self.levers = []
+        self.activators_actions = self.load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
 
@@ -302,10 +304,12 @@ class Game:
                                                   "attack_time": 0.1}))
 
             self.levers = []
-            for lever in self.tilemap.extract([('lever', 0), ('lever', 1)]):
-                l = Lever(self, lever['pos'])
+            i=0
+            for lever in self.tilemap.extract([('lever', 0),('lever', 1)]):
+                l = Lever(self, lever['pos'], i=i)
                 l.state = lever["variant"]
                 self.levers.append(l)
+                i+=1
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
@@ -438,6 +442,53 @@ class Game:
     def update_spawn_point(self, pos, level):
         self.spawn_point = {"pos": pos, "level": level}
 
+    def load_activators_actions(self):
+        try:
+            with open("data/activators.json", "r") as file:
+                actions_data = json.load(file)
+                return actions_data
+
+        except Exception as e:
+            print(f"Error loading activators actions: {e}")
+            return {"levers": {}, "buttons": {}}
+
+    def update_activators_actions(self, level):
+        for lever in self.levers:
+            if lever.can_interact(self.player.rect()):
+                if lever.toggle():
+                    # Get the lever ID as a string
+                    lever_id = str(lever.id)
+                    # Check if this lever has any actions
+                    if lever_id in self.activators_actions[str(level)]["levers"]:
+                        action = self.activators_actions[str(level)]["levers"][lever_id]
+
+                        # Process different action types
+                        if action["type"] == "visual_and_extract":
+                            # Move visual
+                            self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
+
+                            # Extract tiles
+                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
+                            self.tilemap.extract(extract_list)
+
+                            # Add screenshake effect
+                            self.screen_shake(10)
+
+                        elif action["type"] == "extract_only":
+                            # Extract tiles
+                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
+                            self.tilemap.extract(extract_list)
+
+                            # Add screenshake effect
+                            self.screen_shake(5)
+
+                        elif action["type"] == "custom":
+                            # For custom actions that require specific code execution
+                            # This would need to be handled case by case
+                            if action["action_id"] == "open_boss_door":
+                                self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                                self.screen_shake(15)
+
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
@@ -524,12 +575,7 @@ class Game:
                             self.dict_kb[key] = 0
 
                     if event.key == pygame.K_e:
-                        for lever in self.levers:
-                            if lever.can_interact(self.player.rect()):
-                                if lever.toggle():
-                                    self.screen_shake(10)
-                                    self.move_visual(2, (928, 208))
-                                    self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                        self.update_activators_actions(self.level)
 
                     if event.key == pygame.K_F11:
                         self.toggle_fullscreen()

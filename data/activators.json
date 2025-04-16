@@ -1,0 +1,46 @@
+{"0":
+  {
+    "levers": {
+      "0": {
+        "type": "visual_and_extract",
+        "visual_duration": 2,
+        "visual_pos": [
+          928,
+          208
+        ],
+        "extract_tiles": [
+          [
+            "dark_vine",
+            0
+          ],
+          [
+            "dark_vine",
+            1
+          ],
+          [
+            "dark_vine",
+            2
+          ]
+        ]
+      },
+      "1": {
+        "type": "extract_only",
+        "extract_tiles": [
+          [
+            "hanging_vine",
+            0
+          ],
+          [
+            "hanging_vine",
+            1
+          ]
+        ]
+      },
+      "2": {
+        "type": "custom",
+        "action_id": "open_boss_door"
+      }
+    },
+    "buttons": {}
+  }
+}

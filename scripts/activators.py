@@ -3,13 +3,14 @@ import time
 
 
 class Lever:
-    def __init__(self, game, pos, size=(16, 16)):
+    def __init__(self, game, pos, size=(16, 16), i=0):
         self.game = game
         self.pos = pos
         self.rect = pygame.Rect(pos[0], pos[1], size[0], size[1])
         self.state = 0
         self.last_interaction_time = 0
         self.interaction_cooldown = 0.5
+        self.id = i
 
 
     def toggle(self):
