@@ -226,6 +226,7 @@ class FirstBoss(Boss):
         if self.started or self.start_condition:
             self.started = True
             if not self.intro_complete:
+                self.game.cutscene = True
                 if time.time() - self.intro_start_time <= self.intro_duration:
                     if not self.pos[0] > 336:
                         movement = (movement[0] + 0.5, movement[1])
@@ -234,6 +235,7 @@ class FirstBoss(Boss):
                 else:
                     self.intro_complete = True
             else:
+                self.game.cutscene = False
                 if time.time() - self.last_time_bottom >= self.time_bottom:
                     if not self.has_performed_initial_jump and self.bottom:
                         if not self.is_jumping:

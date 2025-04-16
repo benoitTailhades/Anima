@@ -138,6 +138,7 @@ class Game:
         self.attacking = False
         self.player_attacked = False
         self.screenshake = 0
+        self.cutscene = False
 
 
         self.damage_flash_active = False
@@ -394,6 +395,8 @@ class Game:
 
             if not self.in_boss_level:
                 self.update_spawn_point(self.spawner_pos, self.level)
+
+            self.player.disablePlayerInput = self.cutscene
 
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:
