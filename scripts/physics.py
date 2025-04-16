@@ -72,12 +72,15 @@ class PhysicsPlayer:
         self.collision = {'left': False, 'right': False, 'bottom': False}
         self.get_block_on = {'left': False, 'right': False}
         self.air_time = 0
-
+        self.disablePlayerInput = False
 
     def physics_process(self, tilemap, dict_kb):
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
+        if self.disablePlayerInput:
+            self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,"key_noclip":0}
+            #Consider all keys as not pressed
 
         if self.is_stunned:
             # Calculate time since stun started
@@ -260,6 +263,10 @@ class PhysicsPlayer:
             # Stop unintended horizontal movement if no input is given
             if self.get_direction("x") == 0 and not self.is_stunned:
                 self.velocity[0] = 0
+
+    def disallow_movement(self,bool):
+        """allows to disable or re-enable player movement. Bool as parameter, True to disable, False to enable movement."""
+        self.disablePlayerInput = bool
 
     def jump(self):
         """Handles player jump and super/hyperdash tech"""
