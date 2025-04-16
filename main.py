@@ -124,7 +124,6 @@ class Game:
         self.level = 0
         self.levels = {i:{"charged": False} for i in range(len(os.listdir("data/maps")))}
 
-
         self.levers = []
         self.boss_levels = [1]
         self.in_boss_level = False
@@ -294,8 +293,7 @@ class Game:
             self.bosses = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawn = {"pos": spawner['pos'] if not self.in_boss_level else self.spawn["pos"],
-                                  "level": map_id if not self.in_boss_level else map_id-1}
+                    self.spawner_pos = spawner["pos"]
                     self.player.pos = spawner["pos"].copy()
                 elif spawner['variant'] == 1:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
@@ -379,6 +377,9 @@ class Game:
             self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
             self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
 
+    def update_spawn_point(self, pos, level):
+        self.spawn_point = {"pos": pos, "level": level}
+
     def run(self):
         while True:
             self.display.blit(self.assets['background'], (0, 0))
@@ -390,6 +391,9 @@ class Game:
 
             if self.transition < 0:
                 self.transition += 1
+
+            if not self.in_boss_level:
+                self.update_spawn_point(self.spawner_pos, self.level)
 
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:
@@ -432,7 +436,7 @@ class Game:
             self.display_level_fg(0)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
-                player_death(self, self.screen, self.spawn["pos"], self.spawn["level"])
+                player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
@@ -474,7 +478,7 @@ class Game:
                     if event.key == pygame.K_j:
                         self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
                     if event.key == pygame.K_m:
-                        self.spawn = {"pos": self.player.pos.copy(), "level": self.level}
+                        self.spawn_point = {"pos": self.player.pos.copy(), "level": self.level}
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:

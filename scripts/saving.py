@@ -17,7 +17,8 @@ class Save:
         save_data = {
             "player": {
                 "position": self.game.player.pos,
-                "hp": self.game.player_hp
+                "hp": self.game.player_hp,
+                "spawn_point": self.game.spawn_point
             },
             "level": self.game.level,
             "enemies": [],
@@ -79,6 +80,8 @@ class Save:
                     self.game.player.pos = save_data["player"]["position"]
                 if "hp" in save_data["player"]:
                     self.game.player_hp = save_data["player"]["hp"]
+                if "spawn_point" in save_data["player"]:
+                    self.game.spawn_point = save_data["player"]["spawn_point"]
 
             if "settings" in save_data:
                 volume = save_data["settings"].get("volume", 0.5)
