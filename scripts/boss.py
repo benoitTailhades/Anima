@@ -208,7 +208,7 @@ class FirstBoss(Boss):
         self.vine_warning_time = 100
         self.phases = {
             1: {'threshold': 1.0, 'speed': 1.0, 'vines_speed': 100, 'max_cycles': 3},
-            2: {'threshold': 0.5, 'speed': 1.0, 'vines_speed': 40, 'max_cycles': 6},
+            2: {'threshold': 0.5, 'speed': 1.0, 'vines_speed': 40, 'max_cycles': 6, 'amount_of_enemies': 5},
         }
         self.started = False
 
@@ -287,7 +287,7 @@ class FirstBoss(Boss):
 
                 if self.phase == 2:
                     if len(self.game.enemies) == 0:
-                        for i in range(5):
+                        for i in range(self.phases[2]["amount_of_enemies"]):
                             selected_pos = random.choice(self.available_summoned_entities_pos)
                             self.game.enemies.append(Enemy(self.game, "picko", selected_pos, (16, 16), 100,
                                                   {"attack_distance" : 20,

@@ -489,8 +489,11 @@ class Game:
                 # Remove dead bosses
                 if boss.hp <= 0:
                     boss.set_action("death")
+                    for enemy in self.enemies:
+                        enemy.hp = 0
                     if boss.animation.done:
                         self.bosses.remove(boss)
+                        self.levels[self.level]["charged"] = True
 
             self.tilemap.render_over(self.display, offset=render_scroll)
             self.display_level_fg(0)

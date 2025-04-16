@@ -22,6 +22,7 @@ class Save:
             },
             "level": self.game.level,
             "enemies": [],
+            "bosses": [],
             "settings": {
                 "volume": self.game.volume,
                 "keyboard_layout": self.game.keyboard_layout,
@@ -51,6 +52,27 @@ class Save:
                 "attributes": attributes
             }
             save_data["enemies"].append(enemy_data)
+
+        for boss in self.game.bosses:
+            attributes = {}
+            if hasattr(boss, "attack_distance"):
+                attributes["attack_distance"] = boss.attack_distance
+            if hasattr(boss, "attack_dmg"):
+                attributes["attack_dmg"] = boss.attack_dmg
+            if hasattr(boss, "attack_time"):
+                attributes["attack_time"] = boss.attack_time
+
+            if hasattr(boss, "attributes"):
+                attributes = boss.attributes
+
+            boss_data = {
+                "position": boss.pos,
+                "hp": boss.hp,
+                "type": boss.type if hasattr(boss, "type") else "boss",
+                "size": boss.size if hasattr(boss, "size") else (16, 16),
+                "attributes": attributes
+            }
+            save_data["bosses"].append(boss_data)
 
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
         with open(save_path, 'w') as save_file:
@@ -141,6 +163,7 @@ class Save:
                         self.game.enemies = backup_enemies
                         import traceback
                         traceback.print_exc()
+
 
             print(f"Game loaded successfully from {save_path}")
             return True
