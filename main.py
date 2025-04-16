@@ -473,6 +473,8 @@ class Game:
                             self.holding_attack = True
                     if event.key == pygame.K_j:
                         self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                    if event.key == pygame.K_m:
+                        self.spawn = {"pos": self.player.pos.copy(), "level": self.level}
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:
