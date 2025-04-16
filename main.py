@@ -121,6 +121,8 @@ class Game:
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
+        self.levels = {i:{"charged": False, "enemies": [], "bosses": [], "levers": []} for i in range(len(os.listdir("data/maps")))}
+
         self.levers = []
         self.in_bossfight = False
 
@@ -148,7 +150,6 @@ class Game:
 
         self.particles = []
 
-        self.load_level(self.level)
         self.selected_language = "English"
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
@@ -159,6 +160,8 @@ class Game:
         else:
             self.menu = Menu(self)
             self.menu.start_menu_newgame()
+
+        self.load_level(self.level)
 
     def set_volume(self, volume):
         self.volume = max(0, min(1, volume))
@@ -278,42 +281,58 @@ class Game:
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
 
+
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
                                            ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
                                           keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
-        self.enemies = []
-        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1)]):
-            if spawner['variant'] == 0:
-                self.spawn_pos = spawner['pos']
-                self.player.pos = spawner['pos'].copy()
-            elif spawner['variant'] == 1:
-                self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
-                                          {"attack_distance" : 15,
-                                           "attack_dmg": 10,
-                                           "attack_time": 2}))
+        if not self.levels[map_id]["charged"]:
+            self.enemies = []
+            self.bosses = []
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+                if spawner['variant'] == 0:
+                    self.spawn_pos = spawner['pos']
+                    self.player.pos = spawner['pos'].copy()
+                elif spawner['variant'] == 1:
+                    self.enemies.append(Enemy(self, "picko", spawner['pos'] , (16, 16), 100,
+                                              {"attack_distance" : 20,
+                                               "attack_dmg": 10,
+                                               "attack_time": 2}))
+                elif spawner['variant'] == 2: # Assuming spawner variant 2 is for bosses
+                    self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
+                                              {"attack_distance": 20,
+                                               "attack_dmg": 20,
+                                               "attack_time": 2}))
 
-        self.bosses = []
-        for spawner in self.tilemap.extract([('spawners', 2)]):  # Assuming spawner variant 3 is for bosses
-            if spawner['variant'] == 2:
-                self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
-                                          {"attack_distance": 20,
-                                           "attack_dmg": 20,
-                                           "attack_time": 0.5}))
+            self.levers = []
+            for lever in self.tilemap.extract([('lever', 0), ('lever', 1)]):
+                l = Lever(self, lever['pos'])
+                l.state = lever["variant"]
+                self.levers.append(l)
+
+            self.levels[self.level]["enemies"] = self.enemies.copy()
+            self.levels[self.level]["bosses"] = self.bosses.copy()
+            self.levels[self.level]["levers"] = self.levers.copy()
+            self.levels[map_id]["charged"] = True
+
+        else:
+            print('elfo')
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+                if spawner['variant'] == 0:
+                    self.spawn_pos = spawner['pos']
+                    self.player.pos = spawner['pos'].copy()
+            self.tilemap.extract([('lever', 0), ('lever', 1)])
+            self.enemies = self.levels[map_id]["enemies"].copy()
+            self.bosses = self.levels[map_id]["bosses"].copy()
+            self.levers = self.levels[map_id]["levers"].copy()
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
         self.scroll = [0, 0]
         self.transition = -30
         self.max_falling_depth = 500 if self.level == 0 else 5000
-
-        self.levers = []
-        for lever in self.tilemap.extract([('lever', 0), ('lever', 1)]):
-            l = Lever(self, lever['pos'])
-            l.state = lever["variant"]
-            self.levers.append(l)
 
     def display_level_bg(self, map_id):
         if map_id == 0:
@@ -329,6 +348,8 @@ class Game:
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     transition['pos'][1] > self.player.rect().centery >= transition['pos'][1] - 16):
+                self.levels[self.level]["enemies"] = self.enemies.copy()
+                self.levels[self.level]["bosses"] = self.bosses.copy()
                 if transition["variant"] == 0:
                     self.level -= 1
                     self.load_level(self.level)
