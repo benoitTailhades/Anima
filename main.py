@@ -304,12 +304,10 @@ class Game:
                                                   "attack_time": 0.1}))
 
             self.levers = []
-            i=0
             for lever in self.tilemap.extract([('lever', 0),('lever', 1)]):
-                l = Lever(self, lever['pos'], i=i)
+                l = Lever(self, lever['pos'], i=lever["id"])
                 l.state = lever["variant"]
                 self.levers.append(l)
-                i+=1
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
