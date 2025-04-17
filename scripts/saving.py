@@ -13,7 +13,7 @@ class Save:
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
-    def save_game(self,slot=1):  # Using a json file(like in the Fort boyard) to save the player data and a bunch od data (settings...)
+    def save_game(self, slot=1):
         save_data = {
             "player": {
                 "position": self.game.player.pos,
@@ -28,7 +28,6 @@ class Save:
                 "language": self.game.selected_language
             },
             "timestamp": time.time(),
-
         }
 
         for enemy in self.game.enemies:
@@ -51,6 +50,17 @@ class Save:
                 "attributes": attributes
             }
             save_data["enemies"].append(enemy_data)
+
+        # Ajoutez ce code pour écrire les données dans un fichier
+        save_path = os.path.join(self.save_folder, f"save_{slot}.json")
+        try:
+            with open(save_path, 'w') as save_file:
+                json.dump(save_data, save_file, indent=4)
+            print(f"Game saved successfully to {save_path}")
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
 
     def load_game(self, slot=1):
 
