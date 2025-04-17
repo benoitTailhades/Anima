@@ -34,6 +34,7 @@ class Editor:
             'vine_decor': load_images('tiles/vine_decor'),
             'large_decor': load_images('tiles/large_decor'),
             'stone': load_images('tiles/stone', self.tile_size),
+            'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
             'spawners': load_images('tiles/spawners'),
             'transitions': load_images('tiles/transitions'),
             'lever': load_images('tiles/lever'),
@@ -64,7 +65,6 @@ class Editor:
 
     def run(self):
         while True:
-            print(self.free_lever_id)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8

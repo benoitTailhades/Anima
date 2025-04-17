@@ -42,6 +42,7 @@ class Game:
             'stone': load_images('tiles/stone', self.tile_size),
             'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
             'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
+            'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
             'player': load_image('entities/player.png', (40, 40)),
             'picko/idle': Animation(load_images('entities/enemies/picko/idle'), img_dur=12),
             'picko/run/left': Animation(load_images('entities/enemies/picko/run/left'), img_dur=8),
