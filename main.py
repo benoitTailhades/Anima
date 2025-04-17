@@ -154,11 +154,8 @@ class Game:
         self.keyboard_layout = "azerty"
         self.save_system = Save(self)
 
-        if hasattr(self, 'menu'):
-            self.menu.start_menu_newgame()
-        else:
-            self.menu = Menu(self)
-            self.menu.start_menu_newgame()
+        self.menu.start_menu_newgame()
+        self.load_level(self.level)
 
 
     def set_volume(self, volume):
