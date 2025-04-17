@@ -55,6 +55,7 @@ class Editor:
         self.tile_list = list(self.assets)
         self.tile_group = 0
         self.tile_variant = 0
+        self.free_lever_id = 0
 
         self.clicking = False
         self.right_clicking = False
@@ -63,7 +64,7 @@ class Editor:
 
     def run(self):
         while True:
-
+            print(self.free_lever_id)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -89,10 +90,17 @@ class Editor:
                 self.display.blit(current_tile_img, mpos)
 
             if self.clicking and self.ongrid:
-                self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {'type': self.tile_list[self.tile_group],
+                if self.tile_list[self.tile_group] != "lever":
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {'type': self.tile_list[self.tile_group],
                                                                                    'variant': self.tile_variant,
                                                                                    'pos': tile_pos}
-                print(self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])])
+                else:
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'id': self.free_lever_id}
+
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
@@ -105,6 +113,11 @@ class Editor:
                                          tile_img.get_height())
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
+
+            for lever in self.tilemap.extract([("lever", 0), ("lever",1)], keep=True):
+                if not self.clicking or (tile_pos != (lever["pos"][0]//self.tilemap.tile_size,
+                                                     lever["pos"][1]//self.tilemap.tile_size)):
+                    self.free_lever_id = lever["id"]+1
 
             self.display.blit(current_tile_img, (5, 5))
 
