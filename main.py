@@ -137,7 +137,6 @@ class Game:
         self.screenshake = 0
         self.cutscene = False
 
-
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
@@ -318,6 +317,7 @@ class Game:
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
             self.levers = self.levels[map_id]["levers"].copy()
+            self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
@@ -403,6 +403,7 @@ class Game:
                 self.levels[self.level]["enemies"] = self.enemies.copy()
                 self.levels[self.level]["bosses"] = self.bosses.copy()
                 self.levels[self.level]["levers"] = self.levers.copy()
+                self.levels[self.level]["tilemap"] = self.tilemap.tilemap.copy()
                 if transition["variant"] == 0:
                     self.level -= 1
                 elif transition["variant"] == 1:

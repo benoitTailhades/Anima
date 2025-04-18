@@ -1,0 +1,43 @@
+{
+    "player": {
+        "position": [
+            883.6777216,
+            155.75
+        ],
+        "hp": 90,
+        "spawn_point": {
+            "pos": [
+                -96,
+                48
+            ],
+            "level": 0
+        }
+    },
+    "level": 0,
+    "enemies": [
+        {
+            "position": [
+                1056.0,
+                64.1
+            ],
+            "hp": 100,
+            "type": "enemy",
+            "size": [
+                16,
+                16
+            ],
+            "attributes": {
+                "attack_distance": 20,
+                "attack_dmg": 10,
+                "attack_time": 2
+            }
+        }
+    ],
+    "bosses": [],
+    "settings": {
+        "volume": 0.5,
+        "keyboard_layout": "azerty",
+        "language": "English"
+    },
+    "timestamp": 1744878071.5529957
+}
