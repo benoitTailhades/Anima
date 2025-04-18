@@ -223,11 +223,12 @@ class FirstBoss(Boss):
         self.start_condition = self.game.player.is_on_floor()
         if self.start_condition and not self.started:
             self.intro_start_time = time.time()
+        if not self.game.cutscene and not self.started:
+            self.game.cutscene = True
 
         if self.started or self.start_condition:
             self.started = True
             if not self.intro_complete:
-                self.game.cutscene = True
                 if time.time() - self.intro_start_time <= self.intro_duration:
                     if not self.pos[0] > 336:
                         movement = (movement[0] + 0.5, movement[1])

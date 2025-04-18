@@ -321,6 +321,7 @@ class Game:
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
+        self.cutscene = False
         self.scroll = [0, 0]
         self.transition = -30
         self.max_falling_depth = 500 if self.level == 0 else 5000

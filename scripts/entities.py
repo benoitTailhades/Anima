@@ -97,6 +97,7 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_dmg = attack_info["attack_dmg"]
         self.attack_time = attack_info["attack_time"]
+        self.first_attack_time = 0
         self.is_dealing_damage = False
         self.hp = hp
         self.hit = False
@@ -126,8 +127,12 @@ class Enemy(PhysicsEntity):
                 self.last_stun_time = time.time()
 
         if self.is_attacking and not self.stunned:
-            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-            self.is_dealing_damage = False
+            if time.time() - self.first_attack_time > 0:
+                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                self.is_dealing_damage = False
+        elif not self.is_attacking:
+            self.last_attack_time = 0
+            self.first_attack_time = time.time()
 
         # Handle stun state first
         if self.stunned:
@@ -314,6 +319,7 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.levels[game.level]["bosses"] = game.bosses.copy()
     game.levels[game.level]["levers"] = game.levers.copy()
     game.levels[game.level]["tilemap"] = game.tilemap.tilemap.copy()
+    game.cutscene = False
 
     death_animation(screen)
     game.load_level(spawn_level)
