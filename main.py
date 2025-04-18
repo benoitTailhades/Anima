@@ -293,7 +293,7 @@ class Game:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
                                               {"attack_distance": 20,
                                                "attack_dmg": 10,
-                                               "attack_time": 2}))
+                                               "attack_time": 1.5}))
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
                     self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
                                                  {"attack_distance": 20,
