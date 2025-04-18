@@ -127,9 +127,8 @@ class Enemy(PhysicsEntity):
                 self.last_stun_time = time.time()
 
         if self.is_attacking and not self.stunned:
-            if time.time() - self.first_attack_time > 0:
-                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-                self.is_dealing_damage = False
+            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+            self.is_dealing_damage = False
         elif not self.is_attacking:
             self.last_attack_time = 0
             self.first_attack_time = time.time()
