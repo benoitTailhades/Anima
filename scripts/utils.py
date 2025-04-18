@@ -1,6 +1,8 @@
 import pygame
 import os
 
+from numpy.f2py.crackfortran import skipfuncs
+
 BASE_IMG_PATH = "assets/images/"
 
 def load_image(path, size=None):
@@ -30,6 +32,50 @@ def display_bg(surf, img, pos):
     elif pos[0] + n*img.get_width() < 0:
         surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
         surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
+
+def load_tiles():
+    tiles = {}
+    for tile in sorted(os.listdir(BASE_IMG_PATH + 'tiles')):
+        tiles[tile] = load_images('tiles/'+ tile)
+    return tiles
+
+def load_entities(e_info):
+    tiles = {}
+    for ent in sorted(os.listdir(BASE_IMG_PATH + 'entities/')):
+        if ent not in ("player", "melee_boss"):
+            for tile in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent)):
+                for animation in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile)):
+                    if animation in e_info[tile]["left/right"]:
+                        for direction in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile + '/' + animation)):
+                            tiles[tile + '/' + animation + '/' + direction] = Animation(load_images('entities/' + ent + '/' +
+                                                                                                    tile + '/' +
+                                                                                                    animation + '/' +
+                                                                                                    direction),
+                                                                                        img_dur=e_info[tile]["img_dur"][animation],
+                                                                                        loop=e_info[tile]["loop"][animation])
+                    else:
+                        tiles[tile+'/'+animation] = Animation(load_images('entities/' + ent + '/' + tile + '/' + animation),
+                                                              img_dur=e_info[tile]["img_dur"][animation],
+                                                              loop=e_info[tile]["loop"][animation])
+    return tiles
+
+def load_player():
+    return {'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
+            'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
+            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
+            'player/jump/right': Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
+            'player/jump/top': Animation(load_images('entities/player/jump/top'), img_dur=3, loop=False),
+            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=True),
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=True),
+            'player/falling/vertical': Animation(load_images('entities/player/falling/vertical'), img_dur=3, loop=True),
+            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
+            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
+            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
+            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
+            'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
+            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
+            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
 
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):

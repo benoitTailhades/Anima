@@ -7,7 +7,7 @@ import pygame
 import random
 import time
 from scripts.entities import player_death, Enemy
-from scripts.utils import load_image, load_images, Animation, display_bg
+from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
@@ -30,27 +30,14 @@ class Game:
 
         self.tile_size = 16
 
+        self.e_info = {"picko":{"left/right": ["run"],
+                                     "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
+                                     "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
+                       "vine":{"left/right":[],
+                               "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
+                               "loop": {"warning": True, "attack": False, "retreat": False}}}
+
         self.assets = {
-            'decor': load_images('tiles/decor', self.tile_size),
-            'grass': load_images('tiles/grass', self.tile_size),
-            'vine': load_images('tiles/vine', self.tile_size),
-            'vine_transp': load_images('tiles/vine_transp', self.tile_size),
-            'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
-            'vine_decor': load_images('tiles/vine_decor'),
-            'large_decor': load_images('tiles/large_decor'),
-            'dark_vine': load_images('tiles/dark_vine'),
-            'hanging_vine': load_images('tiles/hanging_vine'),
-            'stone': load_images('tiles/stone', self.tile_size),
-            'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
-            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
-            'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
-            'player': load_image('entities/player.png', (40, 40)),
-            'picko/idle': Animation(load_images('entities/enemies/picko/idle'), img_dur=12),
-            'picko/run/left': Animation(load_images('entities/enemies/picko/run/left'), img_dur=8),
-            'picko/run/right': Animation(load_images('entities/enemies/picko/run/right'), img_dur=8),
-            'picko/attack': Animation(load_images('entities/enemies/picko/attack'), img_dur=3, loop=False),
-            'picko/death': Animation(load_images('entities/enemies/picko/death'), img_dur=3, loop=False),
-            'picko/hit': Animation(load_images('entities/enemies/picko/hit'), img_dur=5, loop=False),
 
             'boss/idle': Animation(load_images('entities/enemies/picko/idle', 32), img_dur=12),
             'boss/run/left': Animation(load_images('entities/enemies/picko/run/left', 32), img_dur=8),
@@ -59,9 +46,6 @@ class Game:
             'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
             'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
 
-            'vine/warning': Animation(load_images('entities/elements/vine/warning', (16, 48)), img_dur=12),
-            'vine/attack': Animation(load_images('entities/elements/vine/attack', (16, 48)), img_dur=1, loop=False),
-            'vine/retreat': Animation(load_images('entities/elements/vine/retreat', (16, 48)), img_dur=3, loop=False),
             'vines_door/opened': Animation(load_images('doors/vines_door/opened', (16, 48)), img_dur=3, loop=False),
             'vines_door/opening': Animation(load_images('doors/vines_door/opening', (16, 48)), img_dur=3, loop=False),
             'vines_door/closed': Animation(load_images('doors/vines_door/closed', (16, 48)), img_dur=3, loop=False),
@@ -74,28 +58,16 @@ class Game:
             'background2': load_image('bg2.png'),
             'fog': load_image('fog.png'),
 
-            'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
-            'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
-            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
-            'player/jump/right': Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
-            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
-            'player/jump/top': Animation(load_images('entities/player/jump/top'), img_dur=3, loop=False),
-            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=True),
-            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=True),
-            'player/falling/vertical': Animation(load_images('entities/player/falling/vertical'), img_dur=3, loop=True),
-            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
-            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
-            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
-            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
-            'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
-            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
-            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
             'lever': load_images('tiles/lever'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16 ))
         }
+
+        self.assets.update(load_tiles())
+        self.assets.update(load_entities(self.e_info))
+        self.assets.update(load_player())
 
         self.sound_running = False
 

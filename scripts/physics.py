@@ -126,7 +126,7 @@ class PhysicsPlayer:
             self.apply_animations()
             self.apply_particle()
             self.animation.update()
-            print(self.get_block_on)
+
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
