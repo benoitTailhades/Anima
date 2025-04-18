@@ -126,6 +126,7 @@ class PhysicsPlayer:
             self.apply_animations()
             self.apply_particle()
             self.animation.update()
+            print(self.get_block_on)
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
@@ -238,7 +239,7 @@ class PhysicsPlayer:
 
     def is_on_floor(self):
         """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
-        for rect in self.tilemap.physics_rects_under(self.pos,self.size):
+        for rect in self.tilemap.physics_rects_under(self.pos,self.size) + self.game.doors_rects:
             entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
             if entity_rect.colliderect(rect):
                 return self.rect().bottom == rect.top and self.velocity[1] >= 0
@@ -351,7 +352,7 @@ class PhysicsPlayer:
             if self.can_walljump["timer"] == 0:
                 self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_under(self.pos, self.size):
+            for rect in tilemap.physics_rects_under(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
                         self.pos[1] = rect.top - entity_rect.height
@@ -360,7 +361,7 @@ class PhysicsPlayer:
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_around(self.pos, self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] < 0:
                         self.pos[1] = rect.bottom
@@ -376,7 +377,7 @@ class PhysicsPlayer:
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
             if self.can_walljump["available"]:
                 self.can_walljump["cooldown"] = max(self.can_walljump["cooldown"]-1,0)
-            for rect in tilemap.physics_rects_around(self.pos, self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
@@ -391,9 +392,9 @@ class PhysicsPlayer:
                         self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
-                if rect.x < entity_rect.x:
+                if entity_rect.x - 17 < rect.x < entity_rect.x:
                     b_l.add(True)
-                if rect.x > entity_rect.x:
+                if entity_rect.x + 32 > rect.x > entity_rect.x:
                     b_r.add(True)
 
             self.get_block_on["left"] = bool(b_l)

@@ -15,6 +15,7 @@ from scripts.boss import FirstBoss, Vine
 from scripts.activators import Lever
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
+from scripts.doors import Door
 
 
 class Game:
@@ -61,6 +62,11 @@ class Game:
             'vine/warning': Animation(load_images('entities/elements/vine/warning', (16, 48)), img_dur=12),
             'vine/attack': Animation(load_images('entities/elements/vine/attack', (16, 48)), img_dur=1, loop=False),
             'vine/retreat': Animation(load_images('entities/elements/vine/retreat', (16, 48)), img_dur=3, loop=False),
+            'vines_door/opened': Animation(load_images('doors/vines_door/opened', (16, 48)), img_dur=3, loop=False),
+            'vines_door/opening': Animation(load_images('doors/vines_door/opening', (16, 48)), img_dur=3, loop=False),
+            'vines_door/closed': Animation(load_images('doors/vines_door/closed', (16, 48)), img_dur=3, loop=False),
+            'vines_door/closing': Animation(load_images('doors/vines_door/closing', (16, 48)), img_dur=3, loop=False),
+
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
@@ -102,7 +108,6 @@ class Game:
             # Verify the sound file path and try different filename variations if needed
             sound_path = "assets/sounds/v2-level-1-sound-background_W72B8woG.wav"
 
-
             self.volume = 0.5  # Volume par défaut : 50%
             self.background_music = pygame.mixer.Sound(sound_path)
             self.background_music.set_volume(self.volume)
@@ -136,6 +141,8 @@ class Game:
         self.player_attacked = False
         self.screenshake = 0
         self.cutscene = False
+
+        self.doors_rects = []
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
@@ -306,8 +313,14 @@ class Game:
                 l.state = lever["variant"]
                 self.levers.append(l)
 
+            self.doors = []
+            for door in self.tilemap.extract([('vines_door/closed', 0)]):
+                d = Door((16, 48), door["pos"], "vines_door", False, 2, self)
+                self.doors.append(d)
+
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
+
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
@@ -514,6 +527,14 @@ class Game:
             self.display_level_bg(0)
             self.player.can_walljump["allowed"] = not (self.level == 1)
 
+            ds = []
+            for door in self.doors:
+                door.update()
+                door.render(self.display, offset=render_scroll)
+                if not door.opened:
+                    ds.append(door.rect())
+            self.doors_rects = ds
+
             self.tilemap.render(self.display, offset=render_scroll)
 
             for lever in self.levers:
@@ -584,6 +605,8 @@ class Game:
                             self.holding_attack = True
                     if event.key == pygame.K_j:
                         self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                    if event.key == pygame.K_b:
+                        self.doors[0].open()
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:
