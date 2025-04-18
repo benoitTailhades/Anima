@@ -31,9 +31,11 @@ class Game:
         self.tile_size = 16
 
         self.e_info = {"picko":{"left/right": ["run"],
-                                     "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
-                                     "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
+                                "size": (16, 16),
+                                "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
+                                "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
                        "vine":{"left/right":[],
+                               "size": (16, 48),
                                "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
                                "loop": {"warning": True, "attack": False, "retreat": False}}}
 
@@ -46,10 +48,10 @@ class Game:
             'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
             'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
 
-            'vines_door/opened': Animation(load_images('doors/vines_door/opened', (16, 48)), img_dur=3, loop=False),
-            'vines_door/opening': Animation(load_images('doors/vines_door/opening', (16, 48)), img_dur=3, loop=False),
-            'vines_door/closed': Animation(load_images('doors/vines_door/closed', (16, 48)), img_dur=3, loop=False),
-            'vines_door/closing': Animation(load_images('doors/vines_door/closing', (16, 48)), img_dur=3, loop=False),
+            'vines_door/opened': Animation(load_images('doors/vines_door/opened', (64, 16)), img_dur=20, loop=False),
+            'vines_door/opening': Animation(load_images('doors/vines_door/opening', (64, 16)), img_dur=20, loop=False),
+            'vines_door/closed': Animation(load_images('doors/vines_door/closed', (64, 16)), img_dur=20, loop=False),
+            'vines_door/closing': Animation(load_images('doors/vines_door/closing', (64, 16)), img_dur=20, loop=False),
 
 
             'background': load_image('background_begin.png', self.display.get_size()),
@@ -287,8 +289,7 @@ class Game:
 
             self.doors = []
             for door in self.tilemap.extract([('vines_door/closed', 0)]):
-                d = Door((16, 48), door["pos"], "vines_door", False, 2, self)
-                self.doors.append(d)
+                self.doors.append(Door((64, 16), door["pos"], "vines_door", False, 2, self))
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
@@ -302,6 +303,7 @@ class Game:
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
             self.levers = self.levels[map_id]["levers"].copy()
+            self.doors = self.levels[map_id]["doors"].copy()
             self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
 
         self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
@@ -389,6 +391,7 @@ class Game:
                 self.levels[self.level]["enemies"] = self.enemies.copy()
                 self.levels[self.level]["bosses"] = self.bosses.copy()
                 self.levels[self.level]["levers"] = self.levers.copy()
+                self.levels[self.level]["doors"] = self.doors.copy()
                 self.levels[self.level]["tilemap"] = self.tilemap.tilemap.copy()
                 if transition["variant"] == 0:
                     self.level -= 1
@@ -446,21 +449,19 @@ class Game:
                         action = self.activators_actions[str(level)]["levers"][lever_id]
 
                         # Process different action types
-                        if action["type"] == "visual_and_extract":
+                        if action["type"] == "visual_and_door":
                             # Move visual
                             self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
 
                             # Extract tiles
-                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
-                            self.tilemap.extract(extract_list)
+                            self.doors[action["door_id"]].open()
 
                             # Add screenshake effect
                             self.screen_shake(10)
 
-                        elif action["type"] == "extract_only":
+                        elif action["type"] == "door_only":
                             # Extract tiles
-                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
-                            self.tilemap.extract(extract_list)
+                            self.doors[action["door_id"]].open()
 
                             # Add screenshake effect
                             self.screen_shake(5)
@@ -575,8 +576,6 @@ class Game:
                             self.dict_kb["key_attack"] = 1
                         if self.dict_kb["key_attack"] == 1:
                             self.holding_attack = True
-                    if event.key == pygame.K_j:
-                        self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
                     if event.key == pygame.K_b:
                         self.doors[0].open()
 

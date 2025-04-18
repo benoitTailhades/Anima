@@ -4,7 +4,7 @@ import pygame
 
 import json
 
-from scripts.utils import load_images
+from scripts.utils import load_images, load_image
 from scripts.tilemap import Tilemap
 
 RENDER_SCALE = 2.0

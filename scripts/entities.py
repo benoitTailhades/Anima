@@ -318,6 +318,7 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.levels[game.level]["enemies"] = game.enemies.copy()
     game.levels[game.level]["bosses"] = game.bosses.copy()
     game.levels[game.level]["levers"] = game.levers.copy()
+    game.levels[game.level]["doors"] = game.doors.copy()
     game.levels[game.level]["tilemap"] = game.tilemap.tilemap.copy()
     game.cutscene = False
 

@@ -16,12 +16,12 @@ class Door:
         self.last_time_interacted = 0
 
     def update(self):
+        self.animation.update()
+
         if self.action == "opening" and not self.opened:
-            print(self.action)
             if time.time() - self.last_time_interacted >= self.opening_speed:
                 self.set_action("opened")
                 self.opened = True
-                print(self.action)
 
         if self.action == "closing":
             self.opened = False
@@ -29,12 +29,14 @@ class Door:
                 self.set_action("closed")
 
     def open(self):
-        self.set_action("opening")
-        self.last_time_interacted = time.time()
+        if not self.opened:
+            self.set_action("opening")
+            self.last_time_interacted = time.time()
 
     def close(self):
-        self.set_action("closing")
-        self.last_time_interacted = time.time()
+        if self.opened:
+            self.set_action("closing")
+            self.last_time_interacted = time.time()
 
     def rect(self):
         if self.action == "opened":

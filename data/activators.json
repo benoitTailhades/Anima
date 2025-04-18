@@ -2,39 +2,17 @@
   {
     "levers": {
       "0": {
-        "type": "visual_and_extract",
+        "type": "visual_and_door",
         "visual_duration": 2,
         "visual_pos": [
           928,
           208
         ],
-        "extract_tiles": [
-          [
-            "dark_vine",
-            0
-          ],
-          [
-            "dark_vine",
-            1
-          ],
-          [
-            "dark_vine",
-            2
-          ]
-        ]
+        "door_id": 0
       },
       "1": {
-        "type": "extract_only",
-        "extract_tiles": [
-          [
-            "hanging_vine",
-            0
-          ],
-          [
-            "hanging_vine",
-            1
-          ]
-        ]
+        "type": "door_only",
+        "door_id": 0
       },
       "2": {
         "type": "custom",

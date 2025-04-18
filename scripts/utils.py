@@ -50,11 +50,11 @@ def load_entities(e_info):
                             tiles[tile + '/' + animation + '/' + direction] = Animation(load_images('entities/' + ent + '/' +
                                                                                                     tile + '/' +
                                                                                                     animation + '/' +
-                                                                                                    direction),
+                                                                                                    direction, e_info[tile]["size"]),
                                                                                         img_dur=e_info[tile]["img_dur"][animation],
                                                                                         loop=e_info[tile]["loop"][animation])
                     else:
-                        tiles[tile+'/'+animation] = Animation(load_images('entities/' + ent + '/' + tile + '/' + animation),
+                        tiles[tile+'/'+animation] = Animation(load_images('entities/' + ent + '/' + tile + '/' + animation, e_info[tile]["size"]),
                                                               img_dur=e_info[tile]["img_dur"][animation],
                                                               loop=e_info[tile]["loop"][animation])
     return tiles

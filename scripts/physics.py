@@ -188,12 +188,12 @@ class PhysicsPlayer:
         if not animation_applied and not self.is_on_floor():
             # Initial jump
             if self.velocity[1] < 0 and self.air_time < 20:
-                if self.get_direction("x") == 1:
-                    self.set_action("jump/right")
-                elif self.get_direction("x") == -1:
-                    self.set_action("jump/left")
-                elif self.get_direction("x") == 0:
+                if self.get_direction("x") == 0:
                     self.set_action("jump/top")
+                elif self.get_direction("x") == 1 and self.action != "jump/top":
+                    self.set_action("jump/right")
+                elif self.get_direction("x") == -1 and self.action != "jump/top":
+                    self.set_action("jump/left")
                 animation_applied = True
             # Falling
             else:
