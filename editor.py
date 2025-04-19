@@ -38,7 +38,8 @@ class Editor:
             'spawners': load_images('tiles/spawners'),
             'transition': load_images('tiles/transition'),
             'lever': load_images('tiles/lever'),
-            'vines_door_h/closed': load_images('doors/vines_door_h/closed'),
+            'vines_door_h': load_images('doors/vines_door_h/closed'),
+            'vines_door_v': load_images('doors/vines_door_v/closed'),
         }
 
         self.movement = [False, False, False, False]

@@ -60,7 +60,7 @@ class PhysicsPlayer:
         self.stunned_by = None
 
 
-        self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
+        self.allowNoClip = True #MANUALLY TURN IT ON HERE TO USE NOCLIP
 
         #Tilemap (stage)
         self.tilemap = tilemap

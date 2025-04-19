@@ -77,6 +77,17 @@ def load_player():
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
 
+def load_doors(d_info):
+    tiles = {}
+    for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/')):
+        for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + door)):
+            tiles[door + '/' + animation] = Animation(
+                load_images('doors/' + door + '/' + animation,
+                            d_info[door]["size"]),
+                img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
+                loop=False)
+    return tiles
+
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):
         self.images = images

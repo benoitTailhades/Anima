@@ -334,6 +334,9 @@ class FirstBoss(Boss):
                 else:
                     self.is_attacking = self.rect().colliderect(self.game.player.rect())
 
+                if self.hp <= 0:
+                    self.game.doors[0].open()
+
 
         super().update(tilemap, movement)
 

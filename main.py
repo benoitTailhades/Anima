@@ -7,7 +7,7 @@ import pygame
 import random
 import time
 from scripts.entities import player_death, Enemy
-from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player
+from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player, load_doors
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
@@ -37,7 +37,20 @@ class Game:
                        "vine":{"left/right":[],
                                "size": (16, 48),
                                "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
-                               "loop": {"warning": True, "attack": False, "retreat": False}}}
+                               "loop": {"warning": True, "attack": False, "retreat": False}}
+                       }
+
+        self.d_info = {"vines_door_h":{"size":(64, 16),
+                                       "img_dur":5},
+                       "vines_door_v": {"size": (16, 64),
+                                        "img_dur": 5}
+                       }
+
+        self.spawners = {}
+
+        self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
+                              1: {"x":(-48, 16), "y":(-1000, 400)},
+                              2: {"x":(-48, 280), "y":(-192, -80)}}
 
         self.assets = {
 
@@ -47,12 +60,6 @@ class Game:
             'boss/attack': Animation(load_images('entities/enemies/picko/attack', 32), img_dur=3, loop=False),
             'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
             'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
-
-            'vines_door_h/opened': Animation(load_images('doors/vines_door_h/opened', (64, 16)), img_dur=1, loop=False),
-            'vines_door_h/opening': Animation(load_images('doors/vines_door_h/opening', (64, 16)), img_dur=5, loop=False),
-            'vines_door_h/closed': Animation(load_images('doors/vines_door_h/closed', (64, 16)), img_dur=1, loop=False),
-            'vines_door_h/closing': Animation(load_images('doors/vines_door_h/closing', (64, 16)), img_dur=5, loop=False),
-
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
@@ -67,6 +74,7 @@ class Game:
             'empty_heart': load_image('empty_heart.png', (16, 16 ))
         }
 
+        self.assets.update(load_doors(self.d_info))
         self.assets.update(load_tiles())
         self.assets.update(load_entities(self.e_info))
         self.assets.update(load_player())
@@ -103,6 +111,8 @@ class Game:
         self.activators_actions = self.load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
+
+        self.spawner_pos = {}
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
@@ -268,7 +278,8 @@ class Game:
             self.bosses = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawner_pos = spawner["pos"]
+                    self.spawners[map_id] = spawner["pos"].copy()
+                    self.spawner_pos[map_id] = spawner["pos"]
                     self.player.pos = spawner["pos"].copy()
                 elif spawner['variant'] == 1:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
@@ -288,30 +299,31 @@ class Game:
                 self.levers.append(l)
 
             self.doors = []
-            for door in self.tilemap.extract([('vines_door_h/closed', 0)]):
-                self.doors.append(Door((64, 16), door["pos"], "vines_door_h", False, 1.5, self))
+            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)]):
+                self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 1, self))
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
 
+            self.transitions = self.tilemap.extract([("transition", 0)])
+
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawner_pos = spawner["pos"]
-                    self.player.pos = spawner["pos"].copy()
+                    self.spawner_pos[map_id] = spawner["pos"]
+            self.player.pos = self.spawners[map_id].copy()
             self.tilemap.extract([('lever', 0), ('lever', 1)])
+            self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
             self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
 
-        self.transitions = self.tilemap.extract([("transition", 0), ("transition", 1)])
-
         self.cutscene = False
-        self.scroll = [0, 0]
+        self.scroll = [self.player.pos[0], self.player.pos[1]]
         self.transition = -30
-        self.max_falling_depth = 500 if self.level == 0 else 5000
+        self.max_falling_depth = 5000 if self.level == 1 else 500
 
     def display_level_bg(self, map_id):
         if map_id == 0:
@@ -388,6 +400,8 @@ class Game:
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
+                if self.player.get_direction("x") != 0:
+                    self.spawners[self.level] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
                 self.levels[self.level]["enemies"] = self.enemies.copy()
                 self.levels[self.level]["bosses"] = self.bosses.copy()
                 self.levels[self.level]["levers"] = self.levers.copy()
@@ -419,11 +433,30 @@ class Game:
                 self.moving_visual = False
 
         if not self.moving_visual:
-            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
-            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
+            target_x = self.player.rect().centerx - self.display.get_width() / 2
+            target_y = self.player.rect().centery - self.display.get_height() / 2
 
-    def update_spawn_point(self, pos, level):
-        self.spawn_point = {"pos": pos, "level": level}
+            # Apply level boundaries if they exist for the current level
+            if self.level in self.scroll_limits:
+                level_limits = self.scroll_limits[self.level]
+
+                # Apply x-axis limits
+                if level_limits["x"]:
+                    min_x, max_x = level_limits["x"]
+                    target_x = max(min_x, min(target_x, max_x))
+
+                # Apply y-axis limits
+                if level_limits["y"]:
+                    min_y, max_y = level_limits["y"]
+                    target_y = max(min_y, min(target_y, max_y))
+
+            # Smooth camera movement
+            self.scroll[0] += (target_x - self.scroll[0]) / 20
+            self.scroll[1] += (target_y - self.scroll[1]) / 20
+
+    def update_spawn_point(self):
+        if self.level in (0, 1, 2):
+            self.spawn_point = {"pos": self.spawner_pos[0], "level": 0}
 
     def load_activators_actions(self):
         try:
@@ -482,8 +515,7 @@ class Game:
             if self.transition < 0:
                 self.transition += 1
 
-            if not self.in_boss_level:
-                self.update_spawn_point(self.spawner_pos, self.level)
+            self.update_spawn_point()
 
             self.player.disablePlayerInput = self.cutscene
 
@@ -597,7 +629,7 @@ class Game:
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
                                   random.random() * self.screenshake - self.screenshake / 2)
             self.draw_health_bar()
-            if self.bosses:
+            if self.bosses and not self.cutscene:
                 self.draw_boss_health_bar(self.bosses[0])
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
