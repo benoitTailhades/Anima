@@ -457,6 +457,8 @@ class Game:
     def update_spawn_point(self):
         if self.level in (0, 1, 2):
             self.spawn_point = {"pos": self.spawner_pos[0], "level": 0}
+        elif self.level in (3, 4, 5):
+            self.spawn_point = {"pos": self.spawner_pos[3], "level": 3}
 
     def load_activators_actions(self):
         try:
@@ -505,6 +507,7 @@ class Game:
 
     def run(self):
         while True:
+            print(self.spawners)
             self.display.blit(self.assets['background'], (0, 0))
 
             self.screenshake = max(0, self.screenshake - 1)
@@ -527,7 +530,7 @@ class Game:
 
             self.check_transition()
             self.display_level_bg(0)
-            self.player.can_walljump["allowed"] = not (self.level == 1)
+            self.player.can_walljump["allowed"] = self.level not in self.boss_levels
 
             ds = []
             for door in self.doors:
