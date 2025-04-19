@@ -48,10 +48,10 @@ class Game:
             'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
             'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
 
-            'vines_door/opened': Animation(load_images('doors/vines_door/opened', (64, 16)), img_dur=20, loop=False),
-            'vines_door/opening': Animation(load_images('doors/vines_door/opening', (64, 16)), img_dur=20, loop=False),
-            'vines_door/closed': Animation(load_images('doors/vines_door/closed', (64, 16)), img_dur=20, loop=False),
-            'vines_door/closing': Animation(load_images('doors/vines_door/closing', (64, 16)), img_dur=20, loop=False),
+            'vines_door_h/opened': Animation(load_images('doors/vines_door_h/opened', (64, 16)), img_dur=1, loop=False),
+            'vines_door_h/opening': Animation(load_images('doors/vines_door_h/opening', (64, 16)), img_dur=5, loop=False),
+            'vines_door_h/closed': Animation(load_images('doors/vines_door_h/closed', (64, 16)), img_dur=1, loop=False),
+            'vines_door_h/closing': Animation(load_images('doors/vines_door_h/closing', (64, 16)), img_dur=5, loop=False),
 
 
             'background': load_image('background_begin.png', self.display.get_size()),
@@ -289,7 +289,7 @@ class Game:
 
             self.doors = []
             for door in self.tilemap.extract([('vines_door/closed', 0)]):
-                self.doors.append(Door((64, 16), door["pos"], "vines_door", False, 2, self))
+                self.doors.append(Door((64, 16), door["pos"], "vines_door_h", False, 1.5, self))
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
