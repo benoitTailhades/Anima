@@ -288,7 +288,7 @@ class Game:
                 self.levers.append(l)
 
             self.doors = []
-            for door in self.tilemap.extract([('vines_door/closed', 0)]):
+            for door in self.tilemap.extract([('vines_door_h/closed', 0)]):
                 self.doors.append(Door((64, 16), door["pos"], "vines_door_h", False, 1.5, self))
 
             if not self.in_boss_level:
@@ -306,7 +306,7 @@ class Game:
             self.doors = self.levels[map_id]["doors"].copy()
             self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
 
-        self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
+        self.transitions = self.tilemap.extract([("transition", 0), ("transition", 1)])
 
         self.cutscene = False
         self.scroll = [0, 0]
@@ -387,16 +387,13 @@ class Game:
     def check_transition(self):
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
-                    transition['pos'][1] > self.player.rect().centery >= transition['pos'][1] - 16):
+                    self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
                 self.levels[self.level]["enemies"] = self.enemies.copy()
                 self.levels[self.level]["bosses"] = self.bosses.copy()
                 self.levels[self.level]["levers"] = self.levers.copy()
                 self.levels[self.level]["doors"] = self.doors.copy()
                 self.levels[self.level]["tilemap"] = self.tilemap.tilemap.copy()
-                if transition["variant"] == 0:
-                    self.level -= 1
-                elif transition["variant"] == 1:
-                    self.level += 1
+                self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 

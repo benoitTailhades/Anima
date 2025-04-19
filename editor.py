@@ -36,7 +36,7 @@ class Editor:
             'stone': load_images('tiles/stone', self.tile_size),
             'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
             'spawners': load_images('tiles/spawners'),
-            'transitions': load_images('tiles/transitions'),
+            'transition': load_images('tiles/transition'),
             'lever': load_images('tiles/lever'),
             'vines_door_h/closed': load_images('doors/vines_door_h/closed'),
         }
@@ -91,16 +91,26 @@ class Editor:
                 self.display.blit(current_tile_img, mpos)
 
             if self.clicking and self.ongrid:
-                if self.tile_list[self.tile_group] != "lever":
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {'type': self.tile_list[self.tile_group],
-                                                                                   'variant': self.tile_variant,
-                                                                                   'pos': tile_pos}
-                else:
+                if self.tile_list[self.tile_group] == "lever":
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                         'type': self.tile_list[self.tile_group],
                         'variant': self.tile_variant,
                         'pos': tile_pos,
                         'id': self.free_lever_id}
+                elif self.tile_list[self.tile_group] == "transition":
+                    direction = int(input("Enter the destination level: "))
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'destination': direction}
+
+                else:
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos}
+
 
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
