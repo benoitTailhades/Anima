@@ -169,10 +169,11 @@ class Game:
         stun_elapsed = time.time() - target.last_stun_time
         stun_duration = 0.5
 
-        knockback_dir_x = 1 if entity.rect().centerx < target.rect().centerx else -1
-        knockback_dir_y = 0
+        if not target.knockback_dir[0] and not target.knockback_dir[1]:
+            target.knockback_dir[0] = 1 if entity.rect().centerx < target.rect().centerx else -1
+            target.knockback_dir[1] = 0
         knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
-        return knockback_dir_x * knockback_force, knockback_dir_y * knockback_force
+        return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen

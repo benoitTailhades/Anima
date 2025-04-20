@@ -104,6 +104,7 @@ class Enemy(PhysicsEntity):
         self.stunned = False
         self.last_stun_time = 0
         self.is_attacked = False
+        self.knockback_dir = [0, 0]
         self.animation = self.game.assets[self.enemy_type + '/idle'].copy()
 
     def update(self, tilemap, movement=(0, 0)):
@@ -154,11 +155,12 @@ class Enemy(PhysicsEntity):
 
             else:
                 # Add stun animation/movement here
-                movement = self.game.deal_knockback(self.game.player, self, 1.5)
+                movement = self.game.deal_knockback(self.game.player, self, 1)
                 super().update(tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
+        self.knockback_dir = [0, 0]
 
         # Regular (non-stunned) behavior continues below
         if self.walking:
