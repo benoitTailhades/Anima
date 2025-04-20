@@ -60,14 +60,6 @@ class Game:
 
         self.assets = {
 
-            'wrath/idle': Animation(load_images('entities/bosses/wrath/idle', 32), img_dur=12),
-            'wrath/run/right': Animation(load_images('entities/bosses/wrath/run/right', 32), img_dur=8),
-            'wrath/run/left': Animation(load_images('entities/bosses/wrath/run/left', 32), img_dur=8),
-            'wrath/death': Animation(load_images('entities/bosses/wrath/death', 32), img_dur=3, loop=False),
-            'wrath/hit': Animation(load_images('entities/bosses/wrath/hit', 32), img_dur=5, loop=False),
-            'wrath/jump': Animation(load_images('entities/bosses/wrath/jump', 32), img_dur=5, loop=False),
-            'wrath/charge': Animation(load_images('entities/bosses/wrath/charge', 32), img_dur=5, loop=False),
-
             'fog': load_image('fog.png'),
 
             'lever': load_images('tiles/lever'),
@@ -531,7 +523,6 @@ class Game:
 
     def run(self):
         while True:
-            print(self.player.disablePlayerInput)
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()

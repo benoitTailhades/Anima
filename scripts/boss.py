@@ -241,9 +241,10 @@ class FirstBoss(Boss):
                         self.animations(movement)
                     elif not self.flip:
                         movement = (movement[0], movement[1] - 2)
-                        if self.pos[1] < 592:
-                            super().update(tilemap, movement)
+                        if self.pos[1] < 560:
                             self.flip = True
+                            super().update(tilemap, movement)
+
                         else:
                             self.animation.update()
                             frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
@@ -251,6 +252,10 @@ class FirstBoss(Boss):
                             self.pos[1] += frame_movement[1]
                             self.animations(movement)
                     else:
+                        if self.collisions["down"]:
+                            self.game.screen_shake(32)
+                            self.intro_complete = True
+
                         super().update(tilemap, movement)
                 else:
                     self.intro_complete = True
