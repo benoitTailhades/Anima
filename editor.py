@@ -40,6 +40,9 @@ class Editor:
             'lever': load_images('tiles/lever'),
             'vines_door_h': load_images('doors/vines_door_h/closed'),
             'vines_door_v': load_images('doors/vines_door_v/closed'),
+            'blue_grass' : load_images('tiles/blue_grass'),
+            'blue_large_decor': load_images('tiles/blue_large_decor'),
+            'blue_decor': load_images('tiles/blue_decor'),
         }
 
         self.movement = [False, False, False, False]

@@ -42,7 +42,7 @@ def load_tiles():
 def load_entities(e_info):
     tiles = {}
     for ent in sorted(os.listdir(BASE_IMG_PATH + 'entities/')):
-        if ent not in ("player", "melee_boss"):
+        if ent not in ("player", "bosses"):
             for tile in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent)):
                 for animation in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile)):
                     if animation in e_info[tile]["left/right"]:

@@ -54,12 +54,13 @@ class Game:
 
         self.assets = {
 
-            'boss/idle': Animation(load_images('entities/enemies/picko/idle', 32), img_dur=12),
-            'boss/run/left': Animation(load_images('entities/enemies/picko/run/left', 32), img_dur=8),
-            'boss/run/right': Animation(load_images('entities/enemies/picko/run/right', 32), img_dur=8),
-            'boss/attack': Animation(load_images('entities/enemies/picko/attack', 32), img_dur=3, loop=False),
-            'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
-            'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
+            'wrath/idle': Animation(load_images('entities/bosses/wrath/idle', 32), img_dur=12),
+            'wrath/run/right': Animation(load_images('entities/bosses/wrath/run/right', 32), img_dur=8),
+            'wrath/run/left': Animation(load_images('entities/bosses/wrath/run/left', 32), img_dur=8),
+            'wrath/death': Animation(load_images('entities/bosses/wrath/death', 32), img_dur=3, loop=False),
+            'wrath/hit': Animation(load_images('entities/bosses/wrath/hit', 32), img_dur=5, loop=False),
+            'wrath/jump': Animation(load_images('entities/bosses/wrath/jump', 32), img_dur=5, loop=False),
+            'wrath/charge': Animation(load_images('entities/bosses/wrath/charge', 32), img_dur=5, loop=False),
 
             'background': load_image('background_begin.png', self.display.get_size()),
             'background0': load_image('bg0.png'),
@@ -116,7 +117,7 @@ class Game:
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
-        self.player_dmg = 500
+        self.player_dmg = 50
         self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
@@ -287,7 +288,7 @@ class Game:
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
-                    self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
+                    self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (32, 32), 500,
                                                  {"attack_distance": 20,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
@@ -507,7 +508,6 @@ class Game:
 
     def run(self):
         while True:
-            print(self.spawners)
             self.display.blit(self.assets['background'], (0, 0))
 
             self.screenshake = max(0, self.screenshake - 1)
