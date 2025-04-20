@@ -113,7 +113,7 @@ class Game:
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
         self.player_dmg = 50
-        self.player_attack_time = 0.3
+        self.player_attack_time = 0.03
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
         self.holding_attack = False
@@ -140,6 +140,8 @@ class Game:
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
         self.save_system = Save(self)
+
+        self.a = 0
 
         if not self.menu.start_menu_newgame():
             self.load_level(self.level)
@@ -284,7 +286,7 @@ class Game:
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
                     self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (32, 32), 500,
-                                                 {"attack_distance": 20,
+                                                 {"attack_distance": 25,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
 
@@ -322,7 +324,7 @@ class Game:
         self.max_falling_depth = 5000 if self.level == 1 else 500
 
     def display_level_bg(self, map_id):
-        if map_id in (0, 2):
+        if map_id in (0, 1, 2):
             self.display.blit(self.assets['green_cave/0'], (0, 0))
             display_bg(self.display, self.assets['green_cave/1'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['green_cave/2'], (-self.scroll[0] / 10, -20))
@@ -523,6 +525,7 @@ class Game:
 
     def run(self):
         while True:
+
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()
@@ -616,11 +619,9 @@ class Game:
 
                     if event.key == pygame.K_F11:
                         self.toggle_fullscreen()
-                    if event.key == pygame.K_f:
-                        if not self.holding_attack:
-                            self.dict_kb["key_attack"] = 1
-                        if self.dict_kb["key_attack"] == 1:
-                            self.holding_attack = True
+                    if event.key == pygame.K_f and not self.holding_attack:
+                        self.dict_kb["key_attack"] = 1
+                        self.holding_attack = True
                     if event.key == pygame.K_b:
                         self.doors[0].open()
 
@@ -653,13 +654,75 @@ class Game:
             if self.damage_flash_active:
                 # Check if the flash should still be displayed
                 if pygame.time.get_ticks() < self.damage_flash_end_time:
+                    self.screen_shake(16)
                     # Create a transparent surface
-                    flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
-                    flash_surface.fill((255, 0, 0, 50))  # (R, G, B, Alpha)
-                    # Blit the transparent red overlay onto the screen
-                    self.screen.blit(flash_surface, (0, 0))
+                    # Get screen dimensions
+                    screen_width = self.screen.get_width()
+                    screen_height = self.screen.get_height()
+
+                    # Create a transparent surface for the border
+                    border_surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
+
+                    # Calculate elapsed time percentage
+                    elapsed = pygame.time.get_ticks() - (self.damage_flash_end_time - self.damage_flash_duration)
+                    progress = elapsed / self.damage_flash_duration
+
+                    # Border properties that change based on time
+                    max_border_width = 80
+                    border_width = int(max_border_width * (1 - progress))  # Border gets thinner over time
+                    alpha_base = int(240 * (1 - progress))  # Overall opacity fades out over time
+
+                    # Draw the border with inside fade effect
+                    for i in range(border_width):
+                        # Calculate fade factor - starts solid at edge, fades toward inside
+                        fade_factor = 1 - (i / border_width)
+                        color_alpha = int(alpha_base * fade_factor)
+                        color = (0, 0, 0, color_alpha)  # Dark red with variable alpha
+
+                        # Draw four lines (top, right, bottom, left) for each level of the border
+                        # Top border
+                        pygame.draw.line(border_surface, color, (0, i), (screen_width, i), 1)
+                        # Right border
+                        pygame.draw.line(border_surface, color, (screen_width - i - 1, 0),
+                                         (screen_width - i - 1, screen_height), 1)
+                        # Bottom border
+                        pygame.draw.line(border_surface, color, (0, screen_height - i - 1),
+                                         (screen_width, screen_height - i - 1), 1)
+                        # Left border
+                        pygame.draw.line(border_surface, color, (i, 0), (i, screen_height), 1)
+
+                    # Round the corners for a smoother look
+                    # This is a simplified approach - for truly smooth corners, you might need a more complex approach
+                    corner_radius = min(0, border_width)
+                    if corner_radius > 0:
+                        # Soften corners by drawing partially transparent arcs
+                        for i in range(corner_radius):
+                            fade_factor = 1 - (i / corner_radius)
+                            color_alpha = int(
+                                alpha_base * fade_factor * 0.7)  # Slightly more transparent for smooth blending
+                            color = (0, 0, 0, color_alpha)
+
+                            # Top-left corner
+                            pygame.draw.arc(border_surface, color, (0, 0, corner_radius * 2, corner_radius * 2),
+                                            math.pi / 2, math.pi, 1)
+                            # Top-right corner
+                            pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2, 0,
+                                                                    corner_radius * 2, corner_radius * 2), 0,
+                                            math.pi / 2, 1)
+                            # Bottom-right corner
+                            pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2,
+                                                                    screen_height - corner_radius * 2,
+                                                                    corner_radius * 2, corner_radius * 2),
+                                            -math.pi / 2, 0, 1)
+                            # Bottom-left corner
+                            pygame.draw.arc(border_surface, color, (0, screen_height - corner_radius * 2,
+                                                                    corner_radius * 2, corner_radius * 2), math.pi,
+                                            3 * math.pi / 2, 1)
+
+                    # Blit the border onto the screen
+                    self.screen.blit(border_surface, (0, 0))
                 else:
-                    # Flash duration has ended
+                    # Border effect duration has ended
                     self.damage_flash_active = False
 
             pygame.display.update()

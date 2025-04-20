@@ -48,11 +48,15 @@ class Boss(Enemy):
             self.animation.update()
             return
 
-        if self.is_attacked:
-            if time.time() - self.game.player_last_attack_time >= 0.03:
+        if self.is_attacked and not self.game.holding_attack:
+            if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
+                self.hit = True
                 self.last_stun_time = time.time()
+
+        if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
+            self.hit = False
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
@@ -231,6 +235,7 @@ class FirstBoss(Boss):
             self.started = True
             if not self.intro_complete:
                 if time.time() - self.intro_start_time <= self.intro_duration:
+                    self.game.move_visual(0.1, self.pos)
                     if not self.pos[0] > 336:
                         self.animation.update()
                         self.pos[1] = 608
@@ -259,6 +264,7 @@ class FirstBoss(Boss):
                         super().update(tilemap, movement)
                 else:
                     self.intro_complete = True
+                    self.game.moving_visual = False
             else:
                 if not self.hp <= 0:
                     self.game.cutscene = False
@@ -366,8 +372,6 @@ class FirstBoss(Boss):
                 else:
                     self.game.doors[0].open()
                 super().update(tilemap, movement)
-
-
 
     def animations(self, movement):
 

@@ -118,13 +118,17 @@ class Enemy(PhysicsEntity):
             self.animation.update()
             return
 
-        if self.is_attacked:
+        if self.is_attacked and not self.hit:
             self.is_attacking = True
             self.is_chasing = True
-            if time.time() - self.game.player_last_attack_time >= 0.3:
+            if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
+                self.hit = True
                 self.last_stun_time = time.time()
+
+        if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
+            self.hit = False
 
         if self.is_attacking and not self.stunned:
             if time.time() - self.first_attack_time >= self.attack_time/5:
