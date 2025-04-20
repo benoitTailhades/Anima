@@ -7,7 +7,7 @@ import pygame
 import random
 import time
 from scripts.entities import player_death, Enemy
-from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player, load_doors
+from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player, load_doors, load_backgrounds
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
@@ -37,7 +37,11 @@ class Game:
                        "vine":{"left/right":[],
                                "size": (16, 48),
                                "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
-                               "loop": {"warning": True, "attack": False, "retreat": False}}
+                               "loop": {"warning": True, "attack": False, "retreat": False}},
+                        "wrath":{"left/right": ["run"],
+                                "size": (32, 32),
+                                "img_dur": {"idle": 12, "run": 8, "jump": 5, "death": 3, "hit": 5, "charge": 5},
+                                "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}}
                        }
 
         self.d_info = {"vines_door_h":{"size":(64, 16),
@@ -45,6 +49,8 @@ class Game:
                        "vines_door_v": {"size": (16, 64),
                                         "img_dur": 5}
                        }
+
+        self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
 
         self.spawners = {}
 
@@ -62,10 +68,6 @@ class Game:
             'wrath/jump': Animation(load_images('entities/bosses/wrath/jump', 32), img_dur=5, loop=False),
             'wrath/charge': Animation(load_images('entities/bosses/wrath/charge', 32), img_dur=5, loop=False),
 
-            'background': load_image('background_begin.png', self.display.get_size()),
-            'background0': load_image('bg0.png'),
-            'background1': load_image('bg1.png'),
-            'background2': load_image('bg2.png'),
             'fog': load_image('fog.png'),
 
             'lever': load_images('tiles/lever'),
@@ -79,6 +81,7 @@ class Game:
         self.assets.update(load_tiles())
         self.assets.update(load_entities(self.e_info))
         self.assets.update(load_player())
+        self.assets.update(load_backgrounds(self.b_info))
 
         self.sound_running = False
 
@@ -327,10 +330,11 @@ class Game:
         self.max_falling_depth = 5000 if self.level == 1 else 500
 
     def display_level_bg(self, map_id):
-        if map_id == 0:
-            display_bg(self.display, self.assets['background0'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
+        if map_id in (0, 2):
+            self.display.blit(self.assets['green_cave/0'], (0, 0))
+            display_bg(self.display, self.assets['green_cave/1'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['green_cave/2'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['green_cave/3'], (self.scroll[0] / 50, -20))
 
     def draw_boss_health_bar(self, boss):
         if not self.bosses or boss.hp <= 0:
@@ -393,9 +397,28 @@ class Game:
         self.display.blit(shadow_surface, shadow_rect)
         self.display.blit(text_surface, text_rect)
 
+    def generate_fog(self, surface, color=(220, 230, 240), opacity=40):
+        """
+        Generate a simple, plain fog overlay for the entire screen.
+
+        Args:
+            surface: The surface to draw the fog on
+            color: Base color of the fog (RGB)
+            opacity: Fog opacity (0-255)
+        """
+        # Create a surface the same size as the display with alpha channel
+        fog_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
+
+        # Fill it with a semi-transparent color
+        fog_surface.fill((*color, opacity))
+
+        # Blit the fog surface onto the main surface
+        surface.blit(fog_surface, (0, 0))
+
     def display_level_fg(self, map_id):
-        if map_id == 0:
-            display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
+        if map_id in (0,1,2,3):
+            # Generate dynamic fog instead of blitting a static image
+            self.generate_fog(self.display, color=(24, 38, 31), opacity=130)
 
     def check_transition(self):
         for transition in self.transitions:
@@ -433,7 +456,7 @@ class Game:
                 # Duration completed, return to following player
                 self.moving_visual = False
 
-        if not self.moving_visual:
+        else:
             target_x = self.player.rect().centerx - self.display.get_width() / 2
             target_y = self.player.rect().centery - self.display.get_height() / 2
 
@@ -508,8 +531,7 @@ class Game:
 
     def run(self):
         while True:
-            self.display.blit(self.assets['background'], (0, 0))
-
+            print(self.player.disablePlayerInput)
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()
@@ -520,7 +542,7 @@ class Game:
 
             self.update_spawn_point()
 
-            self.player.disablePlayerInput = self.cutscene
+            self.player.disablePlayerInput = self.cutscene or self.moving_visual
 
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:
@@ -529,7 +551,7 @@ class Game:
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
             self.check_transition()
-            self.display_level_bg(0)
+            self.display_level_bg(self.level)
             self.player.can_walljump["allowed"] = self.level not in self.boss_levels
 
             ds = []
@@ -571,7 +593,7 @@ class Game:
                         self.levels[self.level]["charged"] = True
 
             self.tilemap.render_over(self.display, offset=render_scroll)
-            self.display_level_fg(0)
+            self.display_level_fg(self.level)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])

@@ -351,7 +351,6 @@ class FirstBoss(Boss):
                                 self.vines_rendered = False
                             self.vines.remove(vine)
 
-
                     if self.bottom:
                         self.set_action("charge")
                         if time.time() - self.last_time_bottom >= self.time_bottom:

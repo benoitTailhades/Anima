@@ -42,7 +42,7 @@ def load_tiles():
 def load_entities(e_info):
     tiles = {}
     for ent in sorted(os.listdir(BASE_IMG_PATH + 'entities/')):
-        if ent not in ("player", "bosses"):
+        if ent != "player":
             for tile in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent)):
                 for animation in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile)):
                     if animation in e_info[tile]["left/right"]:
@@ -86,6 +86,14 @@ def load_doors(d_info):
                             d_info[door]["size"]),
                 img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
                 loop=False)
+    return tiles
+
+def load_backgrounds(b_info):
+    tiles = {}
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'backgrounds/')):
+        for bg in sorted(os.listdir(BASE_IMG_PATH + 'backgrounds/' + environment)):
+            tiles[environment + "/" + bg[:-4]] = load_image('backgrounds/' + environment + "/" + bg,
+                                                       b_info[str(environment + "/" + bg[:-4])]["size"] if str(environment + "/" + bg[:-4]) in b_info else None)
     return tiles
 
 class Animation:
