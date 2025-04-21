@@ -127,6 +127,14 @@ class Game:
         self.player_attacked = False
         self.screenshake = 0
         self.cutscene = False
+        self.floating_texts = []
+        self.game_texts = self.load_game_texts()
+        self.floating_texts = []
+        self.game_texts = self.load_game_texts()
+        self.tutorial_active = False
+        self.tutorial_step = 0
+        self.tutorial_next_time = 0
+        self.tutorial_messages = []
 
         self.doors_rects = []
 
@@ -325,6 +333,8 @@ class Game:
         self.scroll = [self.player.pos[0], self.player.pos[1]]
         self.transition = -30
         self.max_falling_depth = 5000 if self.level == 1 else 500
+        if map_id == 0 and not self.levels[map_id]["charged"]:
+            self.start_tutorial_sequence()
 
     def display_level_bg(self, map_id):
         if map_id in (0, 1, 2):
@@ -439,6 +449,126 @@ class Game:
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
+    def load_game_texts(self):
+        """Charge les textes du jeu depuis un fichier JSON"""
+        try:
+            with open("data/texts.json", "r", encoding="utf-8") as file:
+                return json.load(file)
+        except Exception as e:
+            print(f"Erreur lors du chargement des textes: {e}")
+            return {}
+
+    def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
+        """
+        Affiche un texte prédéfini au-dessus du joueur.
+
+        Args:
+            text_key (str): La clé du texte dans le fichier JSON
+            duration (float): Durée d'affichage en secondes
+            color (tuple): Couleur RGB du texte
+            offset_y (int): Décalage vertical au-dessus du joueur
+        """
+        # Récupérer le texte correspondant à la clé
+        level_str = str(self.level)
+        if level_str in self.game_texts and text_key in self.game_texts[level_str]:
+            text = self.game_texts[level_str][text_key]
+
+            # Créer un nouveau texte flottant et l'ajouter à la liste
+            self.floating_texts.append({
+                'text': text,
+                'color': color,
+                'end_time': time.time() + duration,
+                'offset_y': offset_y,
+                'opacity': 255  # Opacité initiale
+            })
+        else:
+            print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
+
+    def update_floating_texts(self, render_scroll):
+        """Met à jour et affiche les textes flottants au-dessus du joueur"""
+        current_time = time.time()
+
+        for text_data in self.floating_texts.copy():
+            # Calculer le temps restant
+            remaining_time = text_data['end_time'] - current_time
+
+            if remaining_time <= 0:
+                # Supprimer le texte si son temps est écoulé
+                self.floating_texts.remove(text_data)
+                continue
+
+            # Faire disparaître progressivement le texte vers la fin
+            if remaining_time < 0.5:
+                text_data['opacity'] = int(255 * (remaining_time / 0.5))
+
+            # Obtenir la position du joueur
+            player_x = self.player.rect().centerx - render_scroll[0]
+            player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
+
+            # Préparer le texte
+            try:
+                font = pygame.font.SysFont("Arial", 14)
+            except:
+                font = pygame.font.Font(None, 18)
+
+            text_surface = font.render(text_data['text'], True, text_data['color'])
+            text_surface.set_alpha(text_data['opacity'])
+
+            # Créer une ombre légère pour améliorer la lisibilité
+            shadow_surface = font.render(text_data['text'], True, (0, 0, 0))
+            shadow_surface.set_alpha(text_data['opacity'] * 0.7)
+
+            # Centrer le texte au-dessus du joueur
+            text_rect = text_surface.get_rect(center=(player_x, player_y))
+            shadow_rect = shadow_surface.get_rect(center=(player_x + 1, player_y + 1))
+
+            # Afficher l'ombre puis le texte
+            self.display.blit(shadow_surface, shadow_rect)
+            self.display.blit(text_surface, text_rect)
+
+    def start_tutorial_sequence(self):
+        """Démarre la séquence de tutoriel avec des messages espacés dans le temps"""
+        # Réinitialiser l'état du tutoriel
+        self.tutorial_active = True
+        self.tutorial_step = 0
+        self.tutorial_next_time = time.time()
+
+        # Configurer la séquence de tutoriel pour le niveau 0
+        if str(self.level) == "0":
+            self.tutorial_messages = [
+                {"key": "tuto_movement", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
+                {"key": "tuto_space", "duration": 4.0, "delay": 5.0, "color": (220, 220, 255)},
+                {"key": "tuto_FG", "duration": 4.0, "delay": 5.0, "color": (255, 255, 100)}
+            ]
+        else:
+            # Tutoriels pour d'autres niveaux si nécessaire
+            self.tutorial_messages = []
+            self.tutorial_active = False
+
+    def update_tutorial_sequence(self):
+        """Met à jour la séquence de tutoriel et affiche les messages progressivement"""
+        if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
+            self.tutorial_active = False
+            return
+
+        current_time = time.time()
+
+        # Vérifier s'il est temps d'afficher le prochain message
+        if current_time >= self.tutorial_next_time:
+            message = self.tutorial_messages[self.tutorial_step]
+            self.display_text_above_player(
+                message["key"],
+                message["duration"],
+                message["color"],
+                -30
+            )
+
+            # Préparer le prochain message
+            self.tutorial_next_time = current_time + message["duration"] + message["delay"]
+            self.tutorial_step += 1
+
+
+
     def move_visual(self, duration, pos):
         self.moving_visual = True
         self.visual_pos = pos
@@ -540,6 +670,8 @@ class Game:
 
             self.update_camera()
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            self.update_tutorial_sequence()
+            self.update_floating_texts(render_scroll)
 
             if self.transition < 0:
                 self.transition += 1
@@ -653,9 +785,9 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
-                                  random.random() * self.screenshake - self.screenshake / 2)
+            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
             self.draw_health_bar()
+            self.update_floating_texts(render_scroll)
             if self.bosses and not self.cutscene:
                 self.draw_boss_health_bar(self.bosses[0])
 
