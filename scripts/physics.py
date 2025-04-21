@@ -58,6 +58,7 @@ class PhysicsPlayer:
         self.is_stunned = False
         self.last_stun_time = 0
         self.stunned_by = None
+        self.knockback_dir = [0, 0]
 
 
         self.allowNoClip = True #MANUALLY TURN IT ON HERE TO USE NOCLIP
@@ -451,7 +452,6 @@ class PhysicsPlayer:
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
             return self.dict_kb["key_up"] - self.dict_kb["key_down"]
-
 
     def dash_ghost_trail(self):
         """Creates ghost images that fade out over time."""

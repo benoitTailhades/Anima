@@ -52,6 +52,12 @@ class Game:
 
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
 
+
+        self.environments = {0:"green_cave",
+                             1:"green_cave",
+                             2:"green_cave",
+                             3:"blue_cave"}
+
         self.spawners = {}
 
         self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
@@ -141,11 +147,8 @@ class Game:
         self.keyboard_layout = "azerty"
         self.save_system = Save(self)
 
-        self.a = 0
-
         if not self.menu.start_menu_newgame():
             self.load_level(self.level)
-
 
     def set_volume(self, volume):
         self.volume = max(0, min(1, volume))
@@ -317,7 +320,6 @@ class Game:
             self.bosses = self.levels[map_id]["bosses"].copy()
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
-            self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
 
         self.cutscene = False
         self.scroll = [self.player.pos[0], self.player.pos[1]]
@@ -330,6 +332,12 @@ class Game:
             display_bg(self.display, self.assets['green_cave/1'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['green_cave/2'], (-self.scroll[0] / 10, -20))
             display_bg(self.display, self.assets['green_cave/3'], (self.scroll[0] / 50, -20))
+        if map_id == 3:
+            self.display.blit(self.assets['blue_cave/0'], (0, 0))
+            display_bg(self.display, self.assets['blue_cave/1'], (-self.scroll[0] / 10, 0))
+            display_bg(self.display, self.assets['blue_cave/2'], (-self.scroll[0] / 30, 0))
+            display_bg(self.display, self.assets['blue_cave/3'], (self.scroll[0] / 30, 0))
+            display_bg(self.display, self.assets['blue_cave/4'], (self.scroll[0] / 50, 0))
 
     def draw_boss_health_bar(self, boss):
         if not self.bosses or boss.hp <= 0:
@@ -411,9 +419,11 @@ class Game:
         surface.blit(fog_surface, (0, 0))
 
     def display_level_fg(self, map_id):
-        if map_id in (0,1,2,3):
+        if map_id in (0,1,2):
             # Generate dynamic fog instead of blitting a static image
             self.generate_fog(self.display, color=(24, 38, 31), opacity=130)
+        if map_id == 3:
+            self.generate_fog(self.display, color=(28, 50, 73), opacity=130)
 
     def check_transition(self):
         for transition in self.transitions:
@@ -425,7 +435,6 @@ class Game:
                 self.levels[self.level]["bosses"] = self.bosses.copy()
                 self.levels[self.level]["levers"] = self.levers.copy()
                 self.levels[self.level]["doors"] = self.doors.copy()
-                self.levels[self.level]["tilemap"] = self.tilemap.tilemap.copy()
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
@@ -526,7 +535,7 @@ class Game:
 
     def run(self):
         while True:
-
+            print(self.levels)
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()

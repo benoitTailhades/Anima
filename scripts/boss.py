@@ -48,7 +48,7 @@ class Boss(Enemy):
             self.animation.update()
             return
 
-        if self.is_attacked and not self.game.holding_attack:
+        if self.is_attacked and not self.hit:
             if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                 self.game.deal_dmg('player', self)
                 self.stunned = True

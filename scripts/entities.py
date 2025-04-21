@@ -37,7 +37,7 @@ class PhysicsEntity:
 
         self.pos[0] += frame_movement[0]
         entity_rect = self.rect()
-        for rect in tilemap.physics_rects_around(self.pos, self.size):
+        for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
             if entity_rect.colliderect(rect):
                 if frame_movement[0] > 0:
                     entity_rect.right = rect.left
@@ -325,7 +325,6 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.levels[game.level]["bosses"] = game.bosses.copy()
     game.levels[game.level]["levers"] = game.levers.copy()
     game.levels[game.level]["doors"] = game.doors.copy()
-    game.levels[game.level]["tilemap"] = game.tilemap.tilemap.copy()
     game.cutscene = False
 
     death_animation(screen)
