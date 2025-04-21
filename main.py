@@ -666,7 +666,7 @@ class Game:
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()
-            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
+            render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
             self.update_tutorial_sequence()
             self.update_floating_texts(render_scroll)
 
