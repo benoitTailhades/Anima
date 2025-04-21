@@ -321,10 +321,6 @@ def death_animation(screen):
         clock.tick(30)
 
 def player_death(game, screen, spawn_pos, spawn_level):
-    game.levels[game.level]["enemies"] = game.enemies.copy()
-    game.levels[game.level]["bosses"] = game.bosses.copy()
-    game.levels[game.level]["levers"] = game.levers.copy()
-    game.levels[game.level]["doors"] = game.doors.copy()
     game.cutscene = False
 
     death_animation(screen)

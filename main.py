@@ -108,6 +108,7 @@ class Game:
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
         self.levels = {i:{"charged": False} for i in range(len(os.listdir("data/maps")))}
+        self.charged_levels = []
 
         self.levers = []
         self.activators_actions = self.load_activators_actions()
@@ -314,6 +315,7 @@ class Game:
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
+                self.charged_levels.append(map_id)
 
             self.transitions = self.tilemap.extract([("transition", 0)])
 
@@ -323,6 +325,7 @@ class Game:
                     self.spawner_pos[map_id] = spawner["pos"]
             self.player.pos = self.spawners[map_id].copy()
             self.tilemap.extract([('lever', 0), ('lever', 1)])
+            self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)])
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
@@ -441,10 +444,6 @@ class Game:
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
                 if self.player.get_direction("x") != 0:
                     self.spawners[self.level] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
-                self.levels[self.level]["enemies"] = self.enemies.copy()
-                self.levels[self.level]["bosses"] = self.bosses.copy()
-                self.levels[self.level]["levers"] = self.levers.copy()
-                self.levels[self.level]["doors"] = self.doors.copy()
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
@@ -566,8 +565,6 @@ class Game:
             # Préparer le prochain message
             self.tutorial_next_time = current_time + message["duration"] + message["delay"]
             self.tutorial_step += 1
-
-
 
     def move_visual(self, duration, pos):
         self.moving_visual = True
@@ -771,6 +768,11 @@ class Game:
                     if event.key == pygame.K_f:
                         self.dict_kb["key_attack"] = 0
                         self.holding_attack = False
+
+                self.levels[self.level]["enemies"] = self.enemies.copy()
+                self.levels[self.level]["bosses"] = self.bosses.copy()
+                self.levels[self.level]["levers"] = self.levers.copy()
+                self.levels[self.level]["doors"] = self.doors.copy()
 
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0

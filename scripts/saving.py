@@ -21,6 +21,7 @@ class Save:
                 "spawn_point": self.game.spawn_point
             },
             "level": self.game.level,
+            "charged_levels": self.game.charged_levels,
             "enemies": [],
             "settings": {
                 "volume": self.game.volume,
@@ -76,7 +77,9 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
-            self.game.levels[level]["charged"] = False
+            for l in self.game.levels:
+                if l not in save_data["charged_levels"]:
+                    self.game.levels[l]["charged"] = False
             self.game.load_level(level)
 
             if "player" in save_data:
