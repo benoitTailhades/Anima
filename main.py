@@ -53,10 +53,8 @@ class Game:
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
 
 
-        self.environments = {0:"green_cave",
-                             1:"green_cave",
-                             2:"green_cave",
-                             3:"blue_cave"}
+        self.environments = {"green_cave":(0, 1, 2),
+                             "blue_cave": (3)}
 
         self.spawners = {}
 
@@ -64,6 +62,10 @@ class Game:
                               1: {"x":(-48, 16), "y":(-1000, 400)},
                               2: {"x":(-48, 280), "y":(-192, -80)}}
 
+        self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
+                            1:{"darkness_level":180, "light_radius":300},
+                            2:{"darkness_level":180, "light_radius": 200},
+                            3:{"darkness_level":180, "light_radius": 200}}
         self.assets = {
 
             'fog': load_image('fog.png'),
@@ -287,6 +289,12 @@ class Game:
                 pygame.K_n: "key_noclip",
             }
 
+    def update_light(self):
+        self.light_radius = self.light_infos[self.level]["light_radius"]
+        self.darkness_level = self.light_infos[self.level]["darkness_level"]
+        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
+        self._create_light_mask()
+
     def update_settings_from_game(self):
         self.volume = self.volume
         self.keyboard_layout = self.keyboard_layout
@@ -384,6 +392,7 @@ class Game:
         self.scroll = [self.player.pos[0], self.player.pos[1]]
         self.transition = -30
         self.max_falling_depth = 5000 if self.level == 1 else 500
+        self.update_light()
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
 
@@ -673,6 +682,35 @@ class Game:
             print(f"Error loading activators actions: {e}")
             return {"levers": {}, "buttons": {}}
 
+    def draw_cutscene_border(self, color=(0, 0, 0), width=20, opacity=255):
+
+        border_surface = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
+
+        # Draw top border
+        pygame.draw.rect(border_surface, (*color, opacity), (0, 0, self.display.get_width(), width))
+
+        # Draw bottom border
+        pygame.draw.rect(border_surface, (*color, opacity),
+                         (0, self.display.get_height() - width, self.display.get_width(), width))
+
+        # Add some shine/glow effect
+        '''for i in range(width):
+            # Calculate fade factor - solid on the outside edge, fades toward inside
+            fade_factor = i / width
+            current_opacity = int(opacity * (1 - fade_factor))
+            current_color = (*color, current_opacity)
+
+            # Draw top border line (starting from the outside)
+            pygame.draw.line(border_surface, current_color,
+                             (0, i), (self.display.get_width(), i), 1)
+
+            pygame.draw.line(border_surface, current_color,
+                             (0, self.display.get_height() - i - 1),
+                             (self.display.get_width(), self.display.get_height() - i - 1), 1)'''
+
+        # Blit the border onto the screen
+        self.display.blit(border_surface, (0, 0))
+
     def update_activators_actions(self, level):
         for lever in self.levers:
             if lever.can_interact(self.player.rect()):
@@ -836,10 +874,14 @@ class Game:
 
             self.apply_lighting(self.player.rect().center, render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
-            self.draw_health_bar()
             self.update_floating_texts(render_scroll)
-            if self.bosses and not self.cutscene:
-                self.draw_boss_health_bar(self.bosses[0])
+
+            if self.cutscene:
+                self.draw_cutscene_border()
+            else:
+                self.draw_health_bar()
+                if self.bosses:
+                    self.draw_boss_health_bar(self.bosses[0])
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
