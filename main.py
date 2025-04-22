@@ -11,7 +11,7 @@ from scripts.utils import load_image, load_images, Animation, display_bg, load_t
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
-from scripts.boss import FirstBoss, Vine
+from scripts.boss import FirstBoss
 from scripts.activators import Lever
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
@@ -30,24 +30,24 @@ class Game:
 
         self.tile_size = 16
 
-        self.e_info = {"picko":{"left/right": ["run"],
+        self.e_info = {
+            "picko":{"left/right": ["run"],
                                 "size": (16, 16),
                                 "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
                                 "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
-                       "vine":{"left/right":[],
+            "vine":{"left/right":[],
                                "size": (16, 48),
                                "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
                                "loop": {"warning": True, "attack": False, "retreat": False}},
-                        "wrath":{"left/right": ["run"],
-                                "size": (32, 32),
+            "wrath":{"left/right": ["run"],
+                                "size": (48, 48),
                                 "img_dur": {"idle": 12, "run": 8, "jump": 5, "death": 3, "hit": 5, "charge": 5},
                                 "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}}
                        }
 
-        self.d_info = {"vines_door_h":{"size":(64, 16),
-                                       "img_dur":5},
-                       "vines_door_v": {"size": (16, 64),
-                                        "img_dur": 5}
+        self.d_info = {
+            "vines_door_h":{"size":(64, 16),"img_dur":5},
+            "vines_door_v": {"size": (16, 64),"img_dur": 5}
                        }
 
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
@@ -60,7 +60,8 @@ class Game:
 
         self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
                               1: {"x":(-48, 16), "y":(-1000, 400)},
-                              2: {"x":(-48, 280), "y":(-192, -80)}}
+                              2: {"x":(-48, 280), "y":(-192, -80)},
+                              3: {"x":(16, 400), "y":(0, 200)}}
 
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
@@ -68,13 +69,11 @@ class Game:
                             3:{"darkness_level":180, "light_radius": 200}}
         self.assets = {
 
-            'fog': load_image('fog.png'),
-
             'lever': load_images('tiles/lever'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
-            'empty_heart': load_image('empty_heart.png', (16, 16 ))
+            'empty_heart': load_image('empty_heart.png', (16, 16))
         }
 
         self.assets.update(load_doors(self.d_info))
@@ -354,7 +353,7 @@ class Game:
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
-                    self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (32, 32), 500,
+                    self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (48, 48), 500,
                                                  {"attack_distance": 25,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
@@ -374,6 +373,7 @@ class Game:
                 self.charged_levels.append(map_id)
 
             self.transitions = self.tilemap.extract([("transition", 0)])
+            self.scroll = [self.player.pos[0], self.player.pos[1]]
 
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
@@ -389,7 +389,6 @@ class Game:
             self.doors = self.levels[map_id]["doors"].copy()
 
         self.cutscene = False
-        self.scroll = [self.player.pos[0], self.player.pos[1]]
         self.transition = -30
         self.max_falling_depth = 5000 if self.level == 1 else 500
         self.update_light()
@@ -693,20 +692,6 @@ class Game:
         pygame.draw.rect(border_surface, (*color, opacity),
                          (0, self.display.get_height() - width, self.display.get_width(), width))
 
-        # Add some shine/glow effect
-        '''for i in range(width):
-            # Calculate fade factor - solid on the outside edge, fades toward inside
-            fade_factor = i / width
-            current_opacity = int(opacity * (1 - fade_factor))
-            current_color = (*color, current_opacity)
-
-            # Draw top border line (starting from the outside)
-            pygame.draw.line(border_surface, current_color,
-                             (0, i), (self.display.get_width(), i), 1)
-
-            pygame.draw.line(border_surface, current_color,
-                             (0, self.display.get_height() - i - 1),
-                             (self.display.get_width(), self.display.get_height() - i - 1), 1)'''
 
         # Blit the border onto the screen
         self.display.blit(border_surface, (0, 0))
@@ -750,6 +735,8 @@ class Game:
         while True:
             self.screenshake = max(0, self.screenshake - 1)
 
+            self.check_transition()
+
             self.update_camera()
             render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
             self.update_tutorial_sequence()
@@ -768,9 +755,8 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            self.check_transition()
             self.display_level_bg(self.level)
-            self.player.can_walljump["allowed"] = self.level not in self.boss_levels
+            self.player.can_walljump["allowed"] = self.level not in self.boss_levels or not self.bosses
 
             ds = []
             for door in self.doors:
@@ -902,7 +888,7 @@ class Game:
                     progress = elapsed / self.damage_flash_duration
 
                     # Border properties that change based on time
-                    max_border_width = 80
+                    max_border_width = 220
                     border_width = int(max_border_width * (1 - progress))  # Border gets thinner over time
                     alpha_base = int(240 * (1 - progress))  # Overall opacity fades out over time
 

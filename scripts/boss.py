@@ -196,7 +196,6 @@ class Boss(Enemy):
 
         return False  # Still moving
 
-
 class FirstBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
@@ -379,11 +378,6 @@ class FirstBoss(Boss):
 
         if self.stunned:
             self.set_action("hit")
-            animation_running = True
-
-        if self.is_attacking and not animation_running and not self.stunned:
-            if self.action != "attack":
-                self.set_action("attack")
             animation_running = True
 
         if not self.is_attacking and not animation_running:

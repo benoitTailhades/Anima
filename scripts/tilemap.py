@@ -3,7 +3,6 @@ import pygame
 import json
 
 from scripts.utils import round_up
-from scripts.activators import Lever
 
 AUTOTILE_MAP = {
     tuple(sorted([(1, 0), (0, 1)])): 0,
