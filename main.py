@@ -143,6 +143,14 @@ class Game:
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
 
+        self.darkness_level = 150  # 0-255, higher means darker
+        self.light_radius = 100  # Size of the player's light circle
+        self.light_soft_edge = 250  # How soft the edge of the light is
+
+        # Create a light surface once rather than every frame
+        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
+        self._create_light_mask()
+
         self.last_visual_movement_time = 0
         self.moving_visual = False
         self.visual_pos = (0, 0)
@@ -163,6 +171,46 @@ class Game:
         self.volume = max(0, min(1, volume))
         if self.background_music:
             self.background_music.set_volume(self.volume)
+
+    def _create_light_mask(self):
+        """Generate a circular light mask with soft edges"""
+        # Clear the surface
+        self.light_mask.fill((0, 0, 0, 0))
+
+        # Draw the light with a radial gradient
+        center = (self.light_radius, self.light_radius)
+        for radius in range(self.light_radius, 0, -1):
+            # Calculate alpha based on distance from center
+            if radius >= self.light_radius - self.light_soft_edge:
+                # Create a gradual transition at the edge
+                edge_dist = self.light_radius - radius
+                alpha = int(255 * (edge_dist / self.light_soft_edge))
+            else:
+                # The center is fully transparent (visible)
+                alpha = 255
+
+            # Draw a circle with decreasing radius and increasing transparency
+            pygame.draw.circle(self.light_mask, (255, 255, 255, alpha), center, radius)
+
+    def apply_lighting(self, player_pos, render_scroll):
+        """Apply a darkness effect with a light source around the player"""
+        # Create a surface for darkness
+        darkness = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
+        darkness.fill((0, 0, 0, self.darkness_level))  # Semi-transparent black
+
+        # Calculate player position on screen
+        player_screen_x = player_pos[0] - render_scroll[0]
+        player_screen_y = player_pos[1] - render_scroll[1]
+
+        # Position for the light mask
+        light_x = player_screen_x - self.light_radius
+        light_y = player_screen_y - self.light_radius
+
+        # Apply the light mask to the darkness surface
+        darkness.blit(self.light_mask, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
+
+        # Apply the darkness to the display
+        self.display.blit(darkness, (0, 0))
 
     def deal_dmg(self, entity, target, att_dmg=5, att_time=1):
         current_time = time.time()
@@ -787,6 +835,7 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
+            self.apply_lighting(self.player.rect().center, render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
             self.draw_health_bar()
             self.update_floating_texts(render_scroll)
