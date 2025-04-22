@@ -710,7 +710,6 @@ class Game:
 
     def run(self):
         while True:
-            print(self.levels)
             self.screenshake = max(0, self.screenshake - 1)
 
             self.update_camera()

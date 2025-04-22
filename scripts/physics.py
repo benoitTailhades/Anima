@@ -8,6 +8,7 @@ import sys
 
 import pygame
 
+
 import random
 
 from scripts.particle import Particle
@@ -82,21 +83,23 @@ class PhysicsPlayer:
         self.was_on_floor = True  # Pour gérer le son d'atterrissage
         self.running_sound_playing = False
         self.run_sound_timer = 0
-        self.run_sound_interval = 20  # Intervalle entre les répétitions du son de course
+        self.run_sound_interval = 15  # Intervalle entre les répétitions du son de course
         self.last_action = "idle"  # Pour détecter les changements d'action
 
     def init_sound_system(self):
         """Initialise le système de son avec tous les fichiers nécessaires"""
         # Dictionnaire qui stockera tous les sons
+        base_path = "assets/sounds/player/"
         self.sounds = {
-            'jump': None,
-            'dash': None,
-            'wall_jump': None,
-            'land': None,
-            'run': None,
+            'jump': base_path + "jump.wav",
+            'dash': base_path + "dash.wav",
+            'wall_jump': base_path + "wall_jump.wav",
+            'land': base_path + "land.wav",
+            'run': base_path + "run.wav",
             'walk': None,
             'stun': None
         }
+        self.load_sounds(self.sounds)
 
     def load_sounds(self, sound_paths):
         """
@@ -132,20 +135,20 @@ class PhysicsPlayer:
 
             # Vérifier si le son est déjà en cours de lecture
             if not pygame.mixer.Channel(0).get_busy() or force:
-                self.sounds[sound_key].play()
+                self.sounds[sound_key].play(loops=0, maxtime=0, fade_ms=0)
 
     def update_sounds(self):
         """Met à jour et gère les sons en fonction de l'état du joueur"""
 
         # Son d'atterrissage
         if self.is_on_floor() and not self.was_on_floor:
-            self.play_sound('land')
+            self.play_sound('land', True)
 
         # Mise à jour de l'état du sol pour le prochain frame
         self.was_on_floor = self.is_on_floor()
 
         # Son de course/marche
-        if self.is_on_floor() and abs(self.velocity[0]) > 0.1:
+        if "run" in self.action:
             self.run_sound_timer += 1
 
             # Détermine si le joueur court ou marche
@@ -153,7 +156,7 @@ class PhysicsPlayer:
 
             # Joue le son à intervalles réguliers pour créer un effet de pas
             if self.run_sound_timer >= self.run_sound_interval:
-                self.play_sound(sound_key)
+                self.play_sound('run', True)
                 self.run_sound_timer = 0
         else:
             self.run_sound_timer = 0
@@ -376,7 +379,7 @@ class PhysicsPlayer:
             self.jump_logic_helper()
 
             # Jouer le son de saut
-            self.play_sound('jump')
+            self.play_sound('jump', True)
 
             # Tech
             if self.dashtime_cur != 0:
@@ -391,7 +394,7 @@ class PhysicsPlayer:
             self.jump_logic_helper()
 
             # Jouer le son de wall jump
-            self.play_sound('wall_jump')
+            self.play_sound('wall_jump', True)
 
             if self.can_walljump["wall"] == self.get_direction("x"):  # Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
@@ -451,7 +454,6 @@ class PhysicsPlayer:
         tilemap = self.tilemap
         b_r = set()
         b_l = set()
-
 
         # Handle Vertical Collision First
         if axe == "y":
