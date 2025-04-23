@@ -62,7 +62,7 @@ class Game:
         self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
                               1: {"x":(-48, 16), "y":(-1000, 400)},
                               2: {"x":(-48, 280), "y":(-192, -80)},
-                              3: {"x":(16, 400), "y":(0, 200)}}
+                              3: {"x":(16, 40000), "y":(0, 20000000)}}
 
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
@@ -391,7 +391,7 @@ class Game:
                     self.spawner_pos[map_id] = spawner["pos"]
             self.player.pos = self.spawners[map_id].copy()
             self.tilemap.extract([('lever', 0),('lever', 1)])
-            self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)])
+            self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)])
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
@@ -400,7 +400,7 @@ class Game:
 
         self.cutscene = False
         self.transition = -30
-        self.max_falling_depth = 5000 if self.level == 1 else 500
+        self.max_falling_depth = 50000000 if self.level in (1,3) else 500
         self.update_light()
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
