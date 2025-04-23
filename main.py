@@ -67,7 +67,7 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 200}}
+                            3:{"darkness_level":180, "light_radius": 120}}
 
         self.assets = {
 
@@ -752,6 +752,11 @@ class Game:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
+
+            for spike in self.tilemap.extract([("spikes", 0), ("bloody_spikes", 0)], keep=True):
+                r = pygame.Rect(spike["pos"][0], spike["pos"][1], self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
+                if r.colliderect(self.player.rect().inflate(-10, -32)):
+                    self.player_hp = 0
 
             self.attacking_update()
 
