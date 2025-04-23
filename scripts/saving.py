@@ -13,20 +13,22 @@ class Save:
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
-    def save_game(self,slot=1):  # Using a json file(like in the Fort boyard) to save the player data and a bunch od data (settings...)
+    def save_game(self, slot=1):
         save_data = {
             "player": {
                 "position": self.game.player.pos,
-                "hp": self.game.player_hp
+                "hp": self.game.player_hp,
+                "spawn_point": self.game.spawn_point
             },
             "level": self.game.level,
+            "charged_levels": self.game.charged_levels,
             "enemies": [],
             "settings": {
                 "volume": self.game.volume,
                 "keyboard_layout": self.game.keyboard_layout,
                 "language": self.game.selected_language
             },
-            "timestamp": time.time()
+            "timestamp": time.time(),
         }
 
         for enemy in self.game.enemies:
@@ -50,12 +52,16 @@ class Save:
             }
             save_data["enemies"].append(enemy_data)
 
+        # Ajoutez ce code pour écrire les données dans un fichier
         save_path = os.path.join(self.save_folder, f"save_{slot}.json")
-        with open(save_path, 'w') as save_file:
-            json.dump(save_data, save_file, indent=4)
-
-        print(f"Game saved successfully in {save_path}")
-        return True
+        try:
+            with open(save_path, 'w') as save_file:
+                json.dump(save_data, save_file, indent=4)
+            print(f"Game saved successfully to {save_path}")
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
 
     def load_game(self, slot=1):
 
@@ -71,6 +77,9 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
+            for l in self.game.levels:
+                if l not in save_data["charged_levels"]:
+                    self.game.levels[l]["charged"] = False
             self.game.load_level(level)
 
             if "player" in save_data:
@@ -78,6 +87,8 @@ class Save:
                     self.game.player.pos = save_data["player"]["position"]
                 if "hp" in save_data["player"]:
                     self.game.player_hp = save_data["player"]["hp"]
+                if "spawn_point" in save_data["player"]:
+                    self.game.spawn_point = save_data["player"]["spawn_point"]
 
             if "settings" in save_data:
                 volume = save_data["settings"].get("volume", 0.5)
@@ -137,6 +148,7 @@ class Save:
                         import traceback
                         traceback.print_exc()
 
+
             print(f"Game loaded successfully from {save_path}")
             return True
 
@@ -145,6 +157,7 @@ class Save:
             import traceback
             traceback.print_exc()
             return False
+
     def list_saves(self):  # keep a list of the saves and what they have into them(what is stored)
         saves = []
 

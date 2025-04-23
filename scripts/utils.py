@@ -1,5 +1,8 @@
 import pygame
 import os
+import json
+
+from numpy.f2py.crackfortran import skipfuncs
 
 BASE_IMG_PATH = "assets/images/"
 
@@ -31,6 +34,70 @@ def display_bg(surf, img, pos):
         surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
         surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
 
+def load_tiles(env=None):
+    tiles = {}
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'tiles')) if env is None else [env]:
+        for tile in sorted(os.listdir(BASE_IMG_PATH + 'tiles/' + environment)):
+            tiles[tile] = load_images('tiles/' + environment + '/' + tile)
+    return tiles
+
+def load_entities(e_info):
+    tiles = {}
+    for ent in sorted(os.listdir(BASE_IMG_PATH + 'entities/')):
+        if ent != "player":
+            for tile in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent)):
+                for animation in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile)):
+                    if animation in e_info[tile]["left/right"]:
+                        for direction in sorted(os.listdir(BASE_IMG_PATH + 'entities/' + ent + '/' + tile + '/' + animation)):
+                            tiles[tile + '/' + animation + '/' + direction] = Animation(load_images('entities/' + ent + '/' +
+                                                                                                    tile + '/' +
+                                                                                                    animation + '/' +
+                                                                                                    direction, e_info[tile]["size"]),
+                                                                                        img_dur=e_info[tile]["img_dur"][animation],
+                                                                                        loop=e_info[tile]["loop"][animation])
+                    else:
+                        tiles[tile+'/'+animation] = Animation(load_images('entities/' + ent + '/' + tile + '/' + animation, e_info[tile]["size"]),
+                                                              img_dur=e_info[tile]["img_dur"][animation],
+                                                              loop=e_info[tile]["loop"][animation])
+    return tiles
+
+def load_player():
+    return {'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
+            'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
+            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
+            'player/jump/right': Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
+            'player/jump/top': Animation(load_images('entities/player/jump/top'), img_dur=3, loop=False),
+            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=True),
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=True),
+            'player/falling/vertical': Animation(load_images('entities/player/falling/vertical'), img_dur=3, loop=True),
+            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
+            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
+            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
+            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
+            'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
+            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
+            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
+
+def load_doors(d_info):
+    tiles = {}
+    for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/')):
+        for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + door)):
+            tiles[door + '/' + animation] = Animation(
+                load_images('doors/' + door + '/' + animation,
+                            d_info[door]["size"]),
+                img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
+                loop=False)
+    return tiles
+
+def load_backgrounds(b_info):
+    tiles = {}
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'backgrounds/')):
+        for bg in sorted(os.listdir(BASE_IMG_PATH + 'backgrounds/' + environment)):
+            tiles[environment + "/" + bg[:-4]] = load_image('backgrounds/' + environment + "/" + bg,
+                                                       b_info[str(environment + "/" + bg[:-4])]["size"] if str(environment + "/" + bg[:-4]) in b_info else None)
+    return tiles
+
 class Animation:
     def __init__(self, images, img_dur = 5, loop = True):
         self.images = images
@@ -56,7 +123,6 @@ class Animation:
     def img(self):
         return self.images[int(self.frame / self.img_duration)]
 
-
 def load_game_font(font_name=None, size=36):
 
     RECOMMENDED_FONTS = [
@@ -74,6 +140,25 @@ def load_game_font(font_name=None, size=36):
         except:
             pass
     return pygame.font.SysFont('monospace', size, bold=True)
+
+def load_game_texts():
+        """Charge les textes du jeu depuis un fichier JSON"""
+        try:
+            with open("data/texts.json", "r", encoding="utf-8") as file:
+                return json.load(file)
+        except Exception as e:
+            print(f"Erreur lors du chargement des textes: {e}")
+            return {}
+
+def load_activators_actions():
+    try:
+        with open("data/activators.json", "r") as file:
+            actions_data = json.load(file)
+            return actions_data
+
+    except Exception as e:
+        print(f"Error loading activators actions: {e}")
+        return {"levers": {}, "buttons": {}}
 
 
 

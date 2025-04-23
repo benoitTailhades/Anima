@@ -4,7 +4,7 @@ import pygame
 
 import json
 
-from scripts.utils import load_images
+from scripts.utils import load_images, load_tiles
 from scripts.tilemap import Tilemap
 
 RENDER_SCALE = 2.0
@@ -21,28 +21,26 @@ class Editor:
 
         self.tile_size = 16
 
-        self.assets = {
-            'decor': load_images('tiles/decor', self.tile_size),
-            'grass': load_images('tiles/grass', self.tile_size),
-            'vine': load_images('tiles/vine', self.tile_size),
-            'vine_transp': load_images('tiles/vine_transp', self.tile_size),
-            'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
-            'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
-            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
-            'dark_vine': load_images('tiles/dark_vine'),
-            'hanging_vine': load_images('tiles/hanging_vine'),
-            'vine_decor': load_images('tiles/vine_decor'),
-            'large_decor': load_images('tiles/large_decor'),
-            'stone': load_images('tiles/stone', self.tile_size),
-            'spawners': load_images('tiles/spawners'),
-            'transitions': load_images('tiles/transitions')
+        self.base_assets = {
+            'spawners': load_images('spawners'),
+            'transition': load_images('transition'),
+            'lever': load_images('levers/green_cave'),
+            'vines_door_h': load_images('doors/vines_door_h/closed'),
+            'vines_door_v': load_images('doors/vines_door_v/closed'),
+            'breakable_stalactite': load_images('doors/breakable_stalactite/closed')
         }
+
+        self.environments = {"green_cave": (0, 1, 2),
+                             "blue_cave": (3,)}
+
+        self.level = 0
+
+        self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
 
         self.movement = [False, False, False, False]
 
         self.tilemap = Tilemap(self, self.tile_size)
 
-        self.level = 0
 
         try:
             self.tilemap.load('data/maps/'+str(self.level)+'.json')
@@ -54,15 +52,22 @@ class Editor:
         self.tile_list = list(self.assets)
         self.tile_group = 0
         self.tile_variant = 0
+        self.free_lever_id = 0
+
+        self.zoom = 1
 
         self.clicking = False
         self.right_clicking = False
         self.shift = False
         self.ongrid = True
 
+    def get_environment(self, level):
+        for environment in self.environments:
+            if level in self.environments[environment]:
+                return environment
+
     def run(self):
         while True:
-
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -77,7 +82,7 @@ class Editor:
             current_tile_img.set_alpha(100)
 
             mpos = pygame.mouse.get_pos()
-            mpos = ((mpos[0] / RENDER_SCALE)*(960/self.screen.get_size()[0]), (mpos[1] / RENDER_SCALE)*(576/self.screen.get_size()[1]))
+            mpos = ((mpos[0] / RENDER_SCALE)*(960/self.screen.get_size()[0])*self.zoom, (mpos[1] / RENDER_SCALE)*(576/self.screen.get_size()[1])*self.zoom)
             tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                         int((mpos[1] +  self.scroll[1]) // self.tilemap.tile_size))
 
@@ -88,10 +93,27 @@ class Editor:
                 self.display.blit(current_tile_img, mpos)
 
             if self.clicking and self.ongrid:
-                self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {'type': self.tile_list[self.tile_group],
-                                                                                   'variant': self.tile_variant,
-                                                                                   'pos': tile_pos}
-                print(self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])])
+                if self.tile_list[self.tile_group] == "lever":
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'id': self.free_lever_id}
+                elif self.tile_list[self.tile_group] == "transition":
+                    direction = int(input("Enter the destination level: "))
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'destination': direction}
+
+                else:
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos}
+
+
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
@@ -104,6 +126,8 @@ class Editor:
                                          tile_img.get_height())
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
+
+            self.free_lever_id = len(self.tilemap.extract([("lever", 0), ("lever",1)], keep=True))
 
             self.display.blit(current_tile_img, (5, 5))
 
@@ -157,6 +181,10 @@ class Editor:
                                 self.scroll = [0, 0]
                             else:
                                 pass
+                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.tile_list = list(self.assets)
+                            self.tile_group = 0
+                            self.tile_variant = 0
                     if event.key == pygame.K_LEFT:
                         if self.level > 0:
                             self.tilemap.save('data/maps/' + str(self.level) + '.json')
@@ -166,6 +194,16 @@ class Editor:
                                 self.scroll = [0, 0]
                             except FileNotFoundError:
                                 pass
+                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.tile_list = list(self.assets)
+                            self.tile_group = 0
+                            self.tile_variant = 0
+                    if event.key == pygame.K_DOWN:
+                        self.zoom = self.zoom*2
+                        self.display = pygame.Surface((480*self.zoom, 288*self.zoom))
+                    if event.key == pygame.K_UP:
+                        self.zoom = self.zoom/2
+                        self.display = pygame.Surface((480*self.zoom, 288*self.zoom))
 
                     if event.key == pygame.K_d:
                         self.movement[1] = True

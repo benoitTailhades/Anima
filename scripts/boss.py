@@ -48,11 +48,15 @@ class Boss(Enemy):
             self.animation.update()
             return
 
-        if self.is_attacked:
-            if time.time() - self.game.player_last_attack_time >= 0.3:
+        if self.is_attacked and not self.hit:
+            if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
+                self.hit = True
                 self.last_stun_time = time.time()
+
+        if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
+            self.hit = False
 
         if self.is_attacking and not self.stunned:
             self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
@@ -61,6 +65,7 @@ class Boss(Enemy):
                 self.game.player.is_stunned = True
                 self.game.player.stunned_by = self
                 self.game.player.last_stun_time = time.time()
+            self.is_dealing_damage = False
 
         # Handle stun state first
         if self.stunned:
@@ -118,7 +123,7 @@ class Boss(Enemy):
             print("Starting jump from", self.move_start_pos, "to", target_pos)
 
         if speed is None:
-            speed = 0.8 * self.current_phase_data['speed']
+            speed = 1 * self.current_phase_data['speed']
 
         # Increment progress based on speed
         self.move_progress += 0.02 * speed
@@ -177,14 +182,14 @@ class Boss(Enemy):
         if self.move_progress < 0.5:
             # Rising part of jump
             try:
-                self.set_action("jump_up")
+                self.set_action("jump")
             except KeyError:
                 # If jump_up animation doesn't exist
                 pass
         else:
             # Falling part of jump
             try:
-                self.set_action("jump_down")
+                self.set_action("jump")
             except KeyError:
                 # If jump_down animation doesn't exist
                 pass
@@ -198,121 +203,181 @@ class FirstBoss(Boss):
         self.last_vine_attack = time.time()
         self.vines = []
         self.available_vines_positions = [(x*16, 576) for x in range(-2, 29)]
+        self.available_summoned_entities_pos = [(x*16, 336) for x in range(-2, 29)
+                                                if x not in {1,2,3,4,8,9,10,18,19,20,23,24,25,26}]
         self.bottom = True
         self.time_bottom = 3
         self.last_time_bottom = 0
         self.vines_cyles = 0
-        self.max_cycles = 3
+        self.vines_rendered = False
+        self.vine_warning_time = 100
         self.phases = {
-            1: {'threshold': 1.0, 'speed': 1.0, 'attack_cooldown': 2.0},
-            2: {'threshold': 0.5, 'speed': 1.0, 'attack_cooldown': 1.5},
+            1: {'threshold': 1.0, 'speed': 1.0, 'vines_speed': 100, 'max_cycles': 3},
+            2: {'threshold': 0.5, 'speed': 1.0, 'vines_speed': 40, 'max_cycles': 6, 'amount_of_enemies': 5},
         }
+        self.started = False
 
+        # Introduction action attributes
+        self.intro_sequence_started = False
+        self.intro_complete = False
+        self.intro_start_time = 0
+        self.intro_duration = 6  # Duration in seconds for the intro animation
 
     def update(self, tilemap, movement=(0, 0)):
-        super().update(tilemap, movement)
+        self.start_condition = self.game.player.is_on_floor()
+        if self.start_condition and not self.started:
+            self.intro_start_time = time.time()
+        if not self.game.cutscene and not self.started:
+            self.game.cutscene = True
 
-        # Phase 1 behavior - Jump to position once
-        if self.phase == 1:
-            self.max_cycles = 3
+        if self.started or self.start_condition:
+            self.started = True
+            if not self.intro_complete:
+                if time.time() - self.intro_start_time <= self.intro_duration:
+                    self.game.move_visual(0.1, self.pos)
+                    if not self.pos[0] > 336:
+                        self.animation.update()
+                        self.pos[1] = 608
+                        movement = (movement[0] + 0.5, movement[1])
+                        frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
+                        self.pos[0] += frame_movement[0]
+                        self.pos[1] += frame_movement[1]
+                        self.animations(movement)
+                    elif not self.flip:
+                        movement = (movement[0], movement[1] - 2)
+                        if self.pos[1] < 560:
+                            self.flip = True
+                            super().update(tilemap, movement)
 
-        if self.phase == 2:
-            self.max_cycles = 6
-            self.vine_attack_cycle_time = 1
+                        else:
+                            self.animation.update()
+                            frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
+                            self.pos[0] += frame_movement[0]
+                            self.pos[1] += frame_movement[1]
+                            self.animations(movement)
+                    else:
+                        if self.collisions["down"]:
+                            self.game.screen_shake(32)
+                            self.intro_complete = True
 
-        if time.time() - self.last_time_bottom >= self.time_bottom:
-            if not self.has_performed_initial_jump and self.bottom:
-                if not self.is_jumping:
-                    self.current_destination = (144, 480)
-                    self.last_dest = self.current_destination
-                    print("Starting initial jump to:", self.current_destination)
-
-                if self.current_destination is not None:
-                    reached = self.move_to(self.current_destination, jump_height=100)
-
-                    if reached:
-                        self.game.screen_shake(16)
-                        print('Reached initial position')
-                        self.current_destination = None
-                        self.has_performed_initial_jump = True
-                        self.bottom = False
-                        # Next action after reaching position
-                        # For example, start attacking the player
+                        super().update(tilemap, movement)
+                else:
+                    self.intro_complete = True
+                    self.game.moving_visual = False
             else:
-                # Behavior after first jump is complete (attack patterns, etc.)
-                # For example:
-                if not self.is_jumping and time.time() - self.last_attack_time > 3.0:
-                    # Maybe jump to a new position
-                    possible_positions = [(144, 480), (32, 496), (304, 496)]
-                    r = random.choice(possible_positions)
-                    while r == self.last_dest:
-                        r = random.choice(possible_positions)
-                    self.current_destination = r
-                    self.last_dest = self.current_destination
-                    print("Starting new jump to:", self.current_destination)
-                    self.last_attack_time = time.time()
+                if not self.hp <= 0:
+                    self.game.cutscene = False
 
-                if self.current_destination is not None:
-                    reached = self.move_to(self.current_destination, jump_height=100)
+                    if time.time() - self.last_time_bottom >= self.time_bottom:
+                        if not self.has_performed_initial_jump and self.bottom:
+                            if not self.is_jumping:
+                                self.current_destination = (144, 480)
+                                self.last_dest = self.current_destination
+                                print("Starting initial jump to:", self.current_destination)
 
-                    if reached:
-                        self.game.screen_shake(16)
-                        print('Reached new position')
-                        self.current_destination = None
-                        # Maybe start an attack sequence
+                            if self.current_destination is not None:
+                                reached = self.move_to(self.current_destination, jump_height=100)
 
-        if time.time() - self.last_vine_attack >= self.vine_attack_cycle_time and len(
-                self.vines) == 0 and not self.bottom:
-            for i in range(13):
-                selected_pos = random.choice(self.available_vines_positions)
-                self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.game))
-                self.available_vines_positions.remove(selected_pos)
-            self.available_vines_positions = [(x * 16, 576) for x in range(-2, 29)]
+                                if reached:
+                                    self.game.screen_shake(16)
+                                    print('Reached initial position')
+                                    self.current_destination = None
+                                    self.has_performed_initial_jump = True
+                                    self.bottom = False
+                                    # Next action after reaching position
+                                    # For example, start attacking the player
+                        else:
+                            # Behavior after first jump is complete (attack patterns, etc.)
+                            # For example:
+                            if not self.is_jumping and time.time() - self.last_attack_time > 3.0 and self.vines_cyles != self.phases[self.phase]["max_cycles"]:
+                                # Maybe jump to a new position
+                                possible_positions = [(144, 480), (32, 496), (304, 496), (384, 480)]
+                                r = random.choice(possible_positions)
+                                while r == self.last_dest:
+                                    r = random.choice(possible_positions)
+                                self.current_destination = r
+                                self.last_dest = self.current_destination
+                                print("Starting new jump to:", self.current_destination)
+                                self.last_attack_time = time.time()
 
-        for vine in self.vines:
-            vine.update()
-            vine.render(self.game.display, (int(self.game.scroll[0]), int(self.game.scroll[1])))
-            if vine.action == 'retreat' and vine.animation.done:
-                if len(self.vines) == 1:
-                    self.last_vine_attack = time.time()
-                    self.vines_cyles += 1
-                self.vines.remove(vine)
+                            if self.current_destination is not None:
+                                reached = self.move_to(self.current_destination, jump_height=100)
 
-        if self.vines_cyles == self.max_cycles:
-            if self.rect().colliderect(self.game.player.rect()):
-                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-            self.current_destination = (208, 608)
-            print("Starting initial jump to:", self.current_destination)
+                                if reached:
+                                    self.game.screen_shake(16)
+                                    print('Reached new position')
+                                    self.current_destination = None
+                                    # Maybe start an attack sequence
 
-            if self.current_destination is not None:
-                reached = self.move_to(self.current_destination, jump_height=100)
+                    if self.vines_cyles == self.phases[self.phase]["max_cycles"] and len(self.vines) == 0:
+                        if self.rect().colliderect(self.game.player.rect()):
+                            self.is_attacking = True
 
-                if reached:
-                    self.game.screen_shake(16)
-                    print('Reached bottom')
-                    self.last_time_bottom = time.time()
-                    self.bottom = True
-                    self.vines_cyles = 0
+                        if not self.bottom:
+                            self.current_destination = (208, 608)
+                            print("Starting initial jump to:", self.current_destination)
+                            self.last_time_bottom = time.time()
 
-        if self.bottom:
-            if time.time() - self.last_time_bottom >= self.time_bottom:
-                self.bottom = False
-        else:
-            if self.rect().colliderect(self.game.player.rect()):
-                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                        if self.current_destination is not None:
+                            reached = self.move_to(self.current_destination, jump_height=100)
 
+                            if reached:
+                                self.game.screen_shake(32)
+                                print('Reached bottom')
+                                self.bottom = True
+                                self.is_attacking = False
+                                self.current_destination = None
+                                self.vines_cyles = 0
 
+                    if time.time() - self.last_vine_attack >= self.vine_attack_cycle_time and len(
+                            self.vines) == 0 and not self.bottom:
+                            for i in range(13):
+                                selected_pos = random.choice(self.available_vines_positions)
+                                self.vines.append(Vine((16, 48), selected_pos, 5, 10, self.phases[self.phase]["vines_speed"], self.game))
+                                self.available_vines_positions.remove(selected_pos)
+                            self.available_vines_positions = [(x * 16, 576) for x in range(-2, 29)]
 
-    def update_animation(self, movement):
+                    if self.phase == 2:
+                        if len(self.game.enemies) == 0:
+                            for i in range(self.phases[2]["amount_of_enemies"]):
+                                selected_pos = random.choice(self.available_summoned_entities_pos)
+                                self.game.enemies.append(Enemy(self.game, "picko", selected_pos, (16, 16), 100,
+                                                      {"attack_distance" : 20,
+                                                       "attack_dmg": 5,
+                                                       "attack_time": 2}))
+                                self.available_summoned_entities_pos.remove(selected_pos)
+                            self.available_summoned_entities_pos = [(x*16, 336) for x in range(-2, 29)
+                                                                    if x not in {1,2,3,4,8,9,10,18,19,20,23,24,25,26}]
+
+                    for vine in self.vines:
+                        vine.update()
+                        vine.render(self.game.display, (int(self.game.scroll[0]), int(self.game.scroll[1])))
+                        if not self.vines_rendered:
+                            self.vines_cyles += 1
+                            self.vines_rendered = True
+                        if vine.action == 'retreat' and vine.animation.done:
+                            if len(self.vines) == 1:
+                                self.last_vine_attack = time.time()
+                                self.vines_rendered = False
+                            self.vines.remove(vine)
+
+                    if self.bottom:
+                        self.set_action("charge")
+                        if time.time() - self.last_time_bottom >= self.time_bottom:
+                            self.bottom = False
+                    else:
+                        self.is_attacking = self.rect().colliderect(self.game.player.rect())
+
+                else:
+                    self.game.doors[0].open()
+                super().update(tilemap, movement)
+
+    def animations(self, movement):
+
         animation_running = False
 
         if self.stunned:
             self.set_action("hit")
-            animation_running = True
-
-        if self.is_attacking and not animation_running and not self.stunned:
-            if self.action != "attack":
-                self.set_action("attack")
             animation_running = True
 
         if not self.is_attacking and not animation_running:
@@ -321,18 +386,18 @@ class FirstBoss(Boss):
                     self.set_action("run/left")
                 else:
                     self.set_action("run/right")
-            else:
+            elif self.action != "charge":
                 self.set_action("idle")
 
 class Vine:
-    def __init__(self, size, pos, attack_time, attack_dmg, game):
+    def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):
         self.game = game
         self.size = size
         self.pos = pos
         self.attack_time = attack_time
         self.last_attack_time = 0
         self.attack_dmg = attack_dmg
-        self.warning_duration = 100
+        self.warning_duration = warning_duration
 
         # Animation and state handling
         self.animation = self.game.assets['vine/warning'].copy()
@@ -362,6 +427,7 @@ class Vine:
                     self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
 
             if self.timer >= self.attack_time and self.animation.done:
+                self.game.screen_shake(16)
                 self.set_action('retreat')
                 self.state = 'retreat'
                 self.timer = 0

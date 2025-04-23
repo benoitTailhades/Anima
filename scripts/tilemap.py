@@ -17,9 +17,10 @@ AUTOTILE_MAP = {
 
 }
 
-PHYSICS_TILES = {'grass','stone', 'vine','mossy_stone'}
+PHYSICS_TILES = {'grass','stone', 'vine','mossy_stone', 'gray_mossy_stone', 'blue_grass'}
 TRANSPARENT_TILES = {'vine_transp':[0,1,2], 'vine_transp_back':[0,1,2], 'dark_vine':[0,1,2],'hanging_vine':[0,1,2]}
-AUTOTILE_TYPES = {'grass', 'stone', 'mossy_stone'}
+AUTOTILE_TYPES = {'grass', 'stone', 'mossy_stone', 'blue_grass'}
+LEVER_TILES = {'lever': [0, 1]}
 
 class Tilemap:
     def __init__(self, game, tile_size = 16):
@@ -40,7 +41,7 @@ class Tilemap:
             tile = self.tilemap[loc]
             if (tile['type'], tile['variant']) in id_pairs:
                 matches.append(tile.copy())
-                matches[-1]['pos'] = matches[-1]['pos'].copy()
+                matches[-1]['pos'] = list(matches[-1]['pos']).copy()
                 matches[-1]['pos'][0] *= self.tile_size
                 matches[-1]['pos'][1] *= self.tile_size
                 if not keep:
@@ -181,8 +182,8 @@ class Tilemap:
                         tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
 
     def render_over(self, surf, offset = (0, 0)):
-        for x in range(offset[0] // self.tile_size, (offset[0] + surf.get_width()) // self.tile_size + 1):
-            for y in range(offset[1] // self.tile_size, (offset[1] + surf.get_height()) // self.tile_size + 1):
+        for x in range(offset[0] // self.tile_size - 1, (offset[0] + surf.get_width()) // self.tile_size + 2):
+            for y in range(offset[1] // self.tile_size - 1, (offset[1] + surf.get_height()) // self.tile_size + 2):
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]

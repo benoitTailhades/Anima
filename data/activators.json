@@ -1,0 +1,24 @@
+{"0":
+  {
+    "levers": {
+      "0": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "visual_pos": [
+          928,
+          208
+        ],
+        "door_id": 0
+      },
+      "1": {
+        "type": "door_only",
+        "door_id": 0
+      },
+      "2": {
+        "type": "custom",
+        "action_id": "open_boss_door"
+      }
+    },
+    "buttons": {}
+  }
+}

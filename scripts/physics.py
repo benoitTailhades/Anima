@@ -8,23 +8,24 @@ import sys
 
 import pygame
 
+
 import random
 
 from scripts.particle import Particle
 from scripts.tilemap import Tilemap
+from scripts.sound import *
 
 class PhysicsPlayer:
-    # Overall physics and movement handler
     def __init__(self, game, tilemap, pos, size):
 
-        #Hitbox util vars
+        # Hitbox util vars
         self.game = game
         self.pos = list(pos)  # [x, y]
         self.size = size
         self.velocity = [0, 0]  # [vel_x, vel_y]
         self.acceleration = [0.0, 0.0]
 
-        #Constants for movement
+        # Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
         self.JUMP_VELOCITY = -5.8
@@ -33,24 +34,26 @@ class PhysicsPlayer:
         self.DASH_COOLDOWN = 50
         self.WALLJUMP_COOLDOWN = 5
 
-        #Vars related to constants
+        # Vars related to constants
         self.dashtime_cur = 0  # Used to determine whether we are dashing or not. Also serves as a timer.
         self.dash_cooldown = 0
         self.dash_amt = 1
         self.tech_momentum_mult = 0
 
-        #Direction vars
+        # Direction vars
         self.last_direction = 1
         self.dash_direction = [0, 0]  # [dash_x, dash_y]
 
-        #Keyboard and movement exceptions utils
-        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,"key_noclip":0} #Used for reference
+        # Keyboard and movement exceptions utils
+        self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
+                        "key_noclip": 0}  # Used for reference
         self.anti_dash_buffer = False
-        self.stop_dash_momentum = {"y": False,"x": False}
+        self.stop_dash_momentum = {"y": False, "x": False}
         self.holding_jump = False
-        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False, "cooldown":0,"allowed":True}
-        #available used to know if you can walljump, wall to know where the wall is located,
-        #buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
+        self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False,
+                             "cooldown": 0, "allowed": True}
+        # available used to know if you can walljump, wall to know where the wall is located,
+        # buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
         self.dash_cooldown_cur = 0
         self.noclip = False
         self.noclip_buffer = False
@@ -58,11 +61,11 @@ class PhysicsPlayer:
         self.is_stunned = False
         self.last_stun_time = 0
         self.stunned_by = None
+        self.knockback_dir = [0, 0]
 
+        self.allowNoClip = True  # MANUALLY TURN IT ON HERE TO USE NOCLIP
 
-        self.allowNoClip = False #MANUALLY TURN IT ON HERE TO USE NOCLIP
-
-        #Tilemap (stage)
+        # Tilemap (stage)
         self.tilemap = tilemap
         self.ghost_images = []
 
@@ -74,13 +77,86 @@ class PhysicsPlayer:
         self.air_time = 0
         self.disablePlayerInput = False
 
+        # Système de son
+        self.init_sound_system()
+
+        # Variables pour gérer les états des sons
+        self.was_on_floor = True  # Pour gérer le son d'atterrissage
+        self.running_sound_playing = False
+        self.run_sound_timer = 0
+        self.run_sound_interval = 15  # Intervalle entre les répétitions du son de course
+        self.last_action = "idle"  # Pour détecter les changements d'action
+
+    def init_sound_system(self):
+        """Initialise le système de son avec tous les fichiers nécessaires"""
+        # Dictionnaire qui stockera tous les sons
+        base_path = "assets/sounds/player/"
+        self.sounds = {
+            'jump': base_path + "jump.wav",
+            'dash': base_path + "dash.wav",
+            'wall_jump': base_path + "wall_jump.wav",
+            'land': base_path + "land.wav",
+            'run': base_path + "run.wav",
+            'walk': None,
+            'stun': None
+        }
+        load_sounds(self, self.sounds)
+
+    def play_sound(self, sound_key, force=False):
+        """
+        Joue un son spécifique
+
+        Args:
+            sound_key: La clé du son à jouer
+            force: Si True, joue le son même s'il est déjà en cours
+        """
+        if sound_key in self.sounds and self.sounds[sound_key]:
+            if force:
+                self.sounds[sound_key].stop()
+
+            # Vérifier si le son est déjà en cours de lecture
+            if not pygame.mixer.Channel(0).get_busy() or force:
+                self.sounds[sound_key].play(loops=0, maxtime=0, fade_ms=0)
+
+    def update_sounds(self):
+        """Met à jour et gère les sons en fonction de l'état du joueur"""
+
+        # Son d'atterrissage
+        if self.is_on_floor() and not self.was_on_floor:
+            self.play_sound('land', True)
+
+        # Mise à jour de l'état du sol pour le prochain frame
+        self.was_on_floor = self.is_on_floor()
+
+        # Son de course/marche
+        if "run" in self.action:
+            self.run_sound_timer += 1
+
+            # Détermine si le joueur court ou marche
+            sound_key = 'run' if abs(self.velocity[0]) > 1.5 else 'walk'
+
+            # Joue le son à intervalles réguliers pour créer un effet de pas
+            if self.run_sound_timer >= self.run_sound_interval:
+                self.play_sound('run', True)
+                self.run_sound_timer = 0
+        else:
+            self.run_sound_timer = 0
+
+        # Détecte les changements d'action pour les événements ponctuels
+        if self.action != self.last_action:
+            if self.action in ["stun"]:
+                self.play_sound('stun')
+
+            self.last_action = self.action
+
     def physics_process(self, tilemap, dict_kb):
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
         if self.disablePlayerInput:
-            self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,"key_noclip":0}
-            #Consider all keys as not pressed
+            self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
+                            "key_noclip": 0}
+            # Consider all keys as not pressed
 
         if self.is_stunned:
             # Calculate time since stun started
@@ -90,6 +166,10 @@ class PhysicsPlayer:
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
                     self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+
+                # Jouer le son de stun
+                if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
+                    self.play_sound('stun')
 
                 # When stunned, only apply knockback and gravity
                 self.gravity()
@@ -126,6 +206,10 @@ class PhysicsPlayer:
             self.apply_animations()
             self.apply_particle()
             self.animation.update()
+
+            # Mise à jour des sons
+            self.update_sounds()
+
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
@@ -160,9 +244,18 @@ class PhysicsPlayer:
                 self.set_action("dash/top")
                 animation_applied = True
 
+        # SECOND PRIORITY: Attack animation (moved up in priority)
+        if not animation_applied and self.game.attacking and not self.animation.done:
+            if self.last_direction == 1:
+                self.set_action("attack/right")
+                animation_applied = True
+            elif self.last_direction == -1:
+                self.set_action("attack/left")
+                animation_applied = True
 
-        # SECOND PRIORITY: Wall sliding
-        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"]:
+        # THIRD PRIORITY: Wall sliding
+        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump[
+            "blocks_around"]:
             if self.collision["right"]:
                 self.set_action("wall_slide/right")
                 self.facing = "left"
@@ -175,7 +268,7 @@ class PhysicsPlayer:
         if not animation_applied and (self.collision["right"] or self.collision["left"]):
             if self.is_on_floor():
                 self.set_action("idle")
-                animation_applied = True
+                animation_applied = True  # Add this line to prevent overriding
             elif self.action in ("wall_slide/right", "wall_slide/left"):
                 if self.get_direction("x") == 1 or self.last_direction >= 0:
                     self.set_action('falling/right')
@@ -183,16 +276,16 @@ class PhysicsPlayer:
                     self.set_action('falling/left')
                 animation_applied = True
 
-        # THIRD PRIORITY: Jumping/Falling
+        # FOURTH PRIORITY: Jumping/Falling
         if not animation_applied and not self.is_on_floor():
             # Initial jump
             if self.velocity[1] < 0 and self.air_time < 20:
-                if self.get_direction("x") == 1:
-                    self.set_action("jump/right")
-                elif self.get_direction("x") == -1:
-                    self.set_action("jump/left")
-                elif self.get_direction("x") == 0:
+                if self.get_direction("x") == 0:
                     self.set_action("jump/top")
+                elif self.get_direction("x") == 1 and self.action != "jump/top":
+                    self.set_action("jump/right")
+                elif self.get_direction("x") == -1 and self.action != "jump/top":
+                    self.set_action("jump/left")
                 animation_applied = True
             # Falling
             else:
@@ -204,16 +297,7 @@ class PhysicsPlayer:
                     self.set_action('falling/vertical')
                 animation_applied = True
 
-        # Attack
-        if not animation_applied and self.game.attacking and not self.animation.done:
-            if self.last_direction == 1:
-                self.set_action("attack/right")
-                animation_applied = True
-            elif self.last_direction == -1:
-                self.set_action("attack/left")
-                animation_applied = True
-
-        # FOURTH PRIORITY: Running
+        # FIFTH PRIORITY: Running
         # Check if player is moving OR just finished a dash and is trying to move
         if not animation_applied and (
                 (self.is_on_floor() and abs(self.velocity[0]) > 0.1) or
@@ -238,7 +322,7 @@ class PhysicsPlayer:
 
     def is_on_floor(self):
         """Uses tilemap to check if on (above, standing on) a tile. used for gravity, jump, etc."""
-        for rect in self.tilemap.physics_rects_under(self.pos,self.size):
+        for rect in self.tilemap.physics_rects_under(self.pos,self.size) + self.game.doors_rects:
             entity_rect = pygame.Rect(self.pos[0], self.pos[1] + 1, self.size[0], self.size[1])
             if entity_rect.colliderect(rect):
                 return self.rect().bottom == rect.top and self.velocity[1] >= 0
@@ -271,9 +355,12 @@ class PhysicsPlayer:
     def jump(self):
         """Handles player jump and super/hyperdash tech"""
 
-        #Jumping
-        if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump: #Jump on the ground
+        # Jumping
+        if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump:  # Jump on the ground
             self.jump_logic_helper()
+
+            # Jouer le son de saut
+            self.play_sound('jump', True)
 
             # Tech
             if self.dashtime_cur != 0:
@@ -282,12 +369,18 @@ class PhysicsPlayer:
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                 self.velocity[1] /= self.tech_momentum_mult
 
-        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1 and self.can_walljump["allowed"]: #Walljump
+        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and \
+                self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1 and self.can_walljump[
+            "allowed"]:  # Walljump
             self.jump_logic_helper()
-            if self.can_walljump["wall"] == self.get_direction("x"): #Jumping into the wall
+
+            # Jouer le son de wall jump
+            self.play_sound('wall_jump', True)
+
+            if self.can_walljump["wall"] == self.get_direction("x"):  # Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
                 self.velocity[1] *= 1.18
-            else: #Jumping away from the wall
+            else:  # Jumping away from the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
 
             self.can_walljump["available"] = False
@@ -302,7 +395,7 @@ class PhysicsPlayer:
 
     def dash(self):
         """Handles player dash."""
-        self.dash_cooldown_cur = max(self.dash_cooldown_cur-1,0)
+        self.dash_cooldown_cur = max(self.dash_cooldown_cur - 1, 0)
         if not self.anti_dash_buffer:
             self.dash_direction = [self.get_direction("x"), max(0, self.get_direction("y"))]
             if self.dict_kb["key_dash"] == 1 and self.dash_cooldown_cur == 0 and self.dash_direction != [0, -1]:
@@ -310,8 +403,12 @@ class PhysicsPlayer:
                     if self.dash_direction == [0, 0]:
                         self.dash_direction[0] = self.last_direction
                     self.dashtime_cur = self.DASHTIME
-                    self.stop_dash_momentum["y"],self.stop_dash_momentum["x"] = False,False
+                    self.stop_dash_momentum["y"], self.stop_dash_momentum["x"] = False, False
                     self.dash_amt -= 1
+
+                    # Jouer le son de dash
+                    self.play_sound('dash', force=True)
+
                 self.anti_dash_buffer = True
                 self.dash_cooldown_cur = self.DASH_COOLDOWN
         else:
@@ -339,7 +436,6 @@ class PhysicsPlayer:
         b_r = set()
         b_l = set()
 
-
         # Handle Vertical Collision First
         if axe == "y":
             backup_velo = self.velocity[1]
@@ -351,7 +447,7 @@ class PhysicsPlayer:
             if self.can_walljump["timer"] == 0:
                 self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_under(self.pos, self.size):
+            for rect in tilemap.physics_rects_under(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] > 0:
                         self.pos[1] = rect.top - entity_rect.height
@@ -360,7 +456,7 @@ class PhysicsPlayer:
                         self.can_walljump["buffer"] = True
                         self.can_walljump["available"] = False
 
-            for rect in tilemap.physics_rects_around(self.pos, self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[1] < 0:
                         self.pos[1] = rect.bottom
@@ -376,7 +472,7 @@ class PhysicsPlayer:
             entity_rect.x += self.velocity[0]  # Predict horizontal movement
             if self.can_walljump["available"]:
                 self.can_walljump["cooldown"] = max(self.can_walljump["cooldown"]-1,0)
-            for rect in tilemap.physics_rects_around(self.pos, self.size):
+            for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
                 if entity_rect.colliderect(rect):
                     if self.velocity[0] > 0:
                         entity_rect.right = rect.left
@@ -391,9 +487,9 @@ class PhysicsPlayer:
                         self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
-                if rect.x < entity_rect.x:
+                if entity_rect.x - 17 < rect.x < entity_rect.x:
                     b_l.add(True)
-                if rect.x > entity_rect.x:
+                if entity_rect.x + 32 > rect.x > entity_rect.x:
                     b_r.add(True)
 
             self.get_block_on["left"] = bool(b_l)
@@ -450,9 +546,6 @@ class PhysicsPlayer:
             return self.dict_kb["key_right"] - self.dict_kb["key_left"]
         elif axis == "y":
             return self.dict_kb["key_up"] - self.dict_kb["key_down"]
-        else:
-            print("Error: get_direction() received an invalid axis")
-            return 0
 
     def dash_ghost_trail(self):
         """Creates ghost images that fade out over time."""

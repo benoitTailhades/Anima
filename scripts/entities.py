@@ -37,7 +37,7 @@ class PhysicsEntity:
 
         self.pos[0] += frame_movement[0]
         entity_rect = self.rect()
-        for rect in tilemap.physics_rects_around(self.pos, self.size):
+        for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
             if entity_rect.colliderect(rect):
                 if frame_movement[0] > 0:
                     entity_rect.right = rect.left
@@ -97,12 +97,14 @@ class Enemy(PhysicsEntity):
         self.last_attack_time = 0
         self.attack_dmg = attack_info["attack_dmg"]
         self.attack_time = attack_info["attack_time"]
+        self.first_attack_time = 0
         self.is_dealing_damage = False
         self.hp = hp
         self.hit = False
         self.stunned = False
         self.last_stun_time = 0
         self.is_attacked = False
+        self.knockback_dir = [0, 0]
         self.animation = self.game.assets[self.enemy_type + '/idle'].copy()
 
     def update(self, tilemap, movement=(0, 0)):
@@ -117,17 +119,25 @@ class Enemy(PhysicsEntity):
             self.animation.update()
             return
 
-        if self.is_attacked:
+        if self.is_attacked and not self.hit:
             self.is_attacking = True
             self.is_chasing = True
-            if time.time() - self.game.player_last_attack_time >= 0.3:
+            if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                 self.game.deal_dmg('player', self)
                 self.stunned = True
+                self.hit = True
                 self.last_stun_time = time.time()
 
+        if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
+            self.hit = False
+
         if self.is_attacking and not self.stunned:
-            self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
-            self.is_dealing_damage = False
+            if time.time() - self.first_attack_time >= self.attack_time/5:
+                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                self.is_dealing_damage = False
+        elif not self.is_attacking:
+            self.last_attack_time = 0
+            self.first_attack_time = time.time()
 
         # Handle stun state first
         if self.stunned:
@@ -145,11 +155,12 @@ class Enemy(PhysicsEntity):
 
             else:
                 # Add stun animation/movement here
-                movement = self.game.deal_knockback(self.game.player, self, 1.5)
+                movement = self.game.deal_knockback(self.game.player, self, 1)
                 super().update(tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
                 return  # Skip the rest of the normal update logic
+        self.knockback_dir = [0, 0]
 
         # Regular (non-stunned) behavior continues below
         if self.walking:
@@ -309,7 +320,12 @@ def death_animation(screen):
                 return
         clock.tick(30)
 
-def player_death(game, screen, spawn_pos):
+def player_death(game, screen, spawn_pos, spawn_level):
+    game.cutscene = False
+
     death_animation(screen)
+    game.load_level(spawn_level)
+    game.level = spawn_level
+    game.update_light()
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]
