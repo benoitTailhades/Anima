@@ -1,7 +1,5 @@
 import pygame
 
-
-
 def generate_fog(surface, color=(220, 230, 240), opacity=40):
     """
     Generate a simple, plain fog overlay for the entire screen.

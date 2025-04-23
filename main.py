@@ -17,6 +17,7 @@ from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 from scripts.doors import Door
 from scripts.visual_effects import *
+from scripts.spark import Spark
 
 
 class Game:
@@ -67,12 +68,14 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 120}}
+                            3:{"darkness_level":180, "light_radius": 100}}
 
         self.assets = {
 
             'green_cave_lever': load_images('levers/green_cave'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
+            'particle/crystal': Animation(load_images('particles/crystal'), loop=50),
+            'particle/crystal_fragment': Animation(load_images('particles/crystal'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16))
@@ -148,7 +151,7 @@ class Game:
 
         self.darkness_level = 150  # 0-255, higher means darker
         self.light_radius = 100  # Size of the player's light circle
-        self.light_soft_edge = 250  # How soft the edge of the light is
+        self.light_soft_edge = 350  # How soft the edge of the light is
 
         # Create a light surface once rather than every frame
         self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
@@ -346,6 +349,10 @@ class Game:
                                           keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
+        self.crystal_spawners = []
+        for plant in self.tilemap.extract([("blue_decor", 0),], keep=True):
+            self.crystal_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
+
         if not self.levels[map_id]["charged"]:
             self.enemies = []
             self.bosses = []
@@ -399,6 +406,8 @@ class Game:
             self.doors = self.levels[map_id]["doors"].copy()
 
         self.cutscene = False
+        self.particles = []
+        self.sparks = []
         self.transition = -30
         self.max_falling_depth = 50000000 if self.level in (1,3) else 500
         self.update_light()
@@ -779,6 +788,13 @@ class Game:
                         self.levels[self.level]["charged"] = True
 
             self.tilemap.render_over(self.display, offset=render_scroll)
+
+            for rect in self.crystal_spawners:
+                if random.random() * 49999 < rect.width * rect.height:
+                    pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
+                    self.particles.append(
+                        Particle(self, 'crystal', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
+
             self.display_level_fg(self.level)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
@@ -786,6 +802,12 @@ class Game:
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
+
+            for spark in self.sparks.copy():
+                kill = spark.update()
+                spark.render(self.display, offset=render_scroll)
+                if kill:
+                    self.sparks.remove(spark)
 
             for particle in self.particles.copy():
                 kill = particle.update()

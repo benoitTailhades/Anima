@@ -1,6 +1,10 @@
 import time
 
 import pygame
+import random
+
+from scripts.particle import Particle
+from scripts.spark import Spark
 from pygame.sprite import collide_rect
 
 
@@ -21,6 +25,9 @@ class Door:
         self.animation.update()
 
         if self.type == 'breakable_stalactite' and self.game.attacking and self.rect().colliderect(self.game.player.rect().inflate(32, 32)):
+            pos = (self.rect().x + random.random() * self.rect().width, self.rect().y + 5 + random.random() * self.rect().height)
+            self.game.particles.append(
+                Particle(self.game, 'crystal_fragment', pos, velocity=[-0.1, 1.2], frame=0))
             self.open()
 
         if self.action == "opening" and not self.opened:
@@ -32,6 +39,7 @@ class Door:
             self.opened = False
             if time.time() - self.last_time_interacted >= self.opening_speed:
                 self.set_action("closed")
+
 
     def open(self):
         if not self.opened:
