@@ -753,9 +753,12 @@ class Game:
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
 
-            for spike in self.tilemap.extract([("spikes", 0), ("bloody_spikes", 0)], keep=True):
+            s = []
+            for n in range(4):
+                s += [("spikes", n), ("bloody_spikes", n), ("big_spikes", n), ("big_bloody_spikes", n)]
+            for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1], self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if r.colliderect(self.player.rect().inflate(-10, -32)):
+                if r.colliderect(self.player.rect().inflate(-self.assets[spike["type"]][spike["variant"]].get_width(), -self.assets[spike["type"]][spike["variant"]].get_height())):
                     self.player_hp = 0
 
             self.attacking_update()
