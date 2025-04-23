@@ -12,7 +12,6 @@ class Lever:
         self.interaction_cooldown = 0.5
         self.id = i
 
-
     def toggle(self):
         current_time = time.time()
         if current_time - self.last_interaction_time >= self.interaction_cooldown:

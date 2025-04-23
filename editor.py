@@ -27,6 +27,7 @@ class Editor:
             'lever': load_images('levers/green_cave'),
             'vines_door_h': load_images('doors/vines_door_h/closed'),
             'vines_door_v': load_images('doors/vines_door_v/closed'),
+            'breakable_stalactite': load_images('doors/breakable_stalactite/closed')
         }
 
         self.environments = {"green_cave": (0, 1, 2),
@@ -52,6 +53,8 @@ class Editor:
         self.tile_group = 0
         self.tile_variant = 0
         self.free_lever_id = 0
+
+        self.zoom = 1
 
         self.clicking = False
         self.right_clicking = False
@@ -79,7 +82,7 @@ class Editor:
             current_tile_img.set_alpha(100)
 
             mpos = pygame.mouse.get_pos()
-            mpos = ((mpos[0] / RENDER_SCALE)*(960/self.screen.get_size()[0]), (mpos[1] / RENDER_SCALE)*(576/self.screen.get_size()[1]))
+            mpos = ((mpos[0] / RENDER_SCALE)*(960/self.screen.get_size()[0])*self.zoom, (mpos[1] / RENDER_SCALE)*(576/self.screen.get_size()[1])*self.zoom)
             tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                         int((mpos[1] +  self.scroll[1]) // self.tilemap.tile_size))
 
@@ -195,6 +198,12 @@ class Editor:
                             self.tile_list = list(self.assets)
                             self.tile_group = 0
                             self.tile_variant = 0
+                    if event.key == pygame.K_DOWN:
+                        self.zoom = self.zoom*2
+                        self.display = pygame.Surface((480*self.zoom, 288*self.zoom))
+                    if event.key == pygame.K_UP:
+                        self.zoom = self.zoom/2
+                        self.display = pygame.Surface((480*self.zoom, 288*self.zoom))
 
                     if event.key == pygame.K_d:
                         self.movement[1] = True

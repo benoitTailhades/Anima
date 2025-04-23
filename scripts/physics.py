@@ -13,6 +13,7 @@ import random
 
 from scripts.particle import Particle
 from scripts.tilemap import Tilemap
+from scripts.sound import *
 
 class PhysicsPlayer:
     def __init__(self, game, tilemap, pos, size):
@@ -99,27 +100,7 @@ class PhysicsPlayer:
             'walk': None,
             'stun': None
         }
-        self.load_sounds(self.sounds)
-
-    def load_sounds(self, sound_paths):
-        """
-        Charge les sons à partir des chemins fournis
-
-        sound_paths doit être un dictionnaire avec les clés suivantes:
-        - 'jump': son pour le saut
-        - 'dash': son pour le dash
-        - 'wall_jump': son pour le wall jump
-        - 'land': son pour l'atterrissage
-        - 'run': son pour la course
-        - 'walk': son pour la marche
-        - 'stun': son pour l'étourdissement
-        """
-        for sound_key, path in sound_paths.items():
-            if sound_key in self.sounds and path:
-                try:
-                    self.sounds[sound_key] = pygame.mixer.Sound(path)
-                except Exception as e:
-                    print(f"Erreur lors du chargement du son '{sound_key}': {e}")
+        load_sounds(self, self.sounds)
 
     def play_sound(self, sound_key, force=False):
         """
@@ -263,9 +244,18 @@ class PhysicsPlayer:
                 self.set_action("dash/top")
                 animation_applied = True
 
+        # SECOND PRIORITY: Attack animation (moved up in priority)
+        if not animation_applied and self.game.attacking and not self.animation.done:
+            if self.last_direction == 1:
+                self.set_action("attack/right")
+                animation_applied = True
+            elif self.last_direction == -1:
+                self.set_action("attack/left")
+                animation_applied = True
 
-        # SECOND PRIORITY: Wall sliding
-        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump["blocks_around"]:
+        # THIRD PRIORITY: Wall sliding
+        if not animation_applied and self.velocity[1] > 0 and not self.is_on_floor() and self.can_walljump[
+            "blocks_around"]:
             if self.collision["right"]:
                 self.set_action("wall_slide/right")
                 self.facing = "left"
@@ -278,7 +268,7 @@ class PhysicsPlayer:
         if not animation_applied and (self.collision["right"] or self.collision["left"]):
             if self.is_on_floor():
                 self.set_action("idle")
-                animation_applied = True
+                animation_applied = True  # Add this line to prevent overriding
             elif self.action in ("wall_slide/right", "wall_slide/left"):
                 if self.get_direction("x") == 1 or self.last_direction >= 0:
                     self.set_action('falling/right')
@@ -286,7 +276,7 @@ class PhysicsPlayer:
                     self.set_action('falling/left')
                 animation_applied = True
 
-        # THIRD PRIORITY: Jumping/Falling
+        # FOURTH PRIORITY: Jumping/Falling
         if not animation_applied and not self.is_on_floor():
             # Initial jump
             if self.velocity[1] < 0 and self.air_time < 20:
@@ -307,16 +297,7 @@ class PhysicsPlayer:
                     self.set_action('falling/vertical')
                 animation_applied = True
 
-        # Attack
-        if not animation_applied and self.game.attacking and not self.animation.done:
-            if self.last_direction == 1:
-                self.set_action("attack/right")
-                animation_applied = True
-            elif self.last_direction == -1:
-                self.set_action("attack/left")
-                animation_applied = True
-
-        # FOURTH PRIORITY: Running
+        # FIFTH PRIORITY: Running
         # Check if player is moving OR just finished a dash and is trying to move
         if not animation_applied and (
                 (self.is_on_floor() and abs(self.velocity[0]) > 0.1) or

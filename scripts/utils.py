@@ -1,5 +1,6 @@
 import pygame
 import os
+import json
 
 from numpy.f2py.crackfortran import skipfuncs
 
@@ -139,6 +140,25 @@ def load_game_font(font_name=None, size=36):
         except:
             pass
     return pygame.font.SysFont('monospace', size, bold=True)
+
+def load_game_texts():
+        """Charge les textes du jeu depuis un fichier JSON"""
+        try:
+            with open("data/texts.json", "r", encoding="utf-8") as file:
+                return json.load(file)
+        except Exception as e:
+            print(f"Erreur lors du chargement des textes: {e}")
+            return {}
+
+def load_activators_actions():
+    try:
+        with open("data/activators.json", "r") as file:
+            actions_data = json.load(file)
+            return actions_data
+
+    except Exception as e:
+        print(f"Error loading activators actions: {e}")
+        return {"levers": {}, "buttons": {}}
 
 
 

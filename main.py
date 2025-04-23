@@ -7,7 +7,7 @@ import pygame
 import random
 import time
 from scripts.entities import player_death, Enemy
-from scripts.utils import load_image, load_images, Animation, display_bg, load_tiles, load_entities, load_player, load_doors, load_backgrounds
+from scripts.utils import *
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
@@ -16,6 +16,7 @@ from scripts.activators import Lever
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 from scripts.doors import Door
+from scripts.visual_effects import *
 
 
 class Game:
@@ -47,7 +48,8 @@ class Game:
 
         self.d_info = {
             "vines_door_h":{"size":(64, 16),"img_dur":5},
-            "vines_door_v": {"size": (16, 64),"img_dur": 5}
+            "vines_door_v": {"size": (16, 64),"img_dur": 5},
+            "breakable_stalactite": {"size": (16, 48), "img_dur": 1}
                        }
 
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
@@ -112,7 +114,7 @@ class Game:
         self.charged_levels = []
 
         self.levers = []
-        self.activators_actions = self.load_activators_actions()
+        self.activators_actions = load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
 
@@ -132,9 +134,7 @@ class Game:
 
         self.cutscene = False
         self.floating_texts = []
-        self.game_texts = self.load_game_texts()
-        self.floating_texts = []
-        self.game_texts = self.load_game_texts()
+        self.game_texts = load_game_texts()
         self.tutorial_active = False
         self.tutorial_step = 0
         self.tutorial_next_time = 0
@@ -372,8 +372,11 @@ class Game:
                 self.levers.append(l)
 
             self.doors = []
-            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)]):
-                self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 1, self))
+            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)]):
+                if door['type'] == 'breakable_stalactite':
+                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 0.01, self))
+                else:
+                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 1, self))
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
@@ -387,7 +390,7 @@ class Game:
                 if spawner['variant'] == 0:
                     self.spawner_pos[map_id] = spawner["pos"]
             self.player.pos = self.spawners[map_id].copy()
-            self.tilemap.extract([('vine_lever', 0),('vine_lever', 1)])
+            self.tilemap.extract([('lever', 0),('lever', 1)])
             self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)])
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
@@ -476,30 +479,12 @@ class Game:
         self.display.blit(shadow_surface, shadow_rect)
         self.display.blit(text_surface, text_rect)
 
-    def generate_fog(self, surface, color=(220, 230, 240), opacity=40):
-        """
-        Generate a simple, plain fog overlay for the entire screen.
-
-        Args:
-            surface: The surface to draw the fog on
-            color: Base color of the fog (RGB)
-            opacity: Fog opacity (0-255)
-        """
-        # Create a surface the same size as the display with alpha channel
-        fog_surface = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-
-        # Fill it with a semi-transparent color
-        fog_surface.fill((*color, opacity))
-
-        # Blit the fog surface onto the main surface
-        surface.blit(fog_surface, (0, 0))
-
     def display_level_fg(self, map_id):
         if map_id in (0,1,2):
             # Generate dynamic fog instead of blitting a static image
-            self.generate_fog(self.display, color=(24, 38, 31), opacity=130)
+            generate_fog(self.display, color=(24, 38, 31), opacity=130)
         if map_id == 3:
-            self.generate_fog(self.display, color=(28, 50, 73), opacity=130)
+            generate_fog(self.display, color=(28, 50, 73), opacity=130)
 
     def check_transition(self):
         for transition in self.transitions:
@@ -510,15 +495,6 @@ class Game:
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
-
-    def load_game_texts(self):
-        """Charge les textes du jeu depuis un fichier JSON"""
-        try:
-            with open("data/texts.json", "r", encoding="utf-8") as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Erreur lors du chargement des textes: {e}")
-            return {}
 
     def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
         """
@@ -678,15 +654,41 @@ class Game:
         elif self.level in (3, 4, 5):
             self.spawn_point = {"pos": self.spawner_pos[3], "level": 3}
 
-    def load_activators_actions(self):
-        try:
-            with open("data/activators.json", "r") as file:
-                actions_data = json.load(file)
-                return actions_data
+    def update_activators_actions(self, level):
+        for lever in self.levers:
+            if lever.can_interact(self.player.rect()):
+                lever_id = str(lever.id)
+                # Check if this lever has any actions
+                if lever_id in self.activators_actions[str(level)]["levers"]:
+                    action = self.activators_actions[str(level)]["levers"][lever_id]
 
-        except Exception as e:
-            print(f"Error loading activators actions: {e}")
-            return {"levers": {}, "buttons": {}}
+                    # Process different action types
+                    if action["type"] == "visual_and_door" and not self.doors[action["door_id"]].opened:
+                        lever.toggle()
+                        # Move visual
+                        self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
+
+                        # Extract tiles
+                        self.doors[action["door_id"]].open()
+
+                        # Add screenshake effect
+                        self.screen_shake(10)
+
+                    elif action["type"] == "door_only":
+                        lever.toggle()
+                        # Extract tiles
+                        self.doors[action["door_id"]].open()
+
+                        # Add screenshake effect
+                        self.screen_shake(5)
+
+                    elif action["type"] == "custom":
+                        lever.toggle()
+                        # For custom actions that require specific code execution
+                        # This would need to be handled case by case
+                        if action["action_id"] == "open_boss_door":
+                            self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                            self.screen_shake(15)
 
     def draw_cutscene_border(self, color=(0, 0, 0), width=20, opacity=255):
 
@@ -702,41 +704,6 @@ class Game:
 
         # Blit the border onto the screen
         self.display.blit(border_surface, (0, 0))
-
-    def update_activators_actions(self, level):
-        for lever in self.levers:
-            if lever.can_interact(self.player.rect()):
-                if lever.toggle():
-                    # Get the lever ID as a string
-                    lever_id = str(lever.id)
-                    # Check if this lever has any actions
-                    if lever_id in self.activators_actions[str(level)]["levers"]:
-                        action = self.activators_actions[str(level)]["levers"][lever_id]
-
-                        # Process different action types
-                        if action["type"] == "visual_and_door":
-                            # Move visual
-                            self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
-
-                            # Extract tiles
-                            self.doors[action["door_id"]].open()
-
-                            # Add screenshake effect
-                            self.screen_shake(10)
-
-                        elif action["type"] == "door_only":
-                            # Extract tiles
-                            self.doors[action["door_id"]].open()
-
-                            # Add screenshake effect
-                            self.screen_shake(5)
-
-                        elif action["type"] == "custom":
-                            # For custom actions that require specific code execution
-                            # This would need to be handled case by case
-                            if action["action_id"] == "open_boss_door":
-                                self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
-                                self.screen_shake(15)
 
     def run(self):
         while True:

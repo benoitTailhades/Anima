@@ -1,6 +1,8 @@
 import time
 
 import pygame
+from pygame.sprite import collide_rect
+
 
 class Door:
     def __init__(self, size, pos, d_type, flip, opening_speed, game):
@@ -17,6 +19,9 @@ class Door:
 
     def update(self):
         self.animation.update()
+
+        if self.type == 'breakable_stalactite' and self.game.attacking and self.rect().colliderect(self.game.player.rect().inflate(32, 32)):
+            self.open()
 
         if self.action == "opening" and not self.opened:
             if time.time() - self.last_time_interacted >= self.opening_speed:
