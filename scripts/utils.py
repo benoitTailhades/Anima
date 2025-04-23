@@ -33,10 +33,11 @@ def display_bg(surf, img, pos):
         surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
         surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
 
-def load_tiles():
+def load_tiles(env=None):
     tiles = {}
-    for tile in sorted(os.listdir(BASE_IMG_PATH + 'tiles')):
-        tiles[tile] = load_images('tiles/'+ tile)
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'tiles')) if env is None else [env]:
+        for tile in sorted(os.listdir(BASE_IMG_PATH + 'tiles/' + environment)):
+            tiles[tile] = load_images('tiles/' + environment + '/' + tile)
     return tiles
 
 def load_entities(e_info):
@@ -120,7 +121,6 @@ class Animation:
 
     def img(self):
         return self.images[int(self.frame / self.img_duration)]
-
 
 def load_game_font(font_name=None, size=36):
 

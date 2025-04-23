@@ -52,9 +52,8 @@ class Game:
 
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
 
-
         self.environments = {"green_cave":(0, 1, 2),
-                             "blue_cave": (3)}
+                             "blue_cave": (3,)}
 
         self.spawners = {}
 
@@ -67,9 +66,10 @@ class Game:
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
                             3:{"darkness_level":180, "light_radius": 200}}
+
         self.assets = {
 
-            'lever': load_images('tiles/lever'),
+            'green_cave_lever': load_images('levers/green_cave'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
@@ -127,7 +127,9 @@ class Game:
         self.holding_attack = False
         self.attacking = False
         self.player_attacked = False
+
         self.screenshake = 0
+
         self.cutscene = False
         self.floating_texts = []
         self.game_texts = self.load_game_texts()
@@ -172,6 +174,11 @@ class Game:
         self.volume = max(0, min(1, volume))
         if self.background_music:
             self.background_music.set_volume(self.volume)
+
+    def get_environment(self, level):
+        for environment in self.environments:
+            if level in self.environments[environment]:
+                return environment
 
     def _create_light_mask(self):
         """Generate a circular light mask with soft edges"""
@@ -380,7 +387,7 @@ class Game:
                 if spawner['variant'] == 0:
                     self.spawner_pos[map_id] = spawner["pos"]
             self.player.pos = self.spawners[map_id].copy()
-            self.tilemap.extract([('lever', 0), ('lever', 1)])
+            self.tilemap.extract([('vine_lever', 0),('vine_lever', 1)])
             self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0)])
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()

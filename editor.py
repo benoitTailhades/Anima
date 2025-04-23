@@ -4,7 +4,7 @@ import pygame
 
 import json
 
-from scripts.utils import load_images, load_image
+from scripts.utils import load_images, load_tiles
 from scripts.tilemap import Tilemap
 
 RENDER_SCALE = 2.0
@@ -21,35 +21,25 @@ class Editor:
 
         self.tile_size = 16
 
-        self.assets = {
-            'decor': load_images('tiles/decor', self.tile_size),
-            'grass': load_images('tiles/grass', self.tile_size),
-            'vine': load_images('tiles/vine', self.tile_size),
-            'vine_transp': load_images('tiles/vine_transp', self.tile_size),
-            'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
-            'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
-            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
-            'dark_vine': load_images('tiles/dark_vine'),
-            'hanging_vine': load_images('tiles/hanging_vine'),
-            'vine_decor': load_images('tiles/vine_decor'),
-            'large_decor': load_images('tiles/large_decor'),
-            'stone': load_images('tiles/stone', self.tile_size),
-            'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
-            'spawners': load_images('tiles/spawners'),
-            'transition': load_images('tiles/transition'),
-            'lever': load_images('tiles/lever'),
+        self.base_assets = {
+            'spawners': load_images('spawners'),
+            'transition': load_images('transition'),
+            'lever': load_images('levers/green_cave'),
             'vines_door_h': load_images('doors/vines_door_h/closed'),
             'vines_door_v': load_images('doors/vines_door_v/closed'),
-            'blue_grass' : load_images('tiles/blue_grass'),
-            'blue_large_decor': load_images('tiles/blue_large_decor'),
-            'blue_decor': load_images('tiles/blue_decor'),
         }
+
+        self.environments = {"green_cave": (0, 1, 2),
+                             "blue_cave": (3,)}
+
+        self.level = 0
+
+        self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
 
         self.movement = [False, False, False, False]
 
         self.tilemap = Tilemap(self, self.tile_size)
 
-        self.level = 0
 
         try:
             self.tilemap.load('data/maps/'+str(self.level)+'.json')
@@ -67,6 +57,11 @@ class Editor:
         self.right_clicking = False
         self.shift = False
         self.ongrid = True
+
+    def get_environment(self, level):
+        for environment in self.environments:
+            if level in self.environments[environment]:
+                return environment
 
     def run(self):
         while True:
@@ -129,10 +124,7 @@ class Editor:
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
 
-            for lever in self.tilemap.extract([("lever", 0), ("lever",1)], keep=True):
-                if not self.clicking or (tile_pos != (lever["pos"][0]//self.tilemap.tile_size,
-                                                     lever["pos"][1]//self.tilemap.tile_size)):
-                    self.free_lever_id = lever["id"]+1
+            self.free_lever_id = len(self.tilemap.extract([("lever", 0), ("lever",1)], keep=True))
 
             self.display.blit(current_tile_img, (5, 5))
 
@@ -186,6 +178,10 @@ class Editor:
                                 self.scroll = [0, 0]
                             else:
                                 pass
+                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.tile_list = list(self.assets)
+                            self.tile_group = 0
+                            self.tile_variant = 0
                     if event.key == pygame.K_LEFT:
                         if self.level > 0:
                             self.tilemap.save('data/maps/' + str(self.level) + '.json')
@@ -195,6 +191,10 @@ class Editor:
                                 self.scroll = [0, 0]
                             except FileNotFoundError:
                                 pass
+                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.tile_list = list(self.assets)
+                            self.tile_group = 0
+                            self.tile_variant = 0
 
                     if event.key == pygame.K_d:
                         self.movement[1] = True

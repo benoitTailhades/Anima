@@ -27,4 +27,4 @@ class Lever:
         return can_interact
 
     def render(self, surface, offset=(0, 0)):
-        surface.blit(self.game.assets['lever'][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_lever'][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
