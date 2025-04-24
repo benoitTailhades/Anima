@@ -6,18 +6,15 @@ import json
 import pygame
 import random
 import time
-from scripts.entities import player_death, Enemy, Throwable
-from scripts.utils import *
+from scripts.entities import player_death, Enemy
+from scripts.utils import load_image, load_images, Animation, display_bg
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
-from scripts.boss import FirstBoss
+from scripts.boss import FirstBoss, Vine
 from scripts.activators import Lever
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
-from scripts.doors import Door
-from scripts.visual_effects import *
-from scripts.spark import Spark
 
 
 class Game:
@@ -32,65 +29,67 @@ class Game:
 
         self.tile_size = 16
 
-        self.e_info = {
-            "picko":{"left/right": ["run"],
-                                "size": (16, 16),
-                                "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
-                                "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
-            "vine":{"left/right":[],
-                               "size": (16, 48),
-                               "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
-                               "loop": {"warning": True, "attack": False, "retreat": False}},
-            "wrath":{"left/right": ["run"],
-                                "size": (48, 48),
-                                "img_dur": {"idle": 12, "run": 8, "jump": 5, "death": 3, "hit": 5, "charge": 5},
-                                "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}},
-            "blue_rock": {"left/right": [],
-                      "size": (16, 16),
-                      "img_dur": {"intact":1, "breaking":1},
-                      "loop": {"intact":False, "breaking":False}}
-                       }
-
-        self.d_info = {
-            "vines_door_h":{"size":(64, 16),"img_dur":5},
-            "vines_door_v": {"size": (16, 64),"img_dur": 5},
-            "breakable_stalactite": {"size": (16, 48), "img_dur": 1}
-                       }
-
-        self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
-
-        self.environments = {"green_cave":(0, 1, 2),
-                             "blue_cave": (3,)}
-
-        self.spawners = {}
-
-        self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
-                              1: {"x":(-48, 16), "y":(-1000, 400)},
-                              2: {"x":(-48, 280), "y":(-192, -80)},
-                              3: {"x":(16, 40000), "y":(0, 20000000)}}
-
-        self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
-                            1:{"darkness_level":180, "light_radius":300},
-                            2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 100}}
-
         self.assets = {
+            'decor': load_images('tiles/decor', self.tile_size),
+            'grass': load_images('tiles/grass', self.tile_size),
+            'vine': load_images('tiles/vine', self.tile_size),
+            'vine_transp': load_images('tiles/vine_transp', self.tile_size),
+            'vine_transp_back': load_images('tiles/vine_transp_back', self.tile_size),
+            'vine_decor': load_images('tiles/vine_decor'),
+            'large_decor': load_images('tiles/large_decor'),
+            'dark_vine': load_images('tiles/dark_vine'),
+            'hanging_vine': load_images('tiles/hanging_vine'),
+            'stone': load_images('tiles/stone', self.tile_size),
+            'mossy_stone': load_images('tiles/mossy_stone', self.tile_size),
+            'mossy_stone_decor': load_images('tiles/mossy_stone_decor', self.tile_size),
+            'gray_mossy_stone': load_images('tiles/gray_mossy_stone', self.tile_size),
+            'player': load_image('entities/player.png', (40, 40)),
+            'picko/idle': Animation(load_images('entities/enemies/picko/idle'), img_dur=12),
+            'picko/run/left': Animation(load_images('entities/enemies/picko/run/left'), img_dur=8),
+            'picko/run/right': Animation(load_images('entities/enemies/picko/run/right'), img_dur=8),
+            'picko/attack': Animation(load_images('entities/enemies/picko/attack'), img_dur=3, loop=False),
+            'picko/death': Animation(load_images('entities/enemies/picko/death'), img_dur=3, loop=False),
+            'picko/hit': Animation(load_images('entities/enemies/picko/hit'), img_dur=5, loop=False),
 
-            'green_cave_lever': load_images('levers/green_cave'),
-            'blue_cave_lever': load_images('levers/green_cave'),
+            'boss/idle': Animation(load_images('entities/enemies/picko/idle', 32), img_dur=12),
+            'boss/run/left': Animation(load_images('entities/enemies/picko/run/left', 32), img_dur=8),
+            'boss/run/right': Animation(load_images('entities/enemies/picko/run/right', 32), img_dur=8),
+            'boss/attack': Animation(load_images('entities/enemies/picko/attack', 32), img_dur=3, loop=False),
+            'boss/death': Animation(load_images('entities/enemies/picko/death', 32), img_dur=3, loop=False),
+            'boss/hit': Animation(load_images('entities/enemies/picko/hit', 32), img_dur=5, loop=False),
+
+            'vine/warning': Animation(load_images('entities/elements/vine/warning', (16, 48)), img_dur=12),
+            'vine/attack': Animation(load_images('entities/elements/vine/attack', (16, 48)), img_dur=1, loop=False),
+            'vine/retreat': Animation(load_images('entities/elements/vine/retreat', (16, 48)), img_dur=3, loop=False),
+
+            'background': load_image('background_begin.png', self.display.get_size()),
+            'background0': load_image('bg0.png'),
+            'background1': load_image('bg1.png'),
+            'background2': load_image('bg2.png'),
+            'fog': load_image('fog.png'),
+
+            'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
+            'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
+            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
+            'player/jump/right': Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
+            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
+            'player/jump/top': Animation(load_images('entities/player/jump/top'), img_dur=3, loop=False),
+            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=True),
+            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=True),
+            'player/falling/vertical': Animation(load_images('entities/player/falling/vertical'), img_dur=3, loop=True),
+            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
+            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
+            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
+            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
+            'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
+            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
+            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False),
+            'lever': load_images('tiles/lever'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
-            'particle/crystal': Animation(load_images('particles/crystal'), loop=50),
-            'particle/crystal_fragment': Animation(load_images('particles/crystal'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
-            'empty_heart': load_image('empty_heart.png', (16, 16))
+            'empty_heart': load_image('empty_heart.png', (16, 16 ))
         }
-
-        self.assets.update(load_doors(self.d_info))
-        self.assets.update(load_tiles())
-        self.assets.update(load_entities(self.e_info))
-        self.assets.update(load_player())
-        self.assets.update(load_backgrounds(self.b_info))
 
         self.sound_running = False
 
@@ -102,6 +101,7 @@ class Game:
 
             # Verify the sound file path and try different filename variations if needed
             sound_path = "assets/sounds/v2-level-1-sound-background_W72B8woG.wav"
+
 
             self.volume = 0.5  # Volume par défaut : 50%
             self.background_music = pygame.mixer.Sound(sound_path)
@@ -119,58 +119,33 @@ class Game:
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
         self.levels = {i:{"charged": False} for i in range(len(os.listdir("data/maps")))}
-        self.charged_levels = []
 
         self.levers = []
-        self.activators_actions = load_activators_actions()
+        self.activators_actions = self.load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
-        self.lever_text_displayed = False
-
-        self.spawner_pos = {}
 
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
         self.player_hp = 100
-        self.player_dmg = 50
-        self.player_attack_time = 0.03
+        self.player_dmg = 500
+        self.player_attack_time = 0.3
         self.player_attack_dist = 20
         self.player_last_attack_time = 0
         self.holding_attack = False
         self.attacking = False
         self.player_attacked = False
-
         self.screenshake = 0
-
         self.cutscene = False
-        self.floating_texts = []
-        self.game_texts = load_game_texts()
-        self.tutorial_active = False
-        self.tutorial_step = 0
-        self.tutorial_next_time = 0
-        self.tutorial_messages = []
-
-        self.doors_rects = []
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
-
-        self.darkness_level = 150  # 0-255, higher means darker
-        self.light_radius = 100  # Size of the player's light circle
-        self.light_soft_edge = 350  # How soft the edge of the light is
-
-        # Create a light surface once rather than every frame
-        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        self._create_light_mask()
 
         self.last_visual_movement_time = 0
         self.moving_visual = False
         self.visual_pos = (0, 0)
         self.visual_movement_duration = 0
         self.visual_start_time = 0
-
-        self.player_grabbing = False
-        self.interacting = False
 
         self.particles = []
 
@@ -182,53 +157,11 @@ class Game:
         if not self.menu.start_menu_newgame():
             self.load_level(self.level)
 
+
     def set_volume(self, volume):
         self.volume = max(0, min(1, volume))
         if self.background_music:
             self.background_music.set_volume(self.volume)
-
-    def get_environment(self, level):
-        for environment in self.environments:
-            if level in self.environments[environment]:
-                return environment
-
-    def _create_light_mask(self):
-        """Generate a circular light mask with soft edges"""
-        # Clear the surface
-        self.light_mask.fill((0, 0, 0, 0))
-
-        # Draw the light with a radial gradient
-        center = (self.light_radius, self.light_radius)
-        for radius in range(self.light_radius, 0, -1):
-            # Calculate alpha based on distance from center
-            if radius >= self.light_radius - self.light_soft_edge:
-                # Create a gradual transition at the edge
-                edge_dist = self.light_radius - radius
-                alpha = int(255 * (edge_dist / self.light_soft_edge))
-            else:
-                # The center is fully transparent (visible)
-                alpha = 255
-
-            # Draw a circle with decreasing radius and increasing transparency
-            pygame.draw.circle(self.light_mask, (255, 255, 255, alpha), center, radius)
-
-    def apply_lighting(self, player_pos, render_scroll):
-        """Apply a darkness effect with a light source around the player"""
-        # Create a surface for darkness
-        darkness = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
-        darkness.fill((0, 0, 0, self.darkness_level))  # Semi-transparent black
-
-        player_screen_x = player_pos[0] - render_scroll[0]
-        player_screen_y = player_pos[1] - render_scroll[1]
-
-        light_x = player_screen_x - self.light_radius
-        light_y = player_screen_y - self.light_radius
-
-        # Apply the light mask to the darkness surface
-        darkness.blit(self.light_mask, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
-
-        # Apply the darkness to the display
-        self.display.blit(darkness, (0, 0))
 
     def deal_dmg(self, entity, target, att_dmg=5, att_time=1):
         current_time = time.time()
@@ -247,11 +180,10 @@ class Game:
         stun_elapsed = time.time() - target.last_stun_time
         stun_duration = 0.5
 
-        if not target.knockback_dir[0] and not target.knockback_dir[1]:
-            target.knockback_dir[0] = 1 if entity.rect().centerx < target.rect().centerx else -1
-            target.knockback_dir[1] = 0
+        knockback_dir_x = 1 if entity.rect().centerx < target.rect().centerx else -1
+        knockback_dir_y = 0
         knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
-        return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
+        return knockback_dir_x * knockback_force, knockback_dir_y * knockback_force
 
     def toggle_fullscreen(self):
         self.fullscreen = not self.fullscreen
@@ -305,12 +237,6 @@ class Game:
                 pygame.K_n: "key_noclip",
             }
 
-    def update_light(self):
-        self.light_radius = self.light_infos[self.level]["light_radius"]
-        self.darkness_level = self.light_infos[self.level]["darkness_level"]
-        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        self._create_light_mask()
-
     def update_settings_from_game(self):
         self.volume = self.volume
         self.keyboard_layout = self.keyboard_layout
@@ -320,7 +246,7 @@ class Game:
 
     def attacking_update(self):
         self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
-                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned and not self.player_grabbing
+                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned
         if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
             self.attacking = False
             self.dict_kb["key_attack"] = 0
@@ -350,28 +276,18 @@ class Game:
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
 
-        self.throwable = []
-        for o in self.tilemap.extract([('throwable',0)]):
-            self.throwable.append(Throwable(self, "blue_rock", o['pos'], (16, 16)))
-
-
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
                                            ('mossy_stone_decor', 15), ('mossy_stone_decor', 16)],
                                           keep=True):
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
-        self.crystal_spawners = []
-        for plant in self.tilemap.extract([("blue_decor", 0),], keep=True):
-            self.crystal_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
-
         if not self.levels[map_id]["charged"]:
             self.enemies = []
             self.bosses = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawners[map_id] = spawner["pos"].copy()
-                    self.spawner_pos[map_id] = spawner["pos"]
+                    self.spawner_pos = spawner["pos"]
                     self.player.pos = spawner["pos"].copy()
                 elif spawner['variant'] == 1:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
@@ -379,8 +295,8 @@ class Game:
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
-                    self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (48, 48), 500,
-                                                 {"attack_distance": 25,
+                    self.bosses.append(FirstBoss(self, "boss", spawner['pos'], (32, 32), 500,
+                                                 {"attack_distance": 20,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
 
@@ -390,54 +306,31 @@ class Game:
                 l.state = lever["variant"]
                 self.levers.append(l)
 
-            self.doors = []
-            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)]):
-                if door['type'] == 'breakable_stalactite':
-                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], None, False, 0.01, self))
-                else:
-                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], door["id"], False, 1, self))
-
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
-                self.charged_levels.append(map_id)
-
-            self.transitions = self.tilemap.extract([("transition", 0)])
-            self.scroll = [self.player.pos[0], self.player.pos[1]]
-
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawner_pos[map_id] = spawner["pos"]
-            self.player.pos = self.spawners[map_id].copy()
-            self.tilemap.extract([('lever', 0),('lever', 1)])
-            self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)])
-            self.transitions = self.tilemap.extract([("transition", 0)])
+                    self.spawner_pos = spawner["pos"]
+                    self.player.pos = spawner["pos"].copy()
+            self.tilemap.extract([('lever', 0), ('lever', 1)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
             self.levers = self.levels[map_id]["levers"].copy()
-            self.doors = self.levels[map_id]["doors"].copy()
+            self.tilemap.tilemap = self.levels[map_id]["tilemap"].copy()
+
+        self.transitions = self.tilemap.extract([("transitions", 0), ("transitions", 1)])
 
         self.cutscene = False
-        self.particles = []
-        self.sparks = []
+        self.scroll = [0, 0]
         self.transition = -30
-        self.max_falling_depth = 50000000 if self.level in (1,3) else 500
-        self.update_light()
-        if map_id == 0 and not self.levels[map_id]["charged"]:
-            self.start_tutorial_sequence()
+        self.max_falling_depth = 500 if self.level == 0 else 5000
 
     def display_level_bg(self, map_id):
-        if map_id in (0, 1, 2):
-            self.display.blit(self.assets['green_cave/0'], (0, 0))
-            display_bg(self.display, self.assets['green_cave/1'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['green_cave/2'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['green_cave/3'], (self.scroll[0] / 50, -20))
-        if map_id == 3:
-            self.display.blit(self.assets['blue_cave/0'], (0, 0))
-            display_bg(self.display, self.assets['blue_cave/1'], (-self.scroll[0] / 10, 0))
-            display_bg(self.display, self.assets['blue_cave/2'], (-self.scroll[0] / 30, 0))
-            display_bg(self.display, self.assets['blue_cave/3'], (self.scroll[0] / 30, 0))
-            display_bg(self.display, self.assets['blue_cave/4'], (self.scroll[0] / 50, 0))
+        if map_id == 0:
+            display_bg(self.display, self.assets['background0'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['background1'], (-self.scroll[0] / 10, -20))
+            display_bg(self.display, self.assets['background2'], (self.scroll[0] / 50, -20))
 
     def draw_boss_health_bar(self, boss):
         if not self.bosses or boss.hp <= 0:
@@ -501,102 +394,23 @@ class Game:
         self.display.blit(text_surface, text_rect)
 
     def display_level_fg(self, map_id):
-        if map_id in (0,1,2):
-            # Generate dynamic fog instead of blitting a static image
-            generate_fog(self.display, color=(24, 38, 31), opacity=130)
-        if map_id == 3:
-            generate_fog(self.display, color=(28, 50, 73), opacity=130)
+        if map_id == 0:
+            display_bg(self.display, self.assets['fog'], (-self.scroll[0], -20))
 
     def check_transition(self):
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
-                    self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
-                if self.player.get_direction("x") != 0:
-                    self.spawners[self.level] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
-                self.level = transition["destination"]
+                    transition['pos'][1] > self.player.rect().centery >= transition['pos'][1] - 16):
+                self.levels[self.level]["enemies"] = self.enemies.copy()
+                self.levels[self.level]["bosses"] = self.bosses.copy()
+                self.levels[self.level]["levers"] = self.levers.copy()
+                self.levels[self.level]["tilemap"] = self.tilemap.tilemap.copy()
+                if transition["variant"] == 0:
+                    self.level -= 1
+                elif transition["variant"] == 1:
+                    self.level += 1
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
-
-    def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
-
-        # Récupérer le texte correspondant à la clé
-        level_str = str(self.level)
-        if level_str in self.game_texts and text_key in self.game_texts[level_str]:
-            text = self.game_texts[level_str][text_key]
-
-            # Créer un nouveau texte flottant et l'ajouter à la liste
-            self.floating_texts.append({
-                'text': text,
-                'color': color,
-                'end_time': time.time() + duration,
-                'offset_y': offset_y,
-                'opacity': 255  # Opacité initiale
-            })
-        else:
-            print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
-
-    def update_floating_texts(self, render_scroll):
-        current_time = time.time()
-
-        for text_data in self.floating_texts.copy():
-            remaining_time = text_data['end_time'] - current_time
-
-            if remaining_time <= 0:
-                self.floating_texts.remove(text_data)
-                continue
-
-            if remaining_time < 0.5:
-                text_data['opacity'] = int(255 * (remaining_time / 0.5))
-            player_x = self.player.rect().centerx - render_scroll[0]
-            player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
-
-            try:
-                font = pygame.font.SysFont("Arial", 14)
-            except:
-                font = pygame.font.Font(None, 18)
-
-            text_surface = font.render(text_data['text'], True, text_data['color'])
-            text_surface.set_alpha(text_data['opacity'])
-
-            shadow_surface = font.render(text_data['text'], True, (0, 0, 0))
-            shadow_surface.set_alpha(text_data['opacity'] * 0.7)
-
-            text_rect = text_surface.get_rect(center=(player_x, player_y))
-            shadow_rect = shadow_surface.get_rect(center=(player_x + 1, player_y + 1))
-            self.display.blit(shadow_surface, shadow_rect)
-            self.display.blit(text_surface, text_rect)
-
-    def start_tutorial_sequence(self):
-        self.tutorial_active = True
-        self.tutorial_step = 0
-        self.tutorial_next_time = time.time()
-
-        # Configurer la séquence de tutoriel pour le niveau 0
-        if str(self.level) == "0":
-            self.tutorial_messages = [
-                {"key": "tuto_movement", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
-                {"key": "tuto_space", "duration": 4.0, "delay": 5.0, "color": (220, 220, 255)},
-                {"key": "tuto_FG", "duration": 4.0, "delay": 5.0, "color": (255, 255, 100)},
-            ]
-
-    def update_tutorial_sequence(self):
-        if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
-            self.tutorial_active = False
-            return
-
-        current_time = time.time()
-
-        if current_time >= self.tutorial_next_time:
-            message = self.tutorial_messages[self.tutorial_step]
-            self.display_text_above_player(
-                message["key"],
-                message["duration"],
-                message["color"],
-                -30
-            )
-
-            self.tutorial_next_time = current_time + message["duration"] + message["delay"]
-            self.tutorial_step += 1
 
     def move_visual(self, duration, pos):
         self.moving_visual = True
@@ -607,6 +421,7 @@ class Game:
     def update_camera(self):
         current_time = time.time()
 
+        # Check if we're in a visual movement mode
         if self.moving_visual:
             elapsed_time = current_time - self.visual_start_time
 
@@ -615,118 +430,79 @@ class Game:
                 self.scroll[0] += (self.visual_pos[0] - self.display.get_width() / 2 - self.scroll[0]) / 20
                 self.scroll[1] += (self.visual_pos[1] - self.display.get_height() / 2 - self.scroll[1]) / 20
             else:
+                # Duration completed, return to following player
                 self.moving_visual = False
 
-        else:
-            target_x = self.player.rect().centerx - self.display.get_width() / 2
-            target_y = self.player.rect().centery - self.display.get_height() / 2
+        if not self.moving_visual:
+            self.scroll[0] += (self.player.rect().centerx - self.display.get_width() / 2 - self.scroll[0]) / 20
+            self.scroll[1] += (self.player.rect().centery - self.display.get_height() / 2 - self.scroll[1]) / 20
 
-            # Apply level boundaries if they exist for the current level
-            if self.level in self.scroll_limits:
-                level_limits = self.scroll_limits[self.level]
+    def update_spawn_point(self, pos, level):
+        self.spawn_point = {"pos": pos, "level": level}
 
-                # Apply x-axis limits
-                if level_limits["x"]:
-                    min_x, max_x = level_limits["x"]
-                    target_x = max(min_x, min(target_x, max_x))
+    def load_activators_actions(self):
+        try:
+            with open("data/activators.json", "r") as file:
+                actions_data = json.load(file)
+                return actions_data
 
-                # Apply y-axis limits
-                if level_limits["y"]:
-                    min_y, max_y = level_limits["y"]
-                    target_y = max(min_y, min(target_y, max_y))
-
-            # Smooth camera movement
-            self.scroll[0] += (target_x - self.scroll[0]) / 20
-            self.scroll[1] += (target_y - self.scroll[1]) / 20
-
-    def update_spawn_point(self):
-        if self.level in (0, 1, 2):
-            self.spawn_point = {"pos": self.spawner_pos[0], "level": 0}
-        elif self.level in (3, 4, 5):
-            self.spawn_point = {"pos": self.spawner_pos[3], "level": 3}
+        except Exception as e:
+            print(f"Error loading activators actions: {e}")
+            return {"levers": {}, "buttons": {}}
 
     def update_activators_actions(self, level):
         for lever in self.levers:
             if lever.can_interact(self.player.rect()):
-                lever_id = str(lever.id)
-                # Check if this lever has any actions
-                if lever_id in self.activators_actions[str(level)]["levers"]:
-                    action = self.activators_actions[str(level)]["levers"][lever_id]
+                if lever.toggle():
+                    # Get the lever ID as a string
+                    lever_id = str(lever.id)
+                    # Check if this lever has any actions
+                    if lever_id in self.activators_actions[str(level)]["levers"]:
+                        action = self.activators_actions[str(level)]["levers"][lever_id]
 
-                    # Process different action types
-                    if action["type"] == "visual_and_door":
-                        #Move visual and Open door
-                        for door in self.doors:
-                            if door.id == action["door_id"] and not door.opened:
-                                lever.toggle()
-                                self.move_visual(action["visual_duration"], door.pos)
-                                door.open()
+                        # Process different action types
+                        if action["type"] == "visual_and_extract":
+                            # Move visual
+                            self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
 
-                        # Add screenshake effect
-                        self.screen_shake(10)
+                            # Extract tiles
+                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
+                            self.tilemap.extract(extract_list)
 
-                    elif action["type"] == "door_only":
-                        lever.toggle()
-                        # Open door
-                        for door in self.doors:
-                            if door.id == action["door_id"]:
-                                self.move_visual(action["visual_duration"], door.pos)
-                                door.open()
-                                break
+                            # Add screenshake effect
+                            self.screen_shake(10)
 
-                        # Add screenshake effect
-                        self.screen_shake(10)
+                        elif action["type"] == "extract_only":
+                            # Extract tiles
+                            extract_list = [tuple(tile) for tile in action["extract_tiles"]]
+                            self.tilemap.extract(extract_list)
 
-                    elif action["type"] == "custom":
-                        lever.toggle()
-                        # For custom actions that require specific code execution
-                        # This would need to be handled case by case
-                        if action["action_id"] == "open_boss_door":
-                            self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
-                            self.screen_shake(15)
+                            # Add screenshake effect
+                            self.screen_shake(5)
 
-    def update_throwable_objects_action(self):
-        for o in self.throwable:
-            if not o.grabbed and not self.player_grabbing:
-                if o.can_interact(self.player.rect()):
-                    o.grab(self.player)
-                    return
-            elif o.grabbed:
-                o.launch([self.player.last_direction, -1], 3.2)
-                return
-
-    def draw_cutscene_border(self, color=(0, 0, 0), width=20, opacity=255):
-
-        border_surface = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
-
-        # Draw top border
-        pygame.draw.rect(border_surface, (*color, opacity), (0, 0, self.display.get_width(), width))
-
-        # Draw bottom border
-        pygame.draw.rect(border_surface, (*color, opacity),
-                         (0, self.display.get_height() - width, self.display.get_width(), width))
-
-
-        # Blit the border onto the screen
-        self.display.blit(border_surface, (0, 0))
+                        elif action["type"] == "custom":
+                            # For custom actions that require specific code execution
+                            # This would need to be handled case by case
+                            if action["action_id"] == "open_boss_door":
+                                self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
+                                self.screen_shake(15)
 
     def run(self):
         while True:
+            self.display.blit(self.assets['background'], (0, 0))
+
             self.screenshake = max(0, self.screenshake - 1)
 
-            self.check_transition()
-
             self.update_camera()
-            render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
-            self.update_tutorial_sequence()
-            self.update_floating_texts(render_scroll)
+            render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
             if self.transition < 0:
                 self.transition += 1
 
-            self.update_spawn_point()
+            if not self.in_boss_level:
+                self.update_spawn_point(self.spawner_pos, self.level)
 
-            self.player.disablePlayerInput = self.cutscene or self.moving_visual
+            self.player.disablePlayerInput = self.cutscene
 
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:
@@ -734,64 +510,27 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            self.display_level_bg(self.level)
-            self.player.can_walljump["allowed"] = self.level not in self.boss_levels or not self.bosses
-
-            ds = []
-            for door in self.doors:
-                door.update()
-                door.render(self.display, offset=render_scroll)
-                if not door.opened:
-                    ds.append(door.rect())
-            self.doors_rects = ds
+            self.check_transition()
+            self.display_level_bg(0)
+            self.player.can_walljump["allowed"] = not (self.level == 1)
 
             self.tilemap.render(self.display, offset=render_scroll)
 
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
-                near_lever = abs(self.player.pos[0] - lever.pos[0]) <= 30 and abs(
-                    self.player.pos[1] - lever.pos[1]) <= 30
-
-                if near_lever and not self.lever_text_displayed:
-                    self.display_text_above_player("Lever_interaction", duration=0.5)  # Short duration
-                    self.lever_text_displayed = True
-                elif not near_lever and self.lever_text_displayed:
-                    self.lever_text_displayed = False
-                    self.floating_texts = [text for text in self.floating_texts if
-                                           text['text'] != self.game_texts[str(self.level)]["Lever_interaction"]]
-
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
-                if enemy.hp <= 0 or enemy.pos[1] > self.max_falling_depth:
+                if enemy.hp <= 0:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
-
-            s = []
-            for n in range(4):
-                s += [("spikes", n), ("bloody_spikes", n), ("big_spikes", n), ("big_bloody_spikes", n)]
-            for spike in self.tilemap.extract(s, keep=True):
-                r = pygame.Rect(spike["pos"][0], spike["pos"][1],
-                                self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
-                    self.player_hp = 0
-                for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
-                        o.set_action("breaking")
-                        if o.animation.done:
-                            self.throwable.remove(o)
-
 
             self.attacking_update()
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
-
-            for o in self.throwable:
-                o.update(self.tilemap, (0, 0))
-                o.render(self.display, offset=render_scroll)
 
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
@@ -806,26 +545,13 @@ class Game:
                         self.levels[self.level]["charged"] = True
 
             self.tilemap.render_over(self.display, offset=render_scroll)
-
-            for rect in self.crystal_spawners:
-                if random.random() * 49999 < rect.width * rect.height:
-                    pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
-                    self.particles.append(
-                        Particle(self, 'crystal', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
-
-            self.display_level_fg(self.level)
+            self.display_level_fg(0)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
-
-            for spark in self.sparks.copy():
-                kill = spark.update()
-                spark.render(self.display, offset=render_scroll)
-                if kill:
-                    self.sparks.remove(spark)
 
             for particle in self.particles.copy():
                 kill = particle.update()
@@ -847,17 +573,17 @@ class Game:
                             self.dict_kb[key] = 0
 
                     if event.key == pygame.K_e:
-                        self.update_throwable_objects_action()
-                        if not self.player_grabbing:
-                            self.update_activators_actions(self.level)
+                        self.update_activators_actions(self.level)
 
                     if event.key == pygame.K_F11:
                         self.toggle_fullscreen()
-                    if event.key == pygame.K_f and not self.holding_attack:
-                        self.dict_kb["key_attack"] = 1
-                        self.holding_attack = True
-                    if event.key == pygame.K_b:
-                        self.doors[0].open()
+                    if event.key == pygame.K_f:
+                        if not self.holding_attack:
+                            self.dict_kb["key_attack"] = 1
+                        if self.dict_kb["key_attack"] == 1:
+                            self.holding_attack = True
+                    if event.key == pygame.K_j:
+                        self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
 
                 if event.type == pygame.KEYUP:
                     if event.key == pygame.K_f:
@@ -871,102 +597,30 @@ class Game:
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
 
-            self.levels[self.level]["enemies"] = self.enemies.copy()
-            self.levels[self.level]["bosses"] = self.bosses.copy()
-            self.levels[self.level]["levers"] = self.levers.copy()
-            self.levels[self.level]["doors"] = self.doors.copy()
-
             if self.transition:
                 transition_surf = pygame.Surface(self.display.get_size())
                 pygame.draw.circle(transition_surf, (255, 255, 255),(self.display.get_width() // 2, self.display.get_height() // 2), (30 - abs(self.transition)) * 8)
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            self.apply_lighting(self.player.rect().center, render_scroll)
-            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
-            self.update_floating_texts(render_scroll)
-
-            if self.cutscene:
-                self.draw_cutscene_border()
-            else:
-                self.draw_health_bar()
-                if self.bosses:
-                    self.draw_boss_health_bar(self.bosses[0])
+            screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
+                                  random.random() * self.screenshake - self.screenshake / 2)
+            self.draw_health_bar()
+            if self.bosses:
+                self.draw_boss_health_bar(self.bosses[0])
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
             if self.damage_flash_active:
                 # Check if the flash should still be displayed
                 if pygame.time.get_ticks() < self.damage_flash_end_time:
-                    self.screen_shake(16)
                     # Create a transparent surface
-                    # Get screen dimensions
-                    screen_width = self.screen.get_width()
-                    screen_height = self.screen.get_height()
-
-                    # Create a transparent surface for the border
-                    border_surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
-
-                    # Calculate elapsed time percentage
-                    elapsed = pygame.time.get_ticks() - (self.damage_flash_end_time - self.damage_flash_duration)
-                    progress = elapsed / self.damage_flash_duration
-
-                    # Border properties that change based on time
-                    max_border_width = 220
-                    border_width = int(max_border_width * (1 - progress))  # Border gets thinner over time
-                    alpha_base = int(240 * (1 - progress))  # Overall opacity fades out over time
-
-                    # Draw the border with inside fade effect
-                    for i in range(border_width):
-                        # Calculate fade factor - starts solid at edge, fades toward inside
-                        fade_factor = 1 - (i / border_width)
-                        color_alpha = int(alpha_base * fade_factor)
-                        color = (0, 0, 0, color_alpha)  # Dark red with variable alpha
-
-                        # Draw four lines (top, right, bottom, left) for each level of the border
-                        # Top border
-                        pygame.draw.line(border_surface, color, (0, i), (screen_width, i), 1)
-                        # Right border
-                        pygame.draw.line(border_surface, color, (screen_width - i - 1, 0),
-                                         (screen_width - i - 1, screen_height), 1)
-                        # Bottom border
-                        pygame.draw.line(border_surface, color, (0, screen_height - i - 1),
-                                         (screen_width, screen_height - i - 1), 1)
-                        # Left border
-                        pygame.draw.line(border_surface, color, (i, 0), (i, screen_height), 1)
-
-                    # Round the corners for a smoother look
-                    # This is a simplified approach - for truly smooth corners, you might need a more complex approach
-                    corner_radius = min(0, border_width)
-                    if corner_radius > 0:
-                        # Soften corners by drawing partially transparent arcs
-                        for i in range(corner_radius):
-                            fade_factor = 1 - (i / corner_radius)
-                            color_alpha = int(
-                                alpha_base * fade_factor * 0.7)  # Slightly more transparent for smooth blending
-                            color = (0, 0, 0, color_alpha)
-
-                            # Top-left corner
-                            pygame.draw.arc(border_surface, color, (0, 0, corner_radius * 2, corner_radius * 2),
-                                            math.pi / 2, math.pi, 1)
-                            # Top-right corner
-                            pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2, 0,
-                                                                    corner_radius * 2, corner_radius * 2), 0,
-                                            math.pi / 2, 1)
-                            # Bottom-right corner
-                            pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2,
-                                                                    screen_height - corner_radius * 2,
-                                                                    corner_radius * 2, corner_radius * 2),
-                                            -math.pi / 2, 0, 1)
-                            # Bottom-left corner
-                            pygame.draw.arc(border_surface, color, (0, screen_height - corner_radius * 2,
-                                                                    corner_radius * 2, corner_radius * 2), math.pi,
-                                            3 * math.pi / 2, 1)
-
-                    # Blit the border onto the screen
-                    self.screen.blit(border_surface, (0, 0))
+                    flash_surface = pygame.Surface((self.screen.get_width(), self.screen.get_height()), pygame.SRCALPHA)
+                    flash_surface.fill((255, 0, 0, 50))  # (R, G, B, Alpha)
+                    # Blit the transparent red overlay onto the screen
+                    self.screen.blit(flash_surface, (0, 0))
                 else:
-                    # Border effect duration has ended
+                    # Flash duration has ended
                     self.damage_flash_active = False
 
             pygame.display.update()
