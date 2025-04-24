@@ -27,7 +27,8 @@ class Editor:
             'lever': load_images('levers/green_cave'),
             'vines_door_h': load_images('doors/vines_door_h/closed'),
             'vines_door_v': load_images('doors/vines_door_v/closed'),
-            'breakable_stalactite': load_images('doors/breakable_stalactite/closed')
+            'breakable_stalactite': load_images('doors/breakable_stalactite/closed'),
+            'throwable':load_images('entities/elements/blue_rock/intact')
         }
 
         self.environments = {"green_cave": (0, 1, 2),
@@ -52,7 +53,9 @@ class Editor:
         self.tile_list = list(self.assets)
         self.tile_group = 0
         self.tile_variant = 0
-        self.free_lever_id = 0
+        self.levers_ids = set()
+        self.doors_ids = set()
+
 
         self.zoom = 1
 
@@ -68,6 +71,7 @@ class Editor:
 
     def run(self):
         while True:
+            print(self.doors_ids)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -86,6 +90,12 @@ class Editor:
             tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                         int((mpos[1] +  self.scroll[1]) // self.tilemap.tile_size))
 
+            for lever in self.tilemap.extract([('lever', 0), ('lever', 1)], keep=True):
+                self.levers_ids.add(lever['id'])
+
+            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 1)], keep=True):
+                self.doors_ids.add(door['id'])
+
             if self.ongrid:
                 self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
                                                      tile_pos[1] * self.tilemap.tile_size - self.scroll[1]))
@@ -94,11 +104,29 @@ class Editor:
 
             if self.clicking and self.ongrid:
                 if self.tile_list[self.tile_group] == "lever":
+                    iD = int(input("Enter the lever id: "))
+                    while iD in self.levers_ids:
+                        print("id already used")
+                        iD = int(input("Enter the lever id: "))
+                    self.levers_ids.add(iD)
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                         'type': self.tile_list[self.tile_group],
                         'variant': self.tile_variant,
                         'pos': tile_pos,
-                        'id': self.free_lever_id}
+                        'id': iD}
+
+                elif self.tile_list[self.tile_group] in ('vines_door_h', 'vines_door_v', ):
+                    iD = int(input("Enter the door id: "))
+                    while iD in self.doors_ids:
+                        print("id already used")
+                        iD = int(input("Enter the door id: "))
+                    self.doors_ids.add(iD)
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'id': iD}
+
                 elif self.tile_list[self.tile_group] == "transition":
                     direction = int(input("Enter the destination level: "))
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
@@ -113,7 +141,6 @@ class Editor:
                         'variant': self.tile_variant,
                         'pos': tile_pos}
 
-
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
@@ -124,10 +151,12 @@ class Editor:
                                          tile['pos'][1] - self.scroll[1],
                                          tile_img.get_width(),
                                          tile_img.get_height())
+                    if tile['type'] == 'lever':
+                        self.levers_ids.remove(tile['id'])
+                    #if tile['type'] in ('vines_door_h', 'vines_door_v'):
+                        #self.doors_ids.remove(tile['id'])
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
-
-            self.free_lever_id = len(self.tilemap.extract([("lever", 0), ("lever",1)], keep=True))
 
             self.display.blit(current_tile_img, (5, 5))
 
@@ -183,6 +212,8 @@ class Editor:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
                             self.tile_list = list(self.assets)
+                            self.levers_ids = set()
+                            self.doors_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0
                     if event.key == pygame.K_LEFT:
@@ -196,6 +227,8 @@ class Editor:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
                             self.tile_list = list(self.assets)
+                            self.levers_ids = set()
+                            self.doors_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0
                     if event.key == pygame.K_DOWN:

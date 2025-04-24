@@ -19,6 +19,8 @@ class PhysicsEntity:
             self.set_action('idle')
         except AttributeError:
             pass
+        except KeyError:
+            pass
 
         self.last_movement = [0, 0]
 
@@ -271,6 +273,67 @@ class Enemy(PhysicsEntity):
             else:
                 self.set_action("idle")
 
+class Throwable(PhysicsEntity):
+    def __init__(self, game, o_type, pos, size):
+        super().__init__(game, o_type, pos, size)
+        self.action = ''
+        self.flip = False
+        try:
+            self.set_action('intact')
+        except AttributeError:
+            pass
+        self.grabbed = False
+        self.grabbing_entity = None
+
+    def update(self, tilemap, movement=(0, 0)):
+        if not self.grabbed:
+            self.game.player_grabbing = False
+
+            # Call parent update (handles physics and movement)
+            super().update(tilemap, movement=(0, 0))
+
+            # Check if we've collided with something (implement based on your collision system)
+            # If we hit something horizontally, stop horizontal movement
+            if self.collisions["left"] or self.collisions["right"] or self.collisions["down"] or self.collisions["up"]:
+                self.velocity[0] = 0
+            # We keep vertical velocity for gravity effects
+
+        else:
+            self.game.player_grabbing = True
+            self.pos = [self.grabbing_entity.rect().centerx + 5 if self.grabbing_entity.last_direction == 1 else self.grabbing_entity.rect().centerx - 15,
+                        self.grabbing_entity.rect().centery-10]
+
+    def can_interact(self, player_rect, interaction_distance=2):
+        can_interact = self.rect().colliderect(player_rect.inflate(interaction_distance, interaction_distance))
+        return can_interact
+
+    def grab(self, entity):
+        self.grabbed = True
+        self.grabbing_entity = entity
+
+    def launch(self, direction, strength):
+        # Release from grabbed state
+        self.grabbed = False
+
+        # Calculate magnitude of the direction vector
+        magnitude = math.sqrt(direction[0] ** 2 + direction[1] ** 2)
+
+        # Avoid division by zero
+        if magnitude > 0:
+            # Normalize and multiply by strength
+            normalized_x = direction[0] / magnitude
+            normalized_y = direction[1] / magnitude
+
+            # Set velocity based on strength and direction
+            self.velocity[0] = normalized_x * strength
+            self.velocity[1] = normalized_y * strength
+        else:
+            # If direction vector is zero, just throw upward
+            self.velocity[0] = 0
+            self.velocity[1] = -strength  # Negative y is up in most game coordinate systems
+
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
 def blur(surface, span):
     for i in range(span):

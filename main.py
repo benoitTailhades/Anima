@@ -6,7 +6,7 @@ import json
 import pygame
 import random
 import time
-from scripts.entities import player_death, Enemy
+from scripts.entities import player_death, Enemy, Throwable
 from scripts.utils import *
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
@@ -44,7 +44,11 @@ class Game:
             "wrath":{"left/right": ["run"],
                                 "size": (48, 48),
                                 "img_dur": {"idle": 12, "run": 8, "jump": 5, "death": 3, "hit": 5, "charge": 5},
-                                "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}}
+                                "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}},
+            "blue_rock": {"left/right": [],
+                      "size": (16, 16),
+                      "img_dur": {"intact":1, "breaking":1},
+                      "loop": {"intact":False, "breaking":False}}
                        }
 
         self.d_info = {
@@ -73,6 +77,7 @@ class Game:
         self.assets = {
 
             'green_cave_lever': load_images('levers/green_cave'),
+            'blue_cave_lever': load_images('levers/green_cave'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'particle/crystal': Animation(load_images('particles/crystal'), loop=50),
             'particle/crystal_fragment': Animation(load_images('particles/crystal'), loop=1),
@@ -162,6 +167,9 @@ class Game:
         self.visual_pos = (0, 0)
         self.visual_movement_duration = 0
         self.visual_start_time = 0
+
+        self.player_grabbing = False
+        self.interacting = False
 
         self.particles = []
 
@@ -313,7 +321,7 @@ class Game:
 
     def attacking_update(self):
         self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
-                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned
+                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned and not self.player_grabbing
         if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
             self.attacking = False
             self.dict_kb["key_attack"] = 0
@@ -342,6 +350,11 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
+
+        self.throwable = []
+        for o in self.tilemap.extract([('throwable',0)]):
+            self.throwable.append(Throwable(self, "blue_rock", o['pos'], (16, 16)))
+
 
         self.leaf_spawners = []
         for plant in self.tilemap.extract([('vine_decor', 3), ('vine_decor', 4), ('vine_decor', 5),
@@ -381,9 +394,9 @@ class Game:
             self.doors = []
             for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)]):
                 if door['type'] == 'breakable_stalactite':
-                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 0.01, self))
+                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], None, False, 0.01, self))
                 else:
-                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], False, 1, self))
+                    self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], door["id"], False, 1, self))
 
             if not self.in_boss_level:
                 self.levels[map_id]["charged"] = True
@@ -673,23 +686,27 @@ class Game:
 
                     # Process different action types
                     if action["type"] == "visual_and_door" and not self.doors[action["door_id"]].opened:
-                        lever.toggle()
-                        # Move visual
-                        self.move_visual(action["visual_duration"], tuple(action["visual_pos"]))
-
-                        # Extract tiles
-                        self.doors[action["door_id"]].open()
+                        #Move visual and Open door
+                        for door in self.doors:
+                            if door.id == action["door_id"] and not door.opened:
+                                lever.toggle()
+                                self.move_visual(action["visual_duration"], door.pos)
+                                self.doors[action["door_id"]].open()
 
                         # Add screenshake effect
                         self.screen_shake(10)
 
                     elif action["type"] == "door_only":
                         lever.toggle()
-                        # Extract tiles
-                        self.doors[action["door_id"]].open()
+                        # Open door
+                        for door in self.doors:
+                            if door.id == action["door_id"]:
+                                self.move_visual(action["visual_duration"], door.pos)
+                                self.doors[action["door_id"]].open()
+                                break
 
                         # Add screenshake effect
-                        self.screen_shake(5)
+                        self.screen_shake(10)
 
                     elif action["type"] == "custom":
                         lever.toggle()
@@ -698,6 +715,16 @@ class Game:
                         if action["action_id"] == "open_boss_door":
                             self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
                             self.screen_shake(15)
+
+    def update_throwable_objects_action(self):
+        for o in self.throwable:
+            if not o.grabbed and not self.player_grabbing:
+                if o.can_interact(self.player.rect()):
+                    o.grab(self.player)
+                    return
+            elif o.grabbed:
+                o.launch([self.player.last_direction, -1], 3.2)
+                return
 
     def draw_cutscene_border(self, color=(0, 0, 0), width=20, opacity=255):
 
@@ -757,7 +784,7 @@ class Game:
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
-                if enemy.hp <= 0:
+                if enemy.hp <= 0 or enemy.pos[1] > self.max_falling_depth:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
@@ -770,11 +797,21 @@ class Game:
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
                 if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
                     self.player_hp = 0
+                for o in self.throwable:
+                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                        o.set_action("breaking")
+                        if o.animation.done:
+                            self.throwable.remove(o)
+
 
             self.attacking_update()
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)
+
+            for o in self.throwable:
+                o.update(self.tilemap, (0, 0))
+                o.render(self.display, offset=render_scroll)
 
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
@@ -830,7 +867,9 @@ class Game:
                             self.dict_kb[key] = 0
 
                     if event.key == pygame.K_e:
-                        self.update_activators_actions(self.level)
+                        self.update_throwable_objects_action()
+                        if not self.player_grabbing:
+                            self.update_activators_actions(self.level)
 
                     if event.key == pygame.K_F11:
                         self.toggle_fullscreen()
@@ -845,17 +884,17 @@ class Game:
                         self.dict_kb["key_attack"] = 0
                         self.holding_attack = False
 
-                self.levels[self.level]["enemies"] = self.enemies.copy()
-                self.levels[self.level]["bosses"] = self.bosses.copy()
-                self.levels[self.level]["levers"] = self.levers.copy()
-                self.levels[self.level]["doors"] = self.doors.copy()
-
                 if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                     state = 1 if event.type == pygame.KEYDOWN else 0
                     key_map = self.get_key_map()
 
                     if event.key in key_map:
                         self.dict_kb[key_map[event.key]] = state
+
+            self.levels[self.level]["enemies"] = self.enemies.copy()
+            self.levels[self.level]["bosses"] = self.bosses.copy()
+            self.levels[self.level]["levers"] = self.levers.copy()
+            self.levels[self.level]["doors"] = self.doors.copy()
 
             if self.transition:
                 transition_surf = pygame.Surface(self.display.get_size())
