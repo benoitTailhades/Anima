@@ -120,6 +120,7 @@ class Game:
         self.activators_actions = load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
+        self.lever_text_displayed = False
 
         self.spawner_pos = {}
 
@@ -209,11 +210,9 @@ class Game:
         darkness = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
         darkness.fill((0, 0, 0, self.darkness_level))  # Semi-transparent black
 
-        # Calculate player position on screen
         player_screen_x = player_pos[0] - render_scroll[0]
         player_screen_y = player_pos[1] - render_scroll[1]
 
-        # Position for the light mask
         light_x = player_screen_x - self.light_radius
         light_y = player_screen_y - self.light_radius
 
@@ -506,15 +505,7 @@ class Game:
                 self.load_level(self.level)
 
     def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
-        """
-        Affiche un texte prédéfini au-dessus du joueur.
 
-        Args:
-            text_key (str): La clé du texte dans le fichier JSON
-            duration (float): Durée d'affichage en secondes
-            color (tuple): Couleur RGB du texte
-            offset_y (int): Décalage vertical au-dessus du joueur
-        """
         # Récupérer le texte correspondant à la clé
         level_str = str(self.level)
         if level_str in self.game_texts and text_key in self.game_texts[level_str]:
@@ -532,27 +523,20 @@ class Game:
             print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
 
     def update_floating_texts(self, render_scroll):
-        """Met à jour et affiche les textes flottants au-dessus du joueur"""
         current_time = time.time()
 
         for text_data in self.floating_texts.copy():
-            # Calculer le temps restant
             remaining_time = text_data['end_time'] - current_time
 
             if remaining_time <= 0:
-                # Supprimer le texte si son temps est écoulé
                 self.floating_texts.remove(text_data)
                 continue
 
-            # Faire disparaître progressivement le texte vers la fin
             if remaining_time < 0.5:
                 text_data['opacity'] = int(255 * (remaining_time / 0.5))
-
-            # Obtenir la position du joueur
             player_x = self.player.rect().centerx - render_scroll[0]
             player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
 
-            # Préparer le texte
             try:
                 font = pygame.font.SysFont("Arial", 14)
             except:
@@ -561,21 +545,15 @@ class Game:
             text_surface = font.render(text_data['text'], True, text_data['color'])
             text_surface.set_alpha(text_data['opacity'])
 
-            # Créer une ombre légère pour améliorer la lisibilité
             shadow_surface = font.render(text_data['text'], True, (0, 0, 0))
             shadow_surface.set_alpha(text_data['opacity'] * 0.7)
 
-            # Centrer le texte au-dessus du joueur
             text_rect = text_surface.get_rect(center=(player_x, player_y))
             shadow_rect = shadow_surface.get_rect(center=(player_x + 1, player_y + 1))
-
-            # Afficher l'ombre puis le texte
             self.display.blit(shadow_surface, shadow_rect)
             self.display.blit(text_surface, text_rect)
 
     def start_tutorial_sequence(self):
-        """Démarre la séquence de tutoriel avec des messages espacés dans le temps"""
-        # Réinitialiser l'état du tutoriel
         self.tutorial_active = True
         self.tutorial_step = 0
         self.tutorial_next_time = time.time()
@@ -585,22 +563,16 @@ class Game:
             self.tutorial_messages = [
                 {"key": "tuto_movement", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
                 {"key": "tuto_space", "duration": 4.0, "delay": 5.0, "color": (220, 220, 255)},
-                {"key": "tuto_FG", "duration": 4.0, "delay": 5.0, "color": (255, 255, 100)}
+                {"key": "tuto_FG", "duration": 4.0, "delay": 5.0, "color": (255, 255, 100)},
             ]
-        else:
-            # Tutoriels pour d'autres niveaux si nécessaire
-            self.tutorial_messages = []
-            self.tutorial_active = False
 
     def update_tutorial_sequence(self):
-        """Met à jour la séquence de tutoriel et affiche les messages progressivement"""
         if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
             self.tutorial_active = False
             return
 
         current_time = time.time()
 
-        # Vérifier s'il est temps d'afficher le prochain message
         if current_time >= self.tutorial_next_time:
             message = self.tutorial_messages[self.tutorial_step]
             self.display_text_above_player(
@@ -610,7 +582,6 @@ class Game:
                 -30
             )
 
-            # Préparer le prochain message
             self.tutorial_next_time = current_time + message["duration"] + message["delay"]
             self.tutorial_step += 1
 
@@ -623,7 +594,6 @@ class Game:
     def update_camera(self):
         current_time = time.time()
 
-        # Check if we're in a visual movement mode
         if self.moving_visual:
             elapsed_time = current_time - self.visual_start_time
 
@@ -632,7 +602,6 @@ class Game:
                 self.scroll[0] += (self.visual_pos[0] - self.display.get_width() / 2 - self.scroll[0]) / 20
                 self.scroll[1] += (self.visual_pos[1] - self.display.get_height() / 2 - self.scroll[1]) / 20
             else:
-                # Duration completed, return to following player
                 self.moving_visual = False
 
         else:
@@ -753,6 +722,17 @@ class Game:
 
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
+                near_lever = abs(self.player.pos[0] - lever.pos[0]) <= 30 and abs(
+                    self.player.pos[1] - lever.pos[1]) <= 30
+
+                if near_lever and not self.lever_text_displayed:
+                    self.display_text_above_player("Lever_interaction", duration=0.5)  # Short duration
+                    self.lever_text_displayed = True
+                elif not near_lever and self.lever_text_displayed:
+                    self.lever_text_displayed = False
+                    self.floating_texts = [text for text in self.floating_texts if
+                                           text['text'] != self.game_texts[str(self.level)]["Lever_interaction"]]
+
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
