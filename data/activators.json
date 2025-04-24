@@ -4,10 +4,6 @@
       "0": {
         "type": "visual_and_door",
         "visual_duration": 2,
-        "visual_pos": [
-          928,
-          208
-        ],
         "door_id": 0
       },
       "1": {
@@ -20,5 +16,29 @@
       }
     },
     "buttons": {}
+  },
+  "3": {
+    "levers": {
+      "0": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 0
+      },
+      "1": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 1
+      },
+      "2": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 2
+      },
+      "3": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 3
+      }
+    }
   }
 }
