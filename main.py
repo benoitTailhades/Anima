@@ -685,13 +685,13 @@ class Game:
                     action = self.activators_actions[str(level)]["levers"][lever_id]
 
                     # Process different action types
-                    if action["type"] == "visual_and_door" and not self.doors[action["door_id"]].opened:
+                    if action["type"] == "visual_and_door":
                         #Move visual and Open door
                         for door in self.doors:
                             if door.id == action["door_id"] and not door.opened:
                                 lever.toggle()
                                 self.move_visual(action["visual_duration"], door.pos)
-                                self.doors[action["door_id"]].open()
+                                door.open()
 
                         # Add screenshake effect
                         self.screen_shake(10)
@@ -702,7 +702,7 @@ class Game:
                         for door in self.doors:
                             if door.id == action["door_id"]:
                                 self.move_visual(action["visual_duration"], door.pos)
-                                self.doors[action["door_id"]].open()
+                                door.open()
                                 break
 
                         # Add screenshake effect
@@ -795,10 +795,10 @@ class Game:
             for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                if self.player.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
                     self.player_hp = 0
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                    if o.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)

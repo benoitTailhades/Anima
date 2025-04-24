@@ -71,7 +71,6 @@ class Editor:
 
     def run(self):
         while True:
-            print(self.doors_ids)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -144,6 +143,10 @@ class Editor:
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
+                    if self.tilemap.tilemap[tile_loc]['type'] == 'lever':
+                        self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                    if self.tilemap.tilemap[tile_loc]['type'] in ('vines_door_h', 'vines_door_v'):
+                        self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     del self.tilemap.tilemap[tile_loc]
                 for tile in self.tilemap.offgrid_tiles.copy():
                     tile_img = self.assets[tile['type']][tile['variant']]
@@ -151,10 +154,6 @@ class Editor:
                                          tile['pos'][1] - self.scroll[1],
                                          tile_img.get_width(),
                                          tile_img.get_height())
-                    if tile['type'] == 'lever':
-                        self.levers_ids.remove(tile['id'])
-                    #if tile['type'] in ('vines_door_h', 'vines_door_v'):
-                        #self.doors_ids.remove(tile['id'])
                     if tile_r.collidepoint(mpos):
                         self.tilemap.offgrid_tiles.remove(tile)
 
