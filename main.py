@@ -54,7 +54,9 @@ class Game:
         self.d_info = {
             "vines_door_h":{"size":(64, 16),"img_dur":5},
             "vines_door_v": {"size": (16, 64),"img_dur": 5},
-            "breakable_stalactite": {"size": (16, 48), "img_dur": 1}
+            "breakable_stalactite": {"size": (16, 48), "img_dur": 1},
+            "blue_vine_door_v": {"size": (16, 64), "img_dur": 5},
+            "blue_vine_door_h": {"size": (64, 16), "img_dur": 5}
                        }
 
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
@@ -79,8 +81,8 @@ class Game:
             'green_cave_lever': load_images('levers/green_cave'),
             'blue_cave_lever': load_images('levers/green_cave'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
-            'particle/crystal': Animation(load_images('particles/crystal'), loop=50),
-            'particle/crystal_fragment': Animation(load_images('particles/crystal'), loop=1),
+            'particle/crystal': Animation(load_images('particles/crystal'), loop=1),
+            'particle/crystal_fragment': Animation(load_images('particles/crystal_fragment'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16)),
@@ -92,6 +94,10 @@ class Game:
         self.assets.update(load_entities(self.e_info))
         self.assets.update(load_player())
         self.assets.update(load_backgrounds(self.b_info))
+
+        self.doors_id_pairs = []
+        for env in self.environments:
+            self.doors_id_pairs += [(door, 0) for door in load_doors('editor', env)]
 
         self.sound_running = False
 
@@ -217,22 +223,23 @@ class Game:
             # Draw a circle with decreasing radius and increasing transparency
             pygame.draw.circle(self.light_mask, (255, 255, 255, alpha), center, radius)
 
-    def apply_lighting(self, player_pos, render_scroll):
+    def apply_lighting(self, light_entities_pos, render_scroll):
         """Apply a darkness effect with a light source around the player"""
         # Create a surface for darkness
         darkness = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
         darkness.fill((0, 0, 0, self.darkness_level))  # Semi-transparent black
 
         # Calculate player position on screen
-        player_screen_x = player_pos[0] - render_scroll[0]
-        player_screen_y = player_pos[1] - render_scroll[1]
+        for pos in light_entities_pos:
+            ent_screen_x = pos[0] - render_scroll[0]
+            ent_screen_y = pos[1] - render_scroll[1]
 
-        # Position for the light mask
-        light_x = player_screen_x - self.light_radius
-        light_y = player_screen_y - self.light_radius
+            # Position for the light mask
+            light_x = ent_screen_x - self.light_radius
+            light_y = ent_screen_y - self.light_radius
 
-        # Apply the light mask to the darkness surface
-        darkness.blit(self.light_mask, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
+            # Apply the light mask to the darkness surface
+            darkness.blit(self.light_mask, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
 
         # Apply the darkness to the display
         self.display.blit(darkness, (0, 0))
@@ -403,7 +410,7 @@ class Game:
                 self.levers.append(l)
 
             self.doors = []
-            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)]):
+            for door in self.tilemap.extract(self.doors_id_pairs):
                 if door['type'] == 'breakable_stalactite':
                     self.doors.append(Door(self.d_info[door["type"]]["size"], door["pos"], door["type"], None, False, 0.01, self))
                 else:
@@ -422,7 +429,7 @@ class Game:
                     self.spawner_pos[map_id] = spawner["pos"]
             self.player.pos = self.spawners[map_id].copy()
             self.tilemap.extract([('lever', 0),('lever', 1)])
-            self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 0), ('breakable_stalactite', 0)])
+            self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy()
@@ -917,7 +924,7 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            self.apply_lighting(self.player.rect().center, render_scroll)
+            self.apply_lighting([self.player.rect().center], render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
             self.update_floating_texts(render_scroll)
 
