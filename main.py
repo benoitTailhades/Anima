@@ -158,6 +158,7 @@ class Game:
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
+        self.lever_text_shown = False
 
         self.darkness_level = 150  # 0-255, higher means darker
         self.light_radius = 100  # Size of the player's light circle
@@ -529,21 +530,11 @@ class Game:
                 self.load_level(self.level)
 
     def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
-        """
-        Affiche un texte prédéfini au-dessus du joueur.
 
-        Args:
-            text_key (str): La clé du texte dans le fichier JSON
-            duration (float): Durée d'affichage en secondes
-            color (tuple): Couleur RGB du texte
-            offset_y (int): Décalage vertical au-dessus du joueur
-        """
-        # Récupérer le texte correspondant à la clé
         level_str = str(self.level)
         if level_str in self.game_texts and text_key in self.game_texts[level_str]:
             text = self.game_texts[level_str][text_key]
 
-            # Créer un nouveau texte flottant et l'ajouter à la liste
             self.floating_texts.append({
                 'text': text,
                 'color': color,
@@ -688,6 +679,8 @@ class Game:
 
     def update_activators_actions(self, level):
         for lever in self.levers:
+
+
             if lever.can_interact(self.player.rect()):
                 lever_id = str(lever.id)
                 # Check if this lever has any actions
@@ -792,6 +785,16 @@ class Game:
 
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
+                lever_nearby = abs(lever.pos[0] - self.player.pos[0]) <= 30 and abs(
+                    lever.pos[1] - self.player.pos[1]) <= 30
+
+                if lever_nearby and not self.lever_text_shown:
+                    # Only show text if not already shown
+                    self.display_text_above_player("Lever_interaction", duration=1)
+                    self.lever_text_shown = True
+                elif not lever_nearby and lever == self.levers[-1]:
+                    # Reset the flag if no levers are nearby and we've checked the last one
+                    self.lever_text_shown = False
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
