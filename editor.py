@@ -4,7 +4,7 @@ import pygame
 
 import json
 
-from scripts.utils import load_images, load_tiles
+from scripts.utils import load_images, load_tiles, load_doors
 from scripts.tilemap import Tilemap
 
 RENDER_SCALE = 2.0
@@ -25,9 +25,6 @@ class Editor:
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
             'lever': load_images('levers/green_cave'),
-            'vines_door_h': load_images('doors/vines_door_h/closed'),
-            'vines_door_v': load_images('doors/vines_door_v/closed'),
-            'breakable_stalactite': load_images('doors/breakable_stalactite/closed'),
             'throwable':load_images('entities/elements/blue_rock/intact'),
             'teleporter':load_images('teleporters/blue_cave')
         }
@@ -37,7 +34,13 @@ class Editor:
 
         self.level = 0
 
+        self.base_assets.update(load_doors('editor', self.get_environment(self.level)))
+        self.doors = []
+        for env in self.environments:
+            self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
+
         self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+        self.assets.update(load_doors('editor', self.get_environment(self.level)))
 
         self.movement = [False, False, False, False]
 
@@ -73,6 +76,7 @@ class Editor:
 
     def run(self):
         while True:
+            print(self.doors_ids)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
@@ -94,11 +98,11 @@ class Editor:
             for lever in self.tilemap.extract([('lever', 0), ('lever', 1)], keep=True):
                 self.levers_ids.add(lever['id'])
 
-            for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 1)], keep=True):
+            for door in self.tilemap.extract(self.doors, keep=True):
                 self.doors_ids.add(door['id'])
 
             for tp in self.tilemap.extract([('teleporter', 0)], keep=True):
-                self.doors_ids.add(tp['id'])
+                self.tps_ids.add(tp['id'])
 
             if self.ongrid:
                 self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
@@ -119,7 +123,7 @@ class Editor:
                         'pos': tile_pos,
                         'id': iD}
 
-                elif self.tile_list[self.tile_group] in ('vines_door_h', 'vines_door_v', ):
+                elif self.tile_list[self.tile_group] in (d[0] for d in self.doors):
                     iD = int(input("Enter the door id: "))
                     while iD in self.doors_ids:
                         print("id already used")
@@ -162,7 +166,7 @@ class Editor:
                 if tile_loc in self.tilemap.tilemap:
                     if self.tilemap.tilemap[tile_loc]['type'] == 'lever':
                         self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in ('vines_door_h', 'vines_door_v'):
+                    if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
                         self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in ('teleporter'):
                         self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
@@ -229,6 +233,7 @@ class Editor:
                             else:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.assets.update(load_doors('editor', self.get_environment(self.level)))
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
@@ -245,6 +250,7 @@ class Editor:
                             except FileNotFoundError:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                            self.assets.update(load_doors('editor', self.get_environment(self.level)))
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()

@@ -79,15 +79,19 @@ def load_player():
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
 
-def load_doors(d_info):
+def load_doors(d_info, env = None):
     tiles = {}
-    for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/')):
-        for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + door)):
-            tiles[door + '/' + animation] = Animation(
-                load_images('doors/' + door + '/' + animation,
-                            d_info[door]["size"]),
-                img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
-                loop=False)
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'doors/')) if env is None else [env]:
+        for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + environment)):
+            if d_info == 'editor':
+                tiles[door] = load_images('doors/' + environment + '/' + door + "/closed")
+            else:
+                for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + environment + '/' + door)):
+                    tiles[door + '/' + animation] = Animation(
+                        load_images('doors/' + environment + '/' + door + '/' + animation,
+                                    d_info[door]["size"]),
+                        img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
+                        loop=False)
     return tiles
 
 def load_backgrounds(b_info):
