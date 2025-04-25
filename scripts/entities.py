@@ -359,6 +359,21 @@ def death_animation(screen):
 
     citations = {
         "Lingagu ligaligali wasa.": "Giannini Loic",
+        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri",
+        "You cannot find peace by avoiding life": "Virginia Woolf",
+        "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates",
+        "The wounds of conscience are the voice of God within the soul.": "Saint Augustine",
+        "True redemption is seized when you accept the future consequences of your past actions.": "Unknown (stoicism inspired)",
+        "To die is nothing; but it is terrible not to live.": "Victor Hugo",
+        "Do not go gentle into that good night.": "Dylan Thomas",
+        "Even the devil was once an angel.": "Thomas d'Aquinas(Attributed to him)",
+        "Every saint has a past, and every sinner has a future.": "Oscar Wilde",
+        "We are each our own devil, and we make this world our hell.": "Oscar wilde",
+        "It is not death that a man should fear, but never beginning to live.": "Marcus Aurelius",
+        "No man is lost while he still hopes.":"Miguel Cervantes",
+        "Death is nothing, but to live defeated and without glory is to die every day.": "Napoléon Bonaparte",
+        "It is not death i am afraid of, It is not to have lived enough ":"Napoléon Bonaparte",
+        "Language is a subset of humanity": "Benoît Tailhades"
     }
 
     message, auteur = random.choice(list(citations.items()))
@@ -377,7 +392,7 @@ def death_animation(screen):
         clock.tick(15)
 
     start_time = pygame.time.get_ticks()
-    while pygame.time.get_ticks() - start_time < 2500:
+    while pygame.time.get_ticks() - start_time < 3500:
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 return
