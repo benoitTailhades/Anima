@@ -714,14 +714,13 @@ class Game:
 
     def update_teleporter(self, t_id):
         if t_id is not None:
-            print('niger')
             action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
             if time.time() - self.last_teleport_time < action["time"] - 2:
                 pass
                 # play animation & sound
             else:
                 self.last_teleport_time = time.time()
-                self.player.pos = action["dest"]
+                self.player.pos = action["dest"].copy()
                 self.teleporting = False
                 self.tp_id = None
 
@@ -817,10 +816,10 @@ class Game:
             for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
+                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
                     self.player_hp = 0
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/3, -r.height/3)):
+                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)
