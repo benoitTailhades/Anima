@@ -220,19 +220,11 @@ class Game:
 
     def create_light_mask(self, radius, color=(255, 255, 255), intensity=255, edge_softness=50, flicker=False):
         """
-        Generate a circular light mask with customizable properties
-
-        Args:
-            radius: The maximum radius of the light
-            color: RGB tuple for light color
-            intensity: Maximum brightness of the light (0-255)
-            edge_softness: How soft the edge transition is (higher = softer)
-            flicker: Whether the light should flicker randomly
+        Generate a circular light mask with customizable properties and smooth gradient
         """
         # Apply random flicker effect if enabled
         actual_radius = radius
         if flicker and random.random() < 0.3:
-            # Flickering affects both size and intensity
             flicker_factor = 0.85 + random.random() * 0.3
             actual_radius = int(radius * flicker_factor)
             intensity = int(intensity * flicker_factor)
@@ -241,7 +233,6 @@ class Game:
         light_mask = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
         center = (radius, radius)
 
-        # Calculate how many steps to use for the gradient
         # Use more steps for a smoother gradient
         steps = min(actual_radius, 100)  # Increased from 40 to 100
 
