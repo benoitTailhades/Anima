@@ -169,10 +169,25 @@ class Game:
         self.darkness_level = 150  # 0-255, higher means darker
         self.light_radius = 100  # Size of the player's light circle
         self.light_soft_edge = 350  # How soft the edge of the light is
+        self.light_emitting_tiles = []  # Store positions and properties of light-emitting tiles
+        self.light_emitting_objects = []  # Store references to light-emitting entities/objects
+
+        self.light_properties = {
+            "player": {"radius": 100, "intensity": 100, "edge_softness": 255, "color": (255, 255, 255),
+                       "flicker": False},
+            "torch": {"radius": 80, "intensity": 220, "edge_softness": 30, "color": (255, 180, 100), "flicker": True},
+            "crystal": {"radius": 120, "intensity": 200, "edge_softness": 50, "color": (100, 180, 255),
+                        "flicker": False},
+            "glowing_mushroom": {"radius": 20, "intensity": 50, "edge_softness": 500, "color": (160, 230, 180),
+                                 "flicker": False},
+            "lava": {"radius": 100, "intensity": 210, "edge_softness": 40, "color": (255, 120, 50), "flicker": True}
+        }
 
         # Create a light surface once rather than every frame
         self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        self._create_light_mask()
+        self.create_light_mask(self.light_radius)
+
+        self.player_light = self.light_properties["player"]
 
         self.last_visual_movement_time = 0
         self.moving_visual = False
@@ -203,43 +218,130 @@ class Game:
             if level in self.environments[environment]:
                 return environment
 
-    def _create_light_mask(self):
-        """Generate a circular light mask with soft edges"""
-        # Clear the surface
-        self.light_mask.fill((0, 0, 0, 0))
+    def create_light_mask(self, radius, color=(255, 255, 255), intensity=255, edge_softness=50, flicker=False):
+        """
+        Generate a circular light mask with customizable properties
 
-        # Draw the light with a radial gradient
-        center = (self.light_radius, self.light_radius)
-        for radius in range(self.light_radius, 0, -1):
-            # Calculate alpha based on distance from center
-            if radius >= self.light_radius - self.light_soft_edge:
-                # Create a gradual transition at the edge
-                edge_dist = self.light_radius - radius
-                alpha = int(255 * (edge_dist / self.light_soft_edge))
-            else:
-                # The center is fully transparent (visible)
-                alpha = 255
+        Args:
+            radius: The maximum radius of the light
+            color: RGB tuple for light color
+            intensity: Maximum brightness of the light (0-255)
+            edge_softness: How soft the edge transition is (higher = softer)
+            flicker: Whether the light should flicker randomly
+        """
+        # Apply random flicker effect if enabled
+        actual_radius = radius
+        if flicker and random.random() < 0.3:
+            # Flickering affects both size and intensity
+            flicker_factor = 0.85 + random.random() * 0.3
+            actual_radius = int(radius * flicker_factor)
+            intensity = int(intensity * flicker_factor)
 
-            # Draw a circle with decreasing radius and increasing transparency
-            pygame.draw.circle(self.light_mask, (255, 255, 255, alpha), center, radius)
+        # Create a fresh surface for this light
+        light_mask = pygame.Surface((radius * 2, radius * 2), pygame.SRCALPHA)
+        center = (radius, radius)
 
-    def apply_lighting(self, light_entities_pos, render_scroll):
-        """Apply a darkness effect with a light source around the player"""
+        # Calculate how many steps to use for the gradient
+        # Use more steps for a smoother gradient
+        steps = min(actual_radius, 100)  # Increased from 40 to 100
+
+        # Draw from outside in with increasingly transparent circles
+        for i in range(steps):
+            # Calculate radius for this step - working from outside in
+            r = actual_radius - (i * actual_radius / steps)
+
+            # Calculate alpha based on distance from edge
+            # This creates a smoother falloff function
+            distance_factor = i / steps
+            # Use a non-linear function for smoother falloff
+            alpha = int(intensity * (distance_factor ** 0.8))  # Exponent < 1 creates a softer gradient
+
+            # Apply color with calculated alpha
+            light_color = color + (alpha,)
+            pygame.draw.circle(light_mask, light_color, center, r)
+
+        # Optional: Apply a small Gaussian blur if pygame has this capability
+        # This would require an external library like pygame.transform.smoothscale
+        # or implementing a custom blur function
+
+        return light_mask
+
+    def apply_lighting(self, render_scroll):
+        """Apply darkness effect with player and other light sources"""
         # Create a surface for darkness
         darkness = pygame.Surface(self.display.get_size(), pygame.SRCALPHA)
         darkness.fill((0, 0, 0, self.darkness_level))  # Semi-transparent black
 
+        # Create and apply player light
+        player_props = self.player_light
+        player_light = self.create_light_mask(
+            player_props["radius"],
+            player_props["color"],
+            player_props["intensity"],
+            player_props["edge_softness"],
+            player_props["flicker"]
+        )
+
         # Calculate player position on screen
-        for pos in light_entities_pos:
-            ent_screen_x = pos[0] - render_scroll[0]
-            ent_screen_y = pos[1] - render_scroll[1]
+        player_screen_x = self.player.rect().centerx - render_scroll[0]
+        player_screen_y = self.player.rect().centery - render_scroll[1]
 
-            # Position for the light mask
-            light_x = ent_screen_x - self.light_radius
-            light_y = ent_screen_y - self.light_radius
+        # Position for the light mask
+        light_x = player_screen_x - player_props["radius"]
+        light_y = player_screen_y - player_props["radius"]
 
-            # Apply the light mask to the darkness surface
-            darkness.blit(self.light_mask, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
+        # Apply the player light mask to the darkness surface
+        darkness.blit(player_light, (light_x, light_y), special_flags=pygame.BLEND_RGBA_SUB)
+
+        # Process light-emitting tiles
+        for light_tile in self.light_emitting_tiles:
+            # Get position and properties
+            pos = light_tile["pos"]
+            light_type = light_tile.get("type", "torch")
+            properties = self.light_properties[light_type]
+
+            # Calculate screen position
+            tile_screen_x = pos[0] - render_scroll[0]
+            tile_screen_y = pos[1] - render_scroll[1]
+
+            # Check if the light is visible on screen (with buffer)
+            buffer = properties["radius"] * 2
+            if (-buffer <= tile_screen_x <= self.display.get_width() + buffer and
+                    -buffer <= tile_screen_y <= self.display.get_height() + buffer):
+                # Create light mask for this tile
+                tile_light = self.create_light_mask(
+                    properties["radius"],
+                    properties["color"],
+                    properties["intensity"],
+                    properties["edge_softness"],
+                    properties["flicker"]
+                )
+
+                # Apply light
+                light_pos = (tile_screen_x - properties["radius"], tile_screen_y - properties["radius"])
+                darkness.blit(tile_light, light_pos, special_flags=pygame.BLEND_RGBA_SUB)
+
+        # Process light-emitting objects (enemies, items, etc.)
+        for light_obj in self.light_emitting_objects:
+            if hasattr(light_obj, "pos") and hasattr(light_obj, "light_properties"):
+                props = light_obj.light_properties
+
+                # Calculate screen position
+                obj_screen_x = light_obj.pos[0] - render_scroll[0]
+                obj_screen_y = light_obj.pos[1] - render_scroll[1]
+
+                # Create light mask for this object
+                obj_light = self.create_light_mask(
+                    props.get("radius", 80),
+                    props.get("color", (255, 255, 255)),
+                    props.get("intensity", 200),
+                    props.get("edge_softness", 30),
+                    props.get("flicker", False)
+                )
+
+                # Apply light
+                light_pos = (obj_screen_x - props["radius"], obj_screen_y - props["radius"])
+                darkness.blit(obj_light, light_pos, special_flags=pygame.BLEND_RGBA_SUB)
 
         # Apply the darkness to the display
         self.display.blit(darkness, (0, 0))
@@ -256,6 +358,20 @@ class Game:
         elif target != "player" and current_time - self.player_last_attack_time >= self.player_attack_time:
             self.player_last_attack_time = time.time()
             target.hp -= self.player_dmg
+
+    def register_light_emitting_tile(self, pos, light_type="torch"):
+        """Register a new light-emitting tile at the given position"""
+        if light_type in self.light_properties:
+            self.light_emitting_tiles.append({
+                "pos": pos,
+                "type": light_type
+            })
+
+    def register_light_emitting_object(self, obj, properties=None):
+        """Register an object as a light source"""
+        if not hasattr(obj, "light_properties") and properties:
+            obj.light_properties = properties
+        self.light_emitting_objects.append(obj)
 
     def deal_knockback(self, entity, target, strenght):
         stun_elapsed = time.time() - target.last_stun_time
@@ -320,10 +436,13 @@ class Game:
             }
 
     def update_light(self):
-        self.light_radius = self.light_infos[self.level]["light_radius"]
-        self.darkness_level = self.light_infos[self.level]["darkness_level"]
+        level_info = self.light_infos[self.level]
+        self.darkness_level = level_info["darkness_level"]
+
+        # Update player light properties based on level
+        self.player_light["radius"] = level_info["light_radius"]
         self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        self._create_light_mask()
+        self.create_light_mask(self.light_radius)
 
     def update_settings_from_game(self):
         self.volume = self.volume
@@ -381,8 +500,12 @@ class Game:
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.crystal_spawners = []
-        for plant in self.tilemap.extract([("blue_decor", 0),], keep=True):
-            self.crystal_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
+        for mushroom in self.tilemap.extract([("blue_decor", 0),], keep=True):
+            self.register_light_emitting_tile(
+                (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
+                "glowing_mushroom"
+            )
+            self.crystal_spawners.append(pygame.Rect(4 + mushroom['pos'][0], 4 + mushroom['pos'][1], 23, 13))
 
         if not self.levels[map_id]["charged"]:
             self.enemies = []
@@ -763,6 +886,10 @@ class Game:
             if self.transition < 0:
                 self.transition += 1
 
+            self.light_emitting_objects = [obj for obj in self.light_emitting_objects
+                                           if obj in self.enemies or obj in self.throwable
+                                           or obj in self.bosses]
+
             if self.teleporting:
                 self.update_teleporter(self.tp_id)
 
@@ -823,7 +950,6 @@ class Game:
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)
-
 
             self.attacking_update()
 
@@ -923,7 +1049,7 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            self.apply_lighting([self.player.rect().center], render_scroll)
+            self.apply_lighting(render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
             self.update_floating_texts(render_scroll)
 
