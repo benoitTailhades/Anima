@@ -12,7 +12,7 @@ from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.boss import FirstBoss
-from scripts.activators import Lever
+from scripts.activators import Lever, Teleporter
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 from scripts.doors import Door
@@ -83,7 +83,8 @@ class Game:
             'particle/crystal_fragment': Animation(load_images('particles/crystal'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
-            'empty_heart': load_image('empty_heart.png', (16, 16))
+            'empty_heart': load_image('empty_heart.png', (16, 16)),
+            'teleporter': load_images('teleporters/blue_cave')
         }
 
         self.assets.update(load_doors(self.d_info))
@@ -137,6 +138,10 @@ class Game:
         self.holding_attack = False
         self.attacking = False
         self.player_attacked = False
+
+        self.teleporting = False
+        self.tp_id = None
+        self.last_teleport_time = 0
 
         self.screenshake = 0
 
@@ -350,6 +355,11 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
+
+        self.teleporters = []
+        for tp in self.tilemap.extract([('teleporter',0)], keep=True):
+            self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp['id']))
+
 
         self.throwable = []
         for o in self.tilemap.extract([('throwable',0)]):
@@ -695,26 +705,25 @@ class Game:
 
                         # Add screenshake effect
                         self.screen_shake(10)
+        for tp in self.teleporters:
+            if tp.can_interact(self.player.rect()):
+                if str(tp.id) in self.activators_actions[str(level)]["teleporters"]:
+                    self.last_teleport_time = time.time()
+                    self.teleporting = True
+                    self.tp_id = tp.id
 
-                    elif action["type"] == "door_only":
-                        lever.toggle()
-                        # Open door
-                        for door in self.doors:
-                            if door.id == action["door_id"]:
-                                self.move_visual(action["visual_duration"], door.pos)
-                                door.open()
-                                break
-
-                        # Add screenshake effect
-                        self.screen_shake(10)
-
-                    elif action["type"] == "custom":
-                        lever.toggle()
-                        # For custom actions that require specific code execution
-                        # This would need to be handled case by case
-                        if action["action_id"] == "open_boss_door":
-                            self.tilemap.extract([('dark_vine', 0), ('dark_vine', 1), ('dark_vine', 2)])
-                            self.screen_shake(15)
+    def update_teleporter(self, t_id):
+        if t_id is not None:
+            print('niger')
+            action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
+            if time.time() - self.last_teleport_time < action["time"] - 2:
+                pass
+                # play animation & sound
+            else:
+                self.last_teleport_time = time.time()
+                self.player.pos = action["dest"]
+                self.teleporting = False
+                self.tp_id = None
 
     def update_throwable_objects_action(self):
         for o in self.throwable:
@@ -755,9 +764,12 @@ class Game:
             if self.transition < 0:
                 self.transition += 1
 
+            if self.teleporting:
+                self.update_teleporter(self.tp_id)
+
             self.update_spawn_point()
 
-            self.player.disablePlayerInput = self.cutscene or self.moving_visual
+            self.player.disablePlayerInput = self.cutscene or self.moving_visual or self.teleporting
 
             for rect in self.leaf_spawners:
                 if random.random() * 49999 < rect.width * rect.height:

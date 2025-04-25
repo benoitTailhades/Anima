@@ -14,10 +14,10 @@
         "type": "custom",
         "action_id": "open_boss_door"
       }
-    },
-    "buttons": {}
+    }
   },
-  "3": {
+  "3":
+  {
     "levers": {
       "0": {
         "type": "visual_and_door",
@@ -38,6 +38,12 @@
         "type": "visual_and_door",
         "visual_duration": 2,
         "door_id": 3
+      }
+    },
+    "teleporters": {
+      "0":{
+        "dest": [720, 144],
+        "time": 5
       }
     }
   }

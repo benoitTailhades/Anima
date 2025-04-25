@@ -27,3 +27,18 @@ class Lever:
 
     def render(self, surface, offset=(0, 0)):
         surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_lever'][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+
+
+class Teleporter:
+    def __init__(self, game, pos, size, t_id):
+        self.game = game
+        self.pos = list(pos)
+        self.size = size
+        self.id = t_id
+
+    def rect(self):
+        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
+    def can_interact(self, player_rect, interaction_distance=2):
+        can_interact = self.rect().colliderect(player_rect.inflate(interaction_distance, interaction_distance))
+        return can_interact

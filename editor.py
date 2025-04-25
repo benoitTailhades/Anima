@@ -28,7 +28,8 @@ class Editor:
             'vines_door_h': load_images('doors/vines_door_h/closed'),
             'vines_door_v': load_images('doors/vines_door_v/closed'),
             'breakable_stalactite': load_images('doors/breakable_stalactite/closed'),
-            'throwable':load_images('entities/elements/blue_rock/intact')
+            'throwable':load_images('entities/elements/blue_rock/intact'),
+            'teleporter':load_images('teleporters/blue_cave')
         }
 
         self.environments = {"green_cave": (0, 1, 2),
@@ -55,6 +56,7 @@ class Editor:
         self.tile_variant = 0
         self.levers_ids = set()
         self.doors_ids = set()
+        self.tps_ids = set()
 
 
         self.zoom = 1
@@ -95,6 +97,9 @@ class Editor:
             for door in self.tilemap.extract([('vines_door_h', 0), ('vines_door_v', 1)], keep=True):
                 self.doors_ids.add(door['id'])
 
+            for tp in self.tilemap.extract([('teleporter', 0)], keep=True):
+                self.doors_ids.add(tp['id'])
+
             if self.ongrid:
                 self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
                                                      tile_pos[1] * self.tilemap.tile_size - self.scroll[1]))
@@ -126,6 +131,18 @@ class Editor:
                         'pos': tile_pos,
                         'id': iD}
 
+                elif self.tile_list[self.tile_group] in ('teleporter', 0):
+                    iD = int(input("Enter the tp id: "))
+                    while iD in self.tps_ids:
+                        print("id already used")
+                        iD = int(input("Enter the tp id: "))
+                    self.tps_ids.add(iD)
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'id': iD}
+
                 elif self.tile_list[self.tile_group] == "transition":
                     direction = int(input("Enter the destination level: "))
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
@@ -147,6 +164,8 @@ class Editor:
                         self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in ('vines_door_h', 'vines_door_v'):
                         self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                    if self.tilemap.tilemap[tile_loc]['type'] in ('teleporter'):
+                        self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     del self.tilemap.tilemap[tile_loc]
                 for tile in self.tilemap.offgrid_tiles.copy():
                     tile_img = self.assets[tile['type']][tile['variant']]
@@ -213,6 +232,7 @@ class Editor:
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
+                            self.tps_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0
                     if event.key == pygame.K_LEFT:
@@ -228,6 +248,7 @@ class Editor:
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
+                            self.tps_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0
                     if event.key == pygame.K_DOWN:
