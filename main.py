@@ -492,10 +492,11 @@ class Game:
 
         self.crystal_spawners = []
         for mushroom in self.tilemap.extract([("blue_decor", 0),], keep=True):
-            self.register_light_emitting_tile(
-                (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
-                "glowing_mushroom"
-            )
+            if not self.levels[map_id]["charged"]:
+                self.register_light_emitting_tile(
+                    (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
+                    "glowing_mushroom"
+                )
             self.crystal_spawners.append(pygame.Rect(4 + mushroom['pos'][0], 4 + mushroom['pos'][1], 23, 13))
 
         if not self.levels[map_id]["charged"]:
