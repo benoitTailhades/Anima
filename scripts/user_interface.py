@@ -52,7 +52,7 @@ class Menu:
             "dimmed": (255, 255, 255, 80)
         }
 
-    def update_settings_from_game(self):
+    def update_settings_from_game(self):#Takes the saved settings to apply them to our keyboard and language(which is not graphycally working for the moment)
         self.volume = self.game.volume
         self.keyboard_layout = self.game.keyboard_layout
         if self.game.selected_language in self.languages:
@@ -496,7 +496,6 @@ class Menu:
             slot_width = 300
             spacing = 20
 
-            # Get mouse position for hover effect
             mouse_pos = py.mouse.get_pos()
 
             for slot in slots:
@@ -510,16 +509,13 @@ class Menu:
 
                 is_used = slot in used_slots
 
-                # Check if mouse is hovering over the slot
                 is_hovered = slot_rect.collidepoint(mouse_pos)
 
-                # Only draw a background when the mouse is hovering
                 if is_hovered:
-                    hover_color = (100, 100, 140, 150)  # Semi-transparent light blue/purple
+                    hover_color = (100, 100, 140, 150)
                     py.draw.rect(self.screen, hover_color, slot_rect, border_radius=5)
                 else:
-                    # For non-hovered state, draw just a thin border to indicate clickable area
-                    border_color = (80, 80, 80, 150)  # Semi-transparent gray
+                    border_color = (80, 80, 80, 150)
                     py.draw.rect(self.screen, border_color, slot_rect, width=1, border_radius=5)
 
                 if is_used:
@@ -582,7 +578,7 @@ class Menu:
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
-    def load_menu(self):
+    def load_menu(self):#this menu appear to load saves. Two states-> One display three slot with the ones filled with saves. Two: nothing when there is NO savec at all. Clicking one save button load the coresponding save.
         current_screen = self.screen.copy()
         saves = self.game.save_system.list_saves()
 
@@ -708,7 +704,7 @@ class Menu:
 
         return False
 
-    def start_menu_newgame(self):
+    def start_menu_newgame(self):#This menu ONLY appear when there is, at least one save detected. It displays -> "Resume": Load the game from the last save(just comparing dates), "Load": displays all the saves then load the game from the chosen save, "New game": Pretty obvious
         has_saves = len(self.game.save_system.list_saves()) > 0
 
         if not has_saves:
