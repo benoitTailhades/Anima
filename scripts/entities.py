@@ -358,22 +358,22 @@ def death_animation(screen):
     font = pygame.font.Font(None, 36)
 
     citations = {
-        "Lingagu ligaligali wasa.": "Giannini Loic",
-        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri",
-        "You cannot find peace by avoiding life": "Virginia Woolf",
-        "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates",
-        "The wounds of conscience are the voice of God within the soul.": "Saint Augustine",
+        "Lingagu ligaligali wasa.": "Giannini Loic, ingenio magno",
+        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri, 'Il Poeto'",
+        "You cannot find peace by avoiding life": "Virginia Woolf, Writer ",
+        "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates, Founder of Philosophy",
+        "The wounds of conscience are the voice of God within the soul.": "Saint Augustine, Founder of Theology",
         "True redemption is seized when you accept the future consequences of your past actions.": "Unknown (stoicism inspired)",
-        "To die is nothing; but it is terrible not to live.": "Victor Hugo",
-        "Do not go gentle into that good night.": "Dylan Thomas",
+        "To die is nothing; but it is terrible not to live.": "Victor Hugo, 'l'homme siècle'",
+        "Do not go gentle into that good night.": "Dylan Thomas, Writer",
         "Even the devil was once an angel.": "Thomas d'Aquinas(Attributed to him)",
-        "Every saint has a past, and every sinner has a future.": "Oscar Wilde",
-        "We are each our own devil, and we make this world our hell.": "Oscar wilde",
-        "It is not death that a man should fear, but never beginning to live.": "Marcus Aurelius",
-        "No man is lost while he still hopes.":"Miguel Cervantes",
-        "Death is nothing, but to live defeated and without glory is to die every day.": "Napoléon Bonaparte",
-        "It is not death i am afraid of, It is not to have lived enough ":"Napoléon Bonaparte",
-        "Language is a subset of humanity": "Benoît Tailhades"
+        "Every saint has a past, and every sinner has a future.": "Oscar Wilde, Writer ",
+        "We are each our own devil, and we make this world our hell.": "Oscar wilde, Writer ",
+        "It is not death that a man should fear, but never beginning to live.": "Marcus Aurelius, Pontifex Maximus",
+        "No man is lost while he still hopes.":"Miguel Cervantes, Lépante Soldier, Writer, Poet, SceneWriter",
+        "Death is nothing, but to live defeated and without glory is to die every day.": "Napoléon Bonaparte, Emperor of Europe",
+        "It is not death i am afraid of, It is not to have lived enough ":"Napoléon Bonaparte, Emperor of Europe",
+        "Language is a subset of humanity": "Benoît Tailhades, Ingenio Magno, "
     }
 
     message, auteur = random.choice(list(citations.items()))
