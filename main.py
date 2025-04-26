@@ -6,7 +6,7 @@ import json
 import pygame
 import random
 import time
-from scripts.entities import player_death, Enemy, Throwable
+from scripts.entities import player_death, Enemy, Throwable, deal_dmg, deal_knockback
 from scripts.utils import *
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
@@ -47,7 +47,7 @@ class Game:
                                 "loop": {"idle": True, "run": True, "death": False, "hit": False, "jump":False, "charge": False}},
             "blue_rock": {"left/right": [],
                       "size": (16, 16),
-                      "img_dur": {"intact":1, "breaking":1},
+                      "img_dur": {"intact":1, "breaking":2},
                       "loop": {"intact":False, "breaking":False}}
                        }
 
@@ -703,6 +703,7 @@ class Game:
 
             self.update_camera()
             render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
+
             self.update_tutorial_sequence()
             self.update_floating_texts(render_scroll)
 
@@ -759,6 +760,16 @@ class Game:
                     enemy.set_action("death")
                     if enemy.animation.done:
                         self.enemies.remove(enemy)
+                for o in self.throwable:
+                    if (o.rect().colliderect(enemy.rect().inflate(-enemy.rect().width/2, -enemy.rect().height/3)) and
+                            int(o.velocity[1]) != 0):
+                        if o.action != "breaking":
+                            deal_dmg(self, "player", enemy, 10, 0)
+                            enemy.stunned = True
+                            enemy.last_stun_time = time.time()
+                        o.set_action("breaking")
+                    if o.action == "breaking" and o.animation.done:
+                        self.throwable.remove(o)
 
             s = []
             for n in range(4):

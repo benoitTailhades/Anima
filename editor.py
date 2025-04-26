@@ -76,7 +76,6 @@ class Editor:
 
     def run(self):
         while True:
-            print(self.doors_ids)
             self.display.fill((0, 0, 0))
 
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
