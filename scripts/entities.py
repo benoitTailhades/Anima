@@ -125,7 +125,7 @@ class Enemy(PhysicsEntity):
             self.is_attacking = True
             self.is_chasing = True
             if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
-                self.game.deal_dmg('player', self)
+                deal_dmg(self.game, 'player', self)
                 self.stunned = True
                 self.hit = True
                 self.last_stun_time = time.time()
@@ -135,7 +135,7 @@ class Enemy(PhysicsEntity):
 
         if self.is_attacking and not self.stunned:
             if time.time() - self.first_attack_time >= self.attack_time/5:
-                self.game.deal_dmg(self, 'player', self.attack_dmg, self.attack_time)
+                deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
                 self.is_dealing_damage = False
         elif not self.is_attacking:
             self.last_attack_time = 0
@@ -157,7 +157,7 @@ class Enemy(PhysicsEntity):
 
             else:
                 # Add stun animation/movement here
-                movement = self.game.deal_knockback(self.game.player, self, 1)
+                movement = deal_knockback(self.game.player, self, 1)
                 super().update(tilemap, movement=movement)
                 self.flip = self.player_x < self.enemy_x
                 self.animations(movement)
@@ -407,3 +407,26 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.update_light()
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]
+    
+def deal_dmg(game, entity, target, att_dmg=5, att_time=1):
+    current_time = time.time()
+    if target == "player" and current_time - entity.last_attack_time >= att_time:
+        entity.last_attack_time = time.time()
+        game.player_hp -= att_dmg
+        game.damage_flash_active = True
+        entity.is_dealing_damage = True
+        game.damage_flash_end_time = pygame.time.get_ticks() + game.damage_flash_duration
+
+    elif target != "player" and current_time - game.player_last_attack_time >= game.player_attack_time:
+        game.player_last_attack_time = time.time()
+        target.hp -= game.player_dmg
+        
+def deal_knockback(entity, target, strenght):
+        stun_elapsed = time.time() - target.last_stun_time
+        stun_duration = 0.5
+
+        if not target.knockback_dir[0] and not target.knockback_dir[1]:
+            target.knockback_dir[0] = 1 if entity.rect().centerx < target.rect().centerx else -1
+            target.knockback_dir[1] = 0
+        knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
+        return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
