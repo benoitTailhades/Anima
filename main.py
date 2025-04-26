@@ -317,6 +317,8 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
+        self.light_emitting_tiles = []
+        self.light_emitting_objects = []
 
         self.teleporters = []
         for tp in self.tilemap.extract([('teleporter',0)], keep=True):
@@ -762,7 +764,7 @@ class Game:
                         self.enemies.remove(enemy)
                 for o in self.throwable:
                     if (o.rect().colliderect(enemy.rect().inflate(-enemy.rect().width/2, -enemy.rect().height/3)) and
-                            int(o.velocity[1]) != 0):
+                            int(o.velocity[1]) != 0 and not o.grabbed):
                         if o.action != "breaking":
                             deal_dmg(self, "player", enemy, 10, 0)
                             enemy.stunned = True
