@@ -10,7 +10,7 @@ Anima is a narrative-driven platformer set in the final moment of a man's life �
 The game begins with a brief and implicit execution scene — a gunshot, a flash...  
 The player then enters the Main caracter’s mind, experiencing a fast-paced platformer reflecting his psychological descent that he has lived throuhought his all life.  
 Each level goes deeper, becoming darker and more chaotic, showing how he ignored his conscience throughout his life.  
-At the end, the player confronts the Main ccaracter’s soul — an unwinnable boss fight.  
+At the end, the player confronts the Main caracter’s soul — an unwinnable boss fight.  
 The journey ends with the inevitable death, underlining the game’s core moral: "It is never too late to beg pardon until it is" .  
 
 This game isn't just a platformer — it's a philosophical journey. The goal: show that waiting until your last breath to change your ways is often too late. We want players to feel the weight of choices, even in retrospect, and question the illusion of last-minute redemption. 
@@ -21,6 +21,28 @@ This game isn't just a platformer — it's a philosophical journey. The goal: sh
 **Assets**: Entirely hand drawn(on a tablet)   
 **Sound design**: Made up from pieces all over internet  
 **Version Control**: Github (I think you figured that out)   
+
+## Getting started 
+To play **Anima** on it's early state(right now state...) You will have to do: 
+**Whatch this explaining video I made**
+
+
+**Or** (if you hate me and don't want to watch my video)  
+ 
+>Open pycharm **last version**.   
+>Create a new project  
+>Paste this URL: https://github.com/benoitTailhades/Anima.git when copying repo.
+
+Then make sure to install These libraries in the Pycharm console.   
+**Install** :
+```sh
+pip install pygame
+```
+**Make sure Json python is installed** 
+```sh
+pip install json
+```
+**Enjoy !!**
  
  ## Features  
  One millisecond of gameplay stretched into hours of intense gameplay, symbolic action.  
@@ -48,8 +70,8 @@ Unconsiously inspired by Dante's Inferno painting
 ## Sources   
 **Pygame**: documentation https://www.pygame.org/docs/  
 **youtube**: https://www.youtube.com/  
-**Chat GPT**: chatgpt.com  
-**Claude AI**: claude.ai   
+**Chat GPT**: https://www.chatgpt.com/
+**Claude AI**: https://www.claude.ai/  
 **Internet documentation** : google (i guess)   
 **This video**: https://youtu.be/2gABYM5M0ww  
 
