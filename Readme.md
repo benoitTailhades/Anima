@@ -24,8 +24,9 @@ This game isn't just a platformer — it's a philosophical journey. The goal: sh
 
 ## Getting started 
 To play **Anima** on it's early state(right now state...) You will have to do: 
-**Whatch this explaining video I made**
+**Whatch this explaining video I made**  
 
+https://www.youtube.com/watch?v=vT6RiCA_D9Q
 
 **Or** (if you hate me and don't want to watch my video)  
  
