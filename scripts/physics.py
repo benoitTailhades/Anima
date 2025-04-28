@@ -12,6 +12,7 @@ import pygame
 import random
 
 from scripts.particle import Particle
+from scripts.entities import deal_knockback
 from scripts.tilemap import Tilemap
 from scripts.sound import *
 
@@ -165,7 +166,7 @@ class PhysicsPlayer:
 
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
-                    self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+                    self.velocity = list(deal_knockback(self.stunned_by, self, 4))
 
                 # Jouer le son de stun
                 if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
@@ -399,7 +400,8 @@ class PhysicsPlayer:
         if not self.anti_dash_buffer:
             self.dash_direction = [self.get_direction("x"), max(0, self.get_direction("y"))]
             if self.dict_kb["key_dash"] == 1 and self.dash_cooldown_cur == 0 and self.dash_direction != [0, -1]:
-                self.game.update_throwable_objects_action()
+                if self.game.player_grabbing:
+                    self.game.update_throwable_objects_action()
                 if self.dash_amt > 0:
                     if self.dash_direction == [0, 0]:
                         self.dash_direction[0] = self.last_direction
