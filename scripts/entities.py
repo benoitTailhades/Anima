@@ -51,7 +51,7 @@ class PhysicsEntity:
 
         self.pos[1] += frame_movement[1]
         entity_rect = self.rect()
-        for rect in tilemap.physics_rects_under(self.pos, self.size):
+        for rect in tilemap.physics_rects_under(self.pos, self.size) + self.game.doors_rects:
             if entity_rect.colliderect(rect):
                 if frame_movement[1] > 0:
                     entity_rect.bottom = rect.top

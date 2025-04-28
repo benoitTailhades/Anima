@@ -22,7 +22,7 @@ def create_light_mask(radius, color=(255, 255, 255), intensity=255, edge_softnes
     center = (radius, radius)
 
     # Use more steps for a smoother gradient
-    steps = min(actual_radius, 100)  # Increased from 40 to 100
+    steps = min(actual_radius, 100)
 
     # Draw from outside in with increasingly transparent circles
     for i in range(steps):
