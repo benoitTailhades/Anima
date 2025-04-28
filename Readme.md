@@ -23,10 +23,11 @@ This game isn't just a platformer — it's a philosophical journey. The goal: sh
 **Version Control**: Github (I think you figured that out)   
 
 ## Getting started 
-To play **Anima** on it's early state(right now state...) You will have to do: 
+To play **Anima** on it's early state(right now state...) You will have to do:   
 **Whatch this explaining video I made**  
 
-https://www.youtube.com/watch?v=vT6RiCA_D9Q
+[![Regarder la vidéo](https://img.youtube.com/vi/vT6RiCA_D9Q/maxresdefault.jpg)](https://www.youtube.com/watch?v=vT6RiCA_D9Q)
+
 
 **Or** (if you hate me and don't want to watch my video)  
  
