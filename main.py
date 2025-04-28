@@ -108,7 +108,7 @@ class Game:
                 time.sleep(0.1)  # Small delay to ensure initialization completes
 
             # Verify the sound file path and try different filename variations if needed
-            sound_path = "assets/sounds/v2-level-1-sound-background_W72B8woG.wav"
+            sound_path = "assets/sounds/maintheme.wav"
 
             self.volume = 0.5  # Volume par défaut : 50%
             self.background_music = pygame.mixer.Sound(sound_path)
