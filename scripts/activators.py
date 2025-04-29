@@ -11,6 +11,7 @@ class Lever:
         self.last_interaction_time = 0
         self.interaction_cooldown = 0.5
         self.id = i
+        self.activated = True
 
     def toggle(self):#Basically change the state of the lever from activated to not activated. Takes into account the countdown(useful for silly people trying to destroy the game)
         current_time = time.time()
@@ -23,7 +24,7 @@ class Lever:
 
     def can_interact(self, player_rect, interaction_distance=2):#Check if the player can "touch" the lever.
         can_interact = self.rect.colliderect(player_rect.inflate(interaction_distance, interaction_distance))
-        return can_interact
+        return can_interact and self.activated
 
     def render(self, surface, offset=(0, 0)):#Just display the marvellous lever design of our dear designer
         surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_lever'][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))

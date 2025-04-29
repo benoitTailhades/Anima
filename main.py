@@ -400,7 +400,6 @@ class Game:
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
 
-
     def display_level_bg(self, map_id):
         if map_id in (0, 1, 2):
             self.display.blit(self.assets['green_cave/0'], (0, 0))
@@ -491,7 +490,6 @@ class Game:
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
-
     def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
 
         level_str = str(self.level)
@@ -544,7 +542,6 @@ class Game:
             self.display.blit(shadow_surface, shadow_rect)
             self.display.blit(text_surface, text_rect)
 
-
     def start_tutorial_sequence(self):
         self.tutorial_active = True
         self.tutorial_step = 0
@@ -557,8 +554,6 @@ class Game:
                 {"key": "tuto_FG", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
                 {"key": "Interaction","duration":4.0,"delay":1.0,"color":(255,255,255)}
             ]
-
-
 
     def update_tutorial_sequence(self):
         if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
@@ -623,8 +618,6 @@ class Game:
 
     def update_activators_actions(self, level):
         for lever in self.levers:
-
-
             if lever.can_interact(self.player.rect()):
                 lever_id = str(lever.id)
                 if lever_id in self.activators_actions[str(level)]["levers"]:
@@ -632,9 +625,10 @@ class Game:
 
                     if action["type"] == "visual_and_door":
                         for door in self.doors:
-                            if door.id == action["door_id"] and not door.opened:
+                            if door.id == action["door_id"]:
                                 lever.toggle()
                                 self.move_visual(action["visual_duration"], door.pos)
+                                lever.activated = False
                                 door.open()
 
                         self.screen_shake(10)
@@ -719,10 +713,8 @@ class Game:
 
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
-                lever_nearby = abs(lever.pos[0] - self.player.pos[0]) <= 30 and abs(
-                    lever.pos[1] - self.player.pos[1]) <= 30
 
-                if lever_nearby and not self.floating_text_shown:
+                if lever.can_interact(self.player.rect()) and not self.floating_text_shown:
                     self.display_text_above_player("Lever_interaction", duration=1)
 
             for enemy in self.enemies.copy():
