@@ -55,15 +55,15 @@ pip install json
  Unwinnable final confrontation, emphasizing the tragic ending.  
   
 ## Team Roles  
-**Loïc Giannini** – [Project Director, Art realisation/ Designer, Major dev, Game designer ]  
+**Loïc Giannini** – [Project Director, Art realisation/ Designer, Major dev, Game designer]  
   
-**Benoit Tailhades** – [Story Teller, Major dev, Documentation writer, Game designer ]  
+**Benoit Tailhades** – [Story Teller, Major dev, Documentation writer, Game designer]  
 
 **Raphaël Cayeux** – [Level designer]  
 
 **Aymeric Danlos** – [Physic Dev]  
 
-**François-Xavier Sabatier** – [Sound designer ]  
+**François-Xavier Sabatier** – [Sound designer]  
   
 ## Acknoledgements/Inspirations  
 Graphic Inspiration from games like Inside, Celeste, Hollow knight    
@@ -74,7 +74,7 @@ Unconsiously inspired by Dante's Inferno painting
 **youtube**: https://www.youtube.com/  
 **Chat GPT**: https://www.chatgpt.com/
 **Claude AI**: https://www.claude.ai/  
-**Internet documentation** : google (i guess)   
+**Internet documentation** : google (I guess)   
 **This video**: https://youtu.be/2gABYM5M0ww  
 
 

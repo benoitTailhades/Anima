@@ -74,7 +74,7 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 100}}
+                            3:{"darkness_level":180, "light_radius": 200}}
 
         self.assets = {
 
@@ -678,9 +678,11 @@ class Game:
     def update_teleporter(self, t_id):
         if t_id is not None:
             action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
-            if time.time() - self.last_teleport_time < action["time"] - 2:
-                pass
-                # play animation & sound
+            if time.time() - self.last_teleport_time < action["time"] - 0.2:
+                pos = (self.player.rect().x + random.random() * self.player.rect().width,
+                       self.player.rect().y + 5 + random.random() * self.player.rect().height)
+                self.particles.append(
+                    Particle(self, 'crystal_fragment', pos, velocity=[-0.1, -4], frame=0))
             else:
                 self.last_teleport_time = time.time()
                 self.player.pos = action["dest"].copy()
@@ -779,10 +781,10 @@ class Game:
             for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
                     self.player_hp = 0
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)

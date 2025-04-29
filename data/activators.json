@@ -43,7 +43,7 @@
     "teleporters": {
       "0":{
         "dest": [720, 144],
-        "time": 5
+        "time": 2
       }
     }
   }
