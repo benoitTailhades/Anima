@@ -74,7 +74,7 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 200}}
+                            3:{"darkness_level":180, "light_radius": 100}}
 
         self.assets = {
 
@@ -164,7 +164,7 @@ class Game:
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100  # milliseconds
-        self.lever_text_shown = False
+        self.floating_text_shown = False
 
         self.darkness_level = 150  # 0-255, higher means darker
         self.light_radius = 100  # Size of the player's light circle
@@ -522,11 +522,11 @@ class Game:
 
             if remaining_time <= 0:
                 # Supprimer le texte si son temps est écoulé
-                self.lever_text_shown = False
+                self.floating_text_shown = False
                 self.floating_texts.remove(text_data)
                 continue
             else:
-                self.lever_text_shown = True
+                self.floating_text_shown = True
 
             # Faire disparaître progressivement le texte vers la fin
             if remaining_time < 0.5:
@@ -668,11 +668,9 @@ class Game:
     def update_teleporter(self, t_id):
         if t_id is not None:
             action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
-            if time.time() - self.last_teleport_time < action["time"] - 0.2:
-                pos = (self.player.rect().x + random.random() * self.player.rect().width,
-                       self.player.rect().y + 5 + random.random() * self.player.rect().height)
-                self.particles.append(
-                    Particle(self, 'crystal_fragment', pos, velocity=[-0.1, -4], frame=0))
+            if time.time() - self.last_teleport_time < action["time"] - 2:
+                pass
+                # play animation & sound
             else:
                 self.last_teleport_time = time.time()
                 self.player.pos = action["dest"].copy()
@@ -741,7 +739,7 @@ class Game:
                 lever_nearby = abs(lever.pos[0] - self.player.pos[0]) <= 30 and abs(
                     lever.pos[1] - self.player.pos[1]) <= 30
 
-                if lever_nearby and not self.lever_text_shown:
+                if lever_nearby and not self.floating_text_shown:
                     self.display_text_above_player("Lever_interaction", duration=1)
 
             for enemy in self.enemies.copy():
@@ -768,10 +766,10 @@ class Game:
             for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
+                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
                     self.player_hp = 0
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
+                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)
@@ -784,8 +782,13 @@ class Game:
             for o in self.throwable:
                 o.update(self.tilemap, (0, 0))
                 o.render(self.display, offset=render_scroll)
-                if o.can_interact(self.player.rect()) and not self.lever_text_shown:
+                if o.can_interact(self.player.rect()) and not self.floating_text_shown:
                     self.display_text_above_player("Interaction",duration=4)
+                    
+            for tp in self.teleporters:
+                if tp.can_interact(self.player.rect())and not self.floating_text_shown:
+                    self.display_text_above_player("Interaction",duration=4)
+                    
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
