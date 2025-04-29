@@ -74,7 +74,7 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 200}}
+                            3:{"darkness_level":180, "light_radius": 100}}
 
         self.assets = {
 
@@ -403,6 +403,7 @@ class Game:
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
 
+
     def display_level_bg(self, map_id):
         if map_id in (0, 1, 2):
             self.display.blit(self.assets['green_cave/0'], (0, 0))
@@ -494,6 +495,7 @@ class Game:
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
+
     def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
 
         level_str = str(self.level)
@@ -555,6 +557,7 @@ class Game:
             self.display.blit(shadow_surface, shadow_rect)
             self.display.blit(text_surface, text_rect)
 
+
     def start_tutorial_sequence(self):
         self.tutorial_active = True
         self.tutorial_step = 0
@@ -567,6 +570,8 @@ class Game:
                 {"key": "tuto_FG", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
                 {"key": "Interaction","duration":4.0,"delay":1.0,"color":(255,255,255)}
             ]
+
+
 
     def update_tutorial_sequence(self):
         if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
@@ -663,11 +668,8 @@ class Game:
     def update_teleporter(self, t_id):
         if t_id is not None:
             action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
-            if time.time() - self.last_teleport_time < action["time"] - 0.2:
-                pos = (self.player.rect().x + random.random() * self.player.rect().width,
-                       self.player.rect().y + 5 + random.random() * self.player.rect().height)
-                self.particles.append(
-                    Particle(self, 'crystal_fragment', pos, velocity=[-0.1, -4], frame=0))
+            if time.time() - self.last_teleport_time < action["time"] - 2:
+                pass
                 # play animation & sound
             else:
                 self.last_teleport_time = time.time()
@@ -696,6 +698,8 @@ class Game:
 
             self.update_tutorial_sequence()
             self.update_floating_texts(render_scroll)
+
+
 
             if self.transition < 0:
                 self.transition += 1
