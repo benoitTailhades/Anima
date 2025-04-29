@@ -102,15 +102,13 @@ class Game:
         self.sound_running = False
 
         try:
-            # Make sure pygame is properly initialized before trying to play sounds
             if not pygame.mixer.get_init():
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-                time.sleep(0.1)  # Small delay to ensure initialization completes
+                time.sleep(0.1)
 
-            # Verify the sound file path and try different filename variations if needed
             sound_path = "assets/sounds/maintheme.wav"
 
-            self.volume = 0.5  # Volume par défaut : 50%
+            self.volume = 0.5
             self.background_music = pygame.mixer.Sound(sound_path)
             self.background_music.set_volume(self.volume)
             self.background_music.play(loops=-1)
@@ -163,14 +161,14 @@ class Game:
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
-        self.damage_flash_duration = 100  # milliseconds
+        self.damage_flash_duration = 100
         self.floating_text_shown = False
 
-        self.darkness_level = 150  # 0-255, higher means darker
-        self.light_radius = 100  # Size of the player's light circle
-        self.light_soft_edge = 350  # How soft the edge of the light is
-        self.light_emitting_tiles = []  # Store positions and properties of light-emitting tiles
-        self.light_emitting_objects = []  # Store references to light-emitting entities/objects
+        self.darkness_level = 150
+        self.light_radius = 100
+        self.light_soft_edge = 350
+        self.light_emitting_tiles = []
+        self.light_emitting_objects = []
 
         self.light_properties = {
             "player": {"radius": 100, "intensity": 250, "edge_softness": 255, "color": (255, 255, 255),
@@ -183,7 +181,6 @@ class Game:
             "lava": {"radius": 100, "intensity": 210, "edge_softness": 40, "color": (255, 120, 50), "flicker": True}
         }
 
-        # Create a light surface once rather than every frame
         self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
         create_light_mask(self.light_radius)
 
@@ -355,7 +352,7 @@ class Game:
                                               {"attack_distance": 20,
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
-                elif spawner['variant'] == 2:  # Assuming spawner variant 2 is for bosses
+                elif spawner['variant'] == 2:
                     self.bosses.append(FirstBoss(self, "wrath", spawner['pos'], (48, 48), 500,
                                                  {"attack_distance": 25,
                                                   "attack_dmg": 50,
@@ -463,7 +460,7 @@ class Game:
 
 
         try:
-            font = pygame.font.SysFont("Arial", 15)  # Arial est généralement plus fin que la police par défaut
+            font = pygame.font.SysFont("Arial", 15)
         except:
             font = pygame.font.Font(None, 26)
 
@@ -480,7 +477,6 @@ class Game:
 
     def display_level_fg(self, map_id):
         if map_id in (0,1,2):
-            # Generate dynamic fog instead of blitting a static image
             generate_fog(self.display, color=(24, 38, 31), opacity=130)
         if map_id == 3:
             generate_fog(self.display, color=(28, 50, 73), opacity=130)
@@ -513,30 +509,24 @@ class Game:
             print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
 
     def update_floating_texts(self, render_scroll):
-        """Met à jour et affiche les textes flottants au-dessus du joueur"""
         current_time = time.time()
 
         for text_data in self.floating_texts.copy():
-            # Calculer le temps restant
             remaining_time = text_data['end_time'] - current_time
 
             if remaining_time <= 0:
-                # Supprimer le texte si son temps est écoulé
                 self.floating_text_shown = False
                 self.floating_texts.remove(text_data)
                 continue
             else:
                 self.floating_text_shown = True
 
-            # Faire disparaître progressivement le texte vers la fin
             if remaining_time < 0.5:
                 text_data['opacity'] = int(255 * (remaining_time / 0.5))
 
-            # Obtenir la position du joueur
             player_x = self.player.rect().centerx - render_scroll[0]
             player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
 
-            # Préparer le texte
             try:
                 font = pygame.font.SysFont("Arial", 14)
             except:
@@ -545,15 +535,12 @@ class Game:
             text_surface = font.render(text_data['text'], True, text_data['color'])
             text_surface.set_alpha(text_data['opacity'])
 
-            # Créer une ombre légère pour améliorer la lisibilité
             shadow_surface = font.render(text_data['text'], True, (0, 0, 0))
             shadow_surface.set_alpha(text_data['opacity'] * 0.7)
 
-            # Centrer le texte au-dessus du joueur
             text_rect = text_surface.get_rect(center=(player_x, player_y))
             shadow_rect = shadow_surface.get_rect(center=(player_x + 1, player_y + 1))
 
-            # Afficher l'ombre puis le texte
             self.display.blit(shadow_surface, shadow_rect)
             self.display.blit(text_surface, text_rect)
 
@@ -605,11 +592,9 @@ class Game:
             elapsed_time = current_time - self.visual_start_time
 
             if elapsed_time < self.visual_movement_duration:
-                # Smoothly move to target position while duration is active
                 self.scroll[0] += (self.visual_pos[0] - self.display.get_width() / 2 - self.scroll[0]) / 20
                 self.scroll[1] += (self.visual_pos[1] - self.display.get_height() / 2 - self.scroll[1]) / 20
             else:
-                # Duration completed, return to following player
                 self.moving_visual = False
 
         else:
@@ -627,7 +612,6 @@ class Game:
                     min_y, max_y = level_limits["y"]
                     target_y = max(min_y, min(target_y, max_y))
 
-            # Smooth camera movement
             self.scroll[0] += (target_x - self.scroll[0]) / 20
             self.scroll[1] += (target_y - self.scroll[1]) / 20
 
@@ -643,20 +627,16 @@ class Game:
 
             if lever.can_interact(self.player.rect()):
                 lever_id = str(lever.id)
-                # Check if this lever has any actions
                 if lever_id in self.activators_actions[str(level)]["levers"]:
                     action = self.activators_actions[str(level)]["levers"][lever_id]
 
-                    # Process different action types
                     if action["type"] == "visual_and_door":
-                        #Move visual and Open door
                         for door in self.doors:
                             if door.id == action["door_id"] and not door.opened:
                                 lever.toggle()
                                 self.move_visual(action["visual_duration"], door.pos)
                                 door.open()
 
-                        # Add screenshake effect
                         self.screen_shake(10)
         for tp in self.teleporters:
             if tp.can_interact(self.player.rect()):
@@ -674,7 +654,6 @@ class Game:
                 self.particles.append(
                     Particle(self, 'crystal_fragment', pos, velocity=[-0.1, 4], frame=0))
                 pass
-                # play animation & sound
             else:
                 self.last_teleport_time = time.time()
                 self.player.pos = action["dest"].copy()
@@ -907,12 +886,12 @@ class Game:
 
                     max_border_width = 220
                     border_width = int(max_border_width * (1 - progress))
-                    alpha_base = int(240 * (1 - progress))  # Overall opacity fades out over time
+                    alpha_base = int(240 * (1 - progress))
 
                     for i in range(border_width):
                         fade_factor = 1 - (i / border_width)
                         color_alpha = int(alpha_base * fade_factor)
-                        color = (0, 0, 0, color_alpha)  # Dark red with variable alpha
+                        color = (0, 0, 0, color_alpha)
 
                         pygame.draw.line(border_surface, color, (0, i), (screen_width, i), 1)
                         pygame.draw.line(border_surface, color, (screen_width - i - 1, 0),
