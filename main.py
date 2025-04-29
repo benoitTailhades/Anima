@@ -226,8 +226,6 @@ class Game:
             self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
 
     def draw_health_bar(self, max_hearts=5):
-        # Ensure player always has at least 0.5 health if they're alive
-        # The actual health points are unchanged, this is only for display
         display_hp = max(10, self.player_hp) if self.player_hp > 0 else 0
 
         full_hearts = display_hp // 20
@@ -274,7 +272,6 @@ class Game:
         level_info = self.light_infos[self.level]
         self.darkness_level = level_info["darkness_level"]
 
-        # Update player light properties based on level
         self.player_light["radius"] = level_info["light_radius"]
         self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
         create_light_mask(self.light_radius)
@@ -406,6 +403,7 @@ class Game:
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
 
+
     def display_level_bg(self, map_id):
         if map_id in (0, 1, 2):
             self.display.blit(self.assets['green_cave/0'], (0, 0))
@@ -509,7 +507,7 @@ class Game:
                 'color': color,
                 'end_time': time.time() + duration,
                 'offset_y': offset_y,
-                'opacity': 255  # Opacité initiale
+                'opacity': 255
             })
         else:
             print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
@@ -524,8 +522,11 @@ class Game:
 
             if remaining_time <= 0:
                 # Supprimer le texte si son temps est écoulé
+                self.lever_text_shown = False
                 self.floating_texts.remove(text_data)
                 continue
+            else:
+                self.lever_text_shown = True
 
             # Faire disparaître progressivement le texte vers la fin
             if remaining_time < 0.5:
@@ -558,33 +559,27 @@ class Game:
 
 
     def start_tutorial_sequence(self):
-        """Démarre la séquence de tutoriel avec des messages espacés dans le temps"""
-        # Réinitialiser l'état du tutoriel
         self.tutorial_active = True
         self.tutorial_step = 0
         self.tutorial_next_time = time.time()
 
-        # Configurer la séquence de tutoriel pour le niveau 0
         if str(self.level) == "0":
             self.tutorial_messages = [
                 {"key": "tuto_movement", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
-                {"key": "tuto_space", "duration": 4.0, "delay": 5.0, "color": (220, 220, 255)},
-                {"key": "tuto_FG", "duration": 4.0, "delay": 5.0, "color": (255, 255, 100)}
+                {"key": "tuto_space", "duration": 4.0, "delay": 1.0, "color": (220, 255, 255)},
+                {"key": "tuto_FG", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
+                {"key": "Interaction","duration":4.0,"delay":1.0,"color":(255,255,255)}
             ]
-        else:
-            # Tutoriels pour d'autres niveaux si nécessaire
-            self.tutorial_messages = []
-            self.tutorial_active = False
+
+
 
     def update_tutorial_sequence(self):
-        """Met à jour la séquence de tutoriel et affiche les messages progressivement"""
         if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
             self.tutorial_active = False
             return
 
         current_time = time.time()
 
-        # Vérifier s'il est temps d'afficher le prochain message
         if current_time >= self.tutorial_next_time:
             message = self.tutorial_messages[self.tutorial_step]
             self.display_text_above_player(
@@ -594,7 +589,6 @@ class Game:
                 -30
             )
 
-            # Préparer le prochain message
             self.tutorial_next_time = current_time + message["duration"] + message["delay"]
             self.tutorial_step += 1
 
@@ -607,7 +601,6 @@ class Game:
     def update_camera(self):
         current_time = time.time()
 
-        # Check if we're in a visual movement mode
         if self.moving_visual:
             elapsed_time = current_time - self.visual_start_time
 
@@ -623,16 +616,13 @@ class Game:
             target_x = self.player.rect().centerx - self.display.get_width() / 2
             target_y = self.player.rect().centery - self.display.get_height() / 2
 
-            # Apply level boundaries if they exist for the current level
             if self.level in self.scroll_limits:
                 level_limits = self.scroll_limits[self.level]
 
-                # Apply x-axis limits
                 if level_limits["x"]:
                     min_x, max_x = level_limits["x"]
                     target_x = max(min_x, min(target_x, max_x))
 
-                # Apply y-axis limits
                 if level_limits["y"]:
                     min_y, max_y = level_limits["y"]
                     target_y = max(min_y, min(target_y, max_y))
@@ -709,6 +699,8 @@ class Game:
             self.update_tutorial_sequence()
             self.update_floating_texts(render_scroll)
 
+
+
             if self.transition < 0:
                 self.transition += 1
 
@@ -748,12 +740,7 @@ class Game:
                     lever.pos[1] - self.player.pos[1]) <= 30
 
                 if lever_nearby and not self.lever_text_shown:
-                    # Only show text if not already shown
                     self.display_text_above_player("Lever_interaction", duration=1)
-                    self.lever_text_shown = True
-                elif not lever_nearby and lever == self.levers[-1]:
-                    # Reset the flag if no levers are nearby and we've checked the last one
-                    self.lever_text_shown = False
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
@@ -795,11 +782,11 @@ class Game:
             for o in self.throwable:
                 o.update(self.tilemap, (0, 0))
                 o.render(self.display, offset=render_scroll)
-
+                if o.can_interact(self.player.rect()) and not self.lever_text_shown:
+                    self.display_text_above_player("Interaction",duration=4)
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
-                # Remove dead bosses
                 if boss.hp <= 0:
                     boss.set_action("death")
                     for enemy in self.enemies:
@@ -899,77 +886,55 @@ class Game:
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
             if self.damage_flash_active:
-                # Check if the flash should still be displayed
                 if pygame.time.get_ticks() < self.damage_flash_end_time:
                     self.screen_shake(16)
-                    # Create a transparent surface
-                    # Get screen dimensions
                     screen_width = self.screen.get_width()
                     screen_height = self.screen.get_height()
 
-                    # Create a transparent surface for the border
                     border_surface = pygame.Surface((screen_width, screen_height), pygame.SRCALPHA)
 
-                    # Calculate elapsed time percentage
                     elapsed = pygame.time.get_ticks() - (self.damage_flash_end_time - self.damage_flash_duration)
                     progress = elapsed / self.damage_flash_duration
 
-                    # Border properties that change based on time
                     max_border_width = 220
-                    border_width = int(max_border_width * (1 - progress))  # Border gets thinner over time
+                    border_width = int(max_border_width * (1 - progress))
                     alpha_base = int(240 * (1 - progress))  # Overall opacity fades out over time
 
-                    # Draw the border with inside fade effect
                     for i in range(border_width):
-                        # Calculate fade factor - starts solid at edge, fades toward inside
                         fade_factor = 1 - (i / border_width)
                         color_alpha = int(alpha_base * fade_factor)
                         color = (0, 0, 0, color_alpha)  # Dark red with variable alpha
 
-                        # Draw four lines (top, right, bottom, left) for each level of the border
-                        # Top border
                         pygame.draw.line(border_surface, color, (0, i), (screen_width, i), 1)
-                        # Right border
                         pygame.draw.line(border_surface, color, (screen_width - i - 1, 0),
                                          (screen_width - i - 1, screen_height), 1)
-                        # Bottom border
                         pygame.draw.line(border_surface, color, (0, screen_height - i - 1),
                                          (screen_width, screen_height - i - 1), 1)
-                        # Left border
                         pygame.draw.line(border_surface, color, (i, 0), (i, screen_height), 1)
 
-                    # Round the corners for a smoother look
-                    # This is a simplified approach - for truly smooth corners, you might need a more complex approach
                     corner_radius = min(0, border_width)
                     if corner_radius > 0:
-                        # Soften corners by drawing partially transparent arcs
                         for i in range(corner_radius):
                             fade_factor = 1 - (i / corner_radius)
                             color_alpha = int(
-                                alpha_base * fade_factor * 0.7)  # Slightly more transparent for smooth blending
+                                alpha_base * fade_factor * 0.7)
                             color = (0, 0, 0, color_alpha)
 
-                            # Top-left corner
                             pygame.draw.arc(border_surface, color, (0, 0, corner_radius * 2, corner_radius * 2),
                                             math.pi / 2, math.pi, 1)
-                            # Top-right corner
                             pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2, 0,
                                                                     corner_radius * 2, corner_radius * 2), 0,
                                             math.pi / 2, 1)
-                            # Bottom-right corner
                             pygame.draw.arc(border_surface, color, (screen_width - corner_radius * 2,
                                                                     screen_height - corner_radius * 2,
                                                                     corner_radius * 2, corner_radius * 2),
                                             -math.pi / 2, 0, 1)
-                            # Bottom-left corner
                             pygame.draw.arc(border_surface, color, (0, screen_height - corner_radius * 2,
                                                                     corner_radius * 2, corner_radius * 2), math.pi,
                                             3 * math.pi / 2, 1)
 
-                    # Blit the border onto the screen
                     self.screen.blit(border_surface, (0, 0))
                 else:
-                    # Border effect duration has ended
                     self.damage_flash_active = False
 
             pygame.display.update()
