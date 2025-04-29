@@ -74,7 +74,7 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 100}}
+                            3:{"darkness_level":180, "light_radius": 200}}
 
         self.assets = {
 
@@ -668,7 +668,11 @@ class Game:
     def update_teleporter(self, t_id):
         if t_id is not None:
             action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
-            if time.time() - self.last_teleport_time < action["time"] - 2:
+            if time.time() - self.last_teleport_time < action["time"] - 0.2:
+                pos = (self.player.rect().x + random.random() * self.player.rect().width,
+                       self.player.rect().y + 5 + random.random() * self.player.rect().height)
+                self.particles.append(
+                    Particle(self, 'crystal_fragment', pos, velocity=[-0.1, 4], frame=0))
                 pass
                 # play animation & sound
             else:
