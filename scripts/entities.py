@@ -358,7 +358,7 @@ def death_animation(screen):
     font = pygame.font.Font(None, 36)
 
     citations = {
-        "Lingagu ligaligali wasa.": "Giannini Loic, ingenio magno",
+        "Lingagu ligaligali wasa.": "Giannini Loic, Ingenio magno",
         "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri, 'Il Poeto'",
         "You cannot find peace by avoiding life": "Virginia Woolf, Writer ",
         "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates, Founder of Philosophy",
