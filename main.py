@@ -150,7 +150,7 @@ class Game:
         self.screenshake = 0
 
         self.cutscene = False
-        self.floating_texts = []
+        self.floating_texts = {}
         self.game_texts = load_game_texts()
         self.tutorial_active = False
         self.tutorial_step = 0
@@ -496,31 +496,23 @@ class Game:
         if level_str in self.game_texts and text_key in self.game_texts[level_str]:
             text = self.game_texts[level_str][text_key]
 
-            self.floating_texts.append({
+            self.floating_texts[text_key] = {
                 'text': text,
                 'color': color,
                 'end_time': time.time() + duration,
                 'offset_y': offset_y,
                 'opacity': 255
-            })
+            }
         else:
             print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
 
     def update_floating_texts(self, render_scroll):
         current_time = time.time()
-
-        for text_data in self.floating_texts.copy():
-            remaining_time = text_data['end_time'] - current_time
-
-            if remaining_time <= 0:
-                self.floating_text_shown = False
-                self.floating_texts.remove(text_data)
-                continue
-            else:
-                self.floating_text_shown = True
-
+        for text_key in self.floating_texts.copy():
+            text_data = self.floating_texts[text_key]
+            remaining_time = text_data['end_time'] - current_time + 1
             if remaining_time < 0.5:
-                text_data['opacity'] = int(255 * (remaining_time / 0.5))
+                self.floating_texts[text_key]['opacity'] = int(255 * (remaining_time / 0.5))
 
             player_x = self.player.rect().centerx - render_scroll[0]
             player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
@@ -541,6 +533,12 @@ class Game:
 
             self.display.blit(shadow_surface, shadow_rect)
             self.display.blit(text_surface, text_rect)
+
+            if remaining_time <= 0:
+                self.floating_text_shown = False
+                del self.floating_texts[text_key]
+            else:
+                self.floating_text_shown = True
 
     def start_tutorial_sequence(self):
         self.tutorial_active = True
@@ -677,7 +675,6 @@ class Game:
             self.update_floating_texts(render_scroll)
 
 
-
             if self.transition < 0:
                 self.transition += 1
 
@@ -714,8 +711,12 @@ class Game:
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
 
-                if lever.can_interact(self.player.rect()) and not self.floating_text_shown:
-                    self.display_text_above_player("Lever_interaction", duration=1)
+                if lever.can_interact(self.player.rect()):
+                    text_key = "Lever_interaction"
+                    if not self.floating_text_shown:
+                        self.display_text_above_player(text_key, duration=1)
+                    else:
+                        self.floating_texts[text_key]['end_time'] = time.time()
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
