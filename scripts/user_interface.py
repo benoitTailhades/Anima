@@ -4,7 +4,8 @@ import numpy as np
 import cv2
 import os
 from scripts.sound import run_sound
-from scripts.utils import load_images, load_image, load_game_font
+from scripts.utils import load_images, load_image
+from scripts.text import load_game_font
 
 
 class Menu:

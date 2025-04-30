@@ -6,17 +6,18 @@ import json
 import pygame
 import random
 import time
-from scripts.entities import player_death, Enemy, Throwable, deal_dmg, deal_knockback
+from scripts.entities import *
 from scripts.utils import *
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.boss import FirstBoss
-from scripts.activators import Lever, Teleporter
+from scripts.activators import *
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 from scripts.doors import Door
-from scripts.visual_effects import *
+from scripts.display import *
+from scripts.text import *
 from scripts.spark import Spark
 
 
@@ -215,34 +216,6 @@ class Game:
             if level in self.environments[environment]:
                 return environment
 
-    def toggle_fullscreen(self):
-        self.fullscreen = not self.fullscreen
-        if self.fullscreen:
-            self.screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN | pygame.NOFRAME)
-        else:
-            self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
-
-    def draw_health_bar(self, max_hearts=5):
-        display_hp = max(10, self.player_hp) if self.player_hp > 0 else 0
-
-        full_hearts = display_hp // 20
-        half_heart = 1 if display_hp % 20 >= 10 else 0
-
-        start_x = 20
-        start_y = 20
-        heart_spacing = 22
-
-        for i in range(full_hearts):
-            self.display.blit(self.assets['full_heart'], (start_x + (i * heart_spacing), start_y))
-
-        if half_heart:
-            self.display.blit(self.assets['half_heart'], (start_x + (full_hearts * heart_spacing), start_y))
-
-        empty_hearts = max_hearts - full_hearts - half_heart
-        for i in range(empty_hearts):
-            pos = start_x + ((full_hearts + half_heart + i) * heart_spacing)
-            self.display.blit(self.assets['empty_heart'], (pos, start_y))
-
     def get_key_map(self):
         if self.keyboard_layout.lower() == "azerty":
             return {
@@ -265,14 +238,6 @@ class Game:
                 pygame.K_n: "key_noclip",
             }
 
-    def update_light(self):
-        level_info = self.light_infos[self.level]
-        self.darkness_level = level_info["darkness_level"]
-
-        self.player_light["radius"] = level_info["light_radius"]
-        self.light_mask = pygame.Surface((self.light_radius * 2, self.light_radius * 2), pygame.SRCALPHA)
-        create_light_mask(self.light_radius)
-
     def update_settings_from_game(self):
         self.volume = self.volume
         self.keyboard_layout = self.keyboard_layout
@@ -293,9 +258,6 @@ class Game:
         if self.attacking and self.player.animation.done:
             self.dict_kb["key_attack"] = 0
             self.player_last_attack_time = time.time()
-
-    def screen_shake(self, strenght):
-        self.screenshake = max(strenght, self.screenshake)
 
     def save_game(self, slot=1):
         if hasattr(self, 'save_system'):
@@ -396,89 +358,9 @@ class Game:
         self.sparks = []
         self.transition = -30
         self.max_falling_depth = 50000000 if self.level in (1,3) else 500
-        self.update_light()
+        update_light(self)
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
-
-    def display_level_bg(self, map_id):
-        if map_id in (0, 1, 2):
-            self.display.blit(self.assets['green_cave/0'], (0, 0))
-            display_bg(self.display, self.assets['green_cave/1'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['green_cave/2'], (-self.scroll[0] / 10, -20))
-            display_bg(self.display, self.assets['green_cave/3'], (self.scroll[0] / 50, -20))
-        if map_id == 3:
-            self.display.blit(self.assets['blue_cave/0'], (0, 0))
-            display_bg(self.display, self.assets['blue_cave/1'], (-self.scroll[0] / 10, 0))
-            display_bg(self.display, self.assets['blue_cave/2'], (-self.scroll[0] / 30, 0))
-            display_bg(self.display, self.assets['blue_cave/3'], (self.scroll[0] / 30, 0))
-            display_bg(self.display, self.assets['blue_cave/4'], (self.scroll[0] / 50, 0))
-
-    def draw_boss_health_bar(self, boss):
-        if not self.bosses or boss.hp <= 0:
-            return
-
-        bar_width = 200
-        bar_height = 6
-        border_thickness = 1
-        border_radius = 3
-
-        bar_x = (self.display.get_width() - bar_width) // 2
-        bar_y = 25
-
-        health_percentage = max(0, boss.hp / boss.max_hp)
-        current_bar_width = int(bar_width * health_percentage)
-
-        border_color = (30, 30, 30)
-        bg_color = (60, 60, 60)
-        health_color = (133, 6, 6)
-
-        shadow_offset = 2
-        pygame.draw.rect(
-            self.display,
-            (20, 20, 20),
-            (bar_x - border_thickness + shadow_offset,
-             bar_y - border_thickness + shadow_offset,
-             bar_width + (border_thickness * 2),
-             bar_height + (border_thickness * 2)),
-            0,
-            border_radius + border_thickness
-        )
-
-        pygame.draw.rect(self.display,border_color,(bar_x - border_thickness,bar_y - border_thickness,bar_width + (border_thickness * 2),bar_height + (border_thickness * 2)),0, border_radius + border_thickness)
-
-        pygame.draw.rect(self.display,bg_color,(bar_x, bar_y, bar_width, bar_height),0,border_radius)
-
-        if current_bar_width > 0:
-            right_radius = border_radius if current_bar_width >= border_radius * 2 else 0
-            pygame.draw.rect(self.display,health_color,(bar_x, bar_y, current_bar_width, bar_height),0,border_radius, right_radius, border_radius, right_radius)
-
-        if current_bar_width > 5:
-            highlight_height = max(2, bar_height // 3)
-            highlight_width = current_bar_width - 4
-            pygame.draw.rect(self.display,(220, 60, 60),  (bar_x + 2, bar_y + 1, highlight_width, highlight_height),0,border_radius // 2)
-
-
-        try:
-            font = pygame.font.SysFont("Arial", 15)
-        except:
-            font = pygame.font.Font(None, 26)
-
-        boss_name = boss.name if hasattr(boss, 'name') else "Wrath"
-
-        text_surface = font.render(boss_name, True, (255, 255, 255))
-        text_rect = text_surface.get_rect(centerx=bar_x + bar_width // 2, bottom=bar_y - 4)
-
-        shadow_surface = font.render(boss_name, True, (0, 0, 0))
-        shadow_rect = shadow_surface.get_rect(centerx=text_rect.centerx + 1, centery=text_rect.centery + 1)
-
-        self.display.blit(shadow_surface, shadow_rect)
-        self.display.blit(text_surface, text_rect)
-
-    def display_level_fg(self, map_id):
-        if map_id in (0,1,2):
-            generate_fog(self.display, color=(24, 38, 31), opacity=130)
-        if map_id == 3:
-            generate_fog(self.display, color=(28, 50, 73), opacity=130)
 
     def check_transition(self):
         for transition in self.transitions:
@@ -489,56 +371,6 @@ class Game:
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
-
-    def display_text_above_player(self, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
-
-        level_str = str(self.level)
-        if level_str in self.game_texts and text_key in self.game_texts[level_str]:
-            text = self.game_texts[level_str][text_key]
-
-            self.floating_texts[text_key] = {
-                'text': text,
-                'color': color,
-                'end_time': time.time() + duration,
-                'offset_y': offset_y,
-                'opacity': 255
-            }
-        else:
-            print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
-
-    def update_floating_texts(self, render_scroll):
-        current_time = time.time()
-        for text_key in self.floating_texts.copy():
-            text_data = self.floating_texts[text_key]
-            remaining_time = text_data['end_time'] - current_time + 1
-            if remaining_time < 0.5:
-                self.floating_texts[text_key]['opacity'] = int(255 * (remaining_time / 0.5))
-
-            player_x = self.player.rect().centerx - render_scroll[0]
-            player_y = self.player.rect().top - render_scroll[1] + text_data['offset_y']
-
-            try:
-                font = pygame.font.SysFont("Arial", 14)
-            except:
-                font = pygame.font.Font(None, 18)
-
-            text_surface = font.render(text_data['text'], True, text_data['color'])
-            text_surface.set_alpha(text_data['opacity'])
-
-            shadow_surface = font.render(text_data['text'], True, (0, 0, 0))
-            shadow_surface.set_alpha(text_data['opacity'] * 0.7)
-
-            text_rect = text_surface.get_rect(center=(player_x, player_y))
-            shadow_rect = shadow_surface.get_rect(center=(player_x + 1, player_y + 1))
-
-            self.display.blit(shadow_surface, shadow_rect)
-            self.display.blit(text_surface, text_rect)
-
-            if remaining_time <= 0:
-                self.floating_text_shown = False
-                del self.floating_texts[text_key]
-            else:
-                self.floating_text_shown = True
 
     def start_tutorial_sequence(self):
         self.tutorial_active = True
@@ -562,7 +394,7 @@ class Game:
 
         if current_time >= self.tutorial_next_time:
             message = self.tutorial_messages[self.tutorial_step]
-            self.display_text_above_player(
+            display_text_above_player(self,
                 message["key"],
                 message["duration"],
                 message["color"],
@@ -572,95 +404,11 @@ class Game:
             self.tutorial_next_time = current_time + message["duration"] + message["delay"]
             self.tutorial_step += 1
 
-    def move_visual(self, duration, pos):
-        self.moving_visual = True
-        self.visual_pos = pos
-        self.visual_movement_duration = duration
-        self.visual_start_time = time.time()
-
-    def update_camera(self):
-        current_time = time.time()
-
-        if self.moving_visual:
-            elapsed_time = current_time - self.visual_start_time
-
-            if elapsed_time < self.visual_movement_duration:
-                self.scroll[0] += (self.visual_pos[0] - self.display.get_width() / 2 - self.scroll[0]) / 20
-                self.scroll[1] += (self.visual_pos[1] - self.display.get_height() / 2 - self.scroll[1]) / 20
-            else:
-                self.moving_visual = False
-
-        else:
-            target_x = self.player.rect().centerx - self.display.get_width() / 2
-            target_y = self.player.rect().centery - self.display.get_height() / 2
-
-            if self.level in self.scroll_limits:
-                level_limits = self.scroll_limits[self.level]
-
-                if level_limits["x"]:
-                    min_x, max_x = level_limits["x"]
-                    target_x = max(min_x, min(target_x, max_x))
-
-                if level_limits["y"]:
-                    min_y, max_y = level_limits["y"]
-                    target_y = max(min_y, min(target_y, max_y))
-
-            self.scroll[0] += (target_x - self.scroll[0]) / 20
-            self.scroll[1] += (target_y - self.scroll[1]) / 20
-
     def update_spawn_point(self):
         if self.level in (0, 1, 2):
             self.spawn_point = {"pos": self.spawner_pos[0], "level": 0}
         elif self.level in (3, 4, 5):
             self.spawn_point = {"pos": self.spawner_pos[3], "level": 3}
-
-    def update_activators_actions(self, level):
-        for lever in self.levers:
-            if lever.can_interact(self.player.rect()):
-                lever_id = str(lever.id)
-                if lever_id in self.activators_actions[str(level)]["levers"]:
-                    action = self.activators_actions[str(level)]["levers"][lever_id]
-
-                    if action["type"] == "visual_and_door":
-                        for door in self.doors:
-                            if door.id == action["door_id"]:
-                                lever.toggle()
-                                self.move_visual(action["visual_duration"], door.pos)
-                                lever.activated = False
-                                door.open()
-
-                        self.screen_shake(10)
-        for tp in self.teleporters:
-            if tp.can_interact(self.player.rect()):
-                if str(tp.id) in self.activators_actions[str(level)]["teleporters"]:
-                    self.last_teleport_time = time.time()
-                    self.teleporting = True
-                    self.tp_id = tp.id
-
-    def update_teleporter(self, t_id):
-        if t_id is not None:
-            action = self.activators_actions[str(self.level)]["teleporters"][str(t_id)]
-            if time.time() - self.last_teleport_time < action["time"] - 0.2:
-                pos = (self.player.rect().x + random.random() * self.player.rect().width,
-                       self.player.rect().y + 5 + random.random() * self.player.rect().height)
-                self.particles.append(
-                    Particle(self, 'crystal_fragment', pos, velocity=[-0.1, 4], frame=0))
-                pass
-            else:
-                self.last_teleport_time = time.time()
-                self.player.pos = action["dest"].copy()
-                self.teleporting = False
-                self.tp_id = None
-
-    def update_throwable_objects_action(self):
-        for o in self.throwable:
-            if not o.grabbed and not self.player_grabbing:
-                if o.can_interact(self.player.rect()):
-                    o.grab(self.player)
-                    return
-            elif o.grabbed:
-                o.launch([self.player.last_direction, -1], 3.2)
-                return
 
     def run(self):
         while True:
@@ -668,11 +416,11 @@ class Game:
 
             self.check_transition()
 
-            self.update_camera()
+            update_camera(self)
             render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
 
             self.update_tutorial_sequence()
-            self.update_floating_texts(render_scroll)
+            update_floating_texts(self, render_scroll)
 
 
             if self.transition < 0:
@@ -683,7 +431,7 @@ class Game:
                                            or obj in self.bosses]
 
             if self.teleporting:
-                self.update_teleporter(self.tp_id)
+                update_teleporter(self, self.tp_id)
 
             self.update_spawn_point()
 
@@ -695,7 +443,7 @@ class Game:
                     self.particles.append(
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            self.display_level_bg(self.level)
+            display_level_bg(self, self.level)
             self.player.can_walljump["allowed"] = self.level not in self.boss_levels or not self.bosses
 
             ds = []
@@ -714,7 +462,7 @@ class Game:
                 if lever.can_interact(self.player.rect()):
                     text_key = "Lever_interaction"
                     if not self.floating_text_shown:
-                        self.display_text_above_player(text_key, duration=1)
+                        display_text_above_player(self, text_key, duration=1)
                     else:
                         self.floating_texts[text_key]['end_time'] = time.time()
 
@@ -759,11 +507,11 @@ class Game:
                 o.update(self.tilemap, (0, 0))
                 o.render(self.display, offset=render_scroll)
                 if o.can_interact(self.player.rect()) and not self.floating_text_shown:
-                    self.display_text_above_player("Interaction",duration=4)
+                    display_text_above_player(self,"Interaction",duration=4)
                     
             for tp in self.teleporters:
                 if tp.can_interact(self.player.rect())and not self.floating_text_shown:
-                    self.display_text_above_player("Interaction",duration=4)
+                    display_text_above_player(self,"Interaction",duration=4)
                     
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
@@ -784,7 +532,7 @@ class Game:
                     self.particles.append(
                         Particle(self, 'crystal', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-            self.display_level_fg(self.level)
+            display_level_fg(self, self.level)
 
             if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
@@ -818,12 +566,12 @@ class Game:
                             self.dict_kb[key] = 0
 
                     if event.key == pygame.K_e:
-                        self.update_throwable_objects_action()
+                        update_throwable_objects_action(self)
                         if not self.player_grabbing:
-                            self.update_activators_actions(self.level)
+                            update_activators_actions(self, self.level)
 
                     if event.key == pygame.K_F11:
-                        self.toggle_fullscreen()
+                        toggle_fullscreen(self)
                     if event.key == pygame.K_f and not self.holding_attack:
                         self.dict_kb["key_attack"] = 1
                         self.holding_attack = True
@@ -855,20 +603,20 @@ class Game:
 
             apply_lighting(self, render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
-            self.update_floating_texts(render_scroll)
+            update_floating_texts(self, render_scroll)
 
             if self.cutscene:
                 draw_cutscene_border(self.display)
             else:
-                self.draw_health_bar()
+                draw_health_bar(self)
                 if self.bosses:
-                    self.draw_boss_health_bar(self.bosses[0])
+                    draw_boss_health_bar(self, self.bosses[0])
 
             self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
             if self.damage_flash_active:
                 if pygame.time.get_ticks() < self.damage_flash_end_time:
-                    self.screen_shake(16)
+                    screen_shake(self,16)
                     screen_width = self.screen.get_width()
                     screen_height = self.screen.get_height()
 

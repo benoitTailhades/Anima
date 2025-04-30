@@ -4,6 +4,8 @@ import pygame
 import random
 import math
 
+from scripts.display import update_light
+
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
         self.game = game
@@ -404,7 +406,7 @@ def player_death(game, screen, spawn_pos, spawn_level):
     death_animation(screen)
     game.load_level(spawn_level)
     game.level = spawn_level
-    game.update_light()
+    update_light(game)
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]
     
@@ -430,3 +432,13 @@ def deal_knockback(entity, target, strenght):
             target.knockback_dir[1] = 0
         knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
         return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
+
+def update_throwable_objects_action(game):
+    for o in game.throwable:
+        if not o.grabbed and not game.player_grabbing:
+            if o.can_interact(game.player.rect()):
+                o.grab(game.player)
+                return
+        elif o.grabbed:
+            o.launch([game.player.last_direction, -1], 3.2)
+            return

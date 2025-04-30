@@ -11,6 +11,7 @@ import math
 import random
 
 from scripts.entities import Enemy, PhysicsEntity, deal_dmg, deal_knockback
+from scripts.display import screen_shake, move_visual
 
 
 class Boss(Enemy):
@@ -234,7 +235,7 @@ class FirstBoss(Boss):
             self.started = True
             if not self.intro_complete:
                 if time.time() - self.intro_start_time <= self.intro_duration:
-                    self.game.move_visual(0.1, self.pos)
+                    move_visual(self.game, 0.1, self.pos)
                     if not self.pos[0] > 336:
                         self.animation.update()
                         self.pos[1] = 608
@@ -257,7 +258,7 @@ class FirstBoss(Boss):
                             self.animations(movement)
                     else:
                         if self.collisions["down"]:
-                            self.game.screen_shake(32)
+                            screen_shake(self.game, 32)
                             self.intro_complete = True
 
                         super().update(tilemap, movement)
@@ -279,7 +280,7 @@ class FirstBoss(Boss):
                                 reached = self.move_to(self.current_destination, jump_height=100)
 
                                 if reached:
-                                    self.game.screen_shake(16)
+                                    screen_shake(self.game, 16)
                                     print('Reached initial position')
                                     self.current_destination = None
                                     self.has_performed_initial_jump = True
@@ -304,7 +305,7 @@ class FirstBoss(Boss):
                                 reached = self.move_to(self.current_destination, jump_height=100)
 
                                 if reached:
-                                    self.game.screen_shake(16)
+                                    screen_shake(self.game, 16)
                                     print('Reached new position')
                                     self.current_destination = None
                                     # Maybe start an attack sequence
@@ -322,7 +323,7 @@ class FirstBoss(Boss):
                             reached = self.move_to(self.current_destination, jump_height=100)
 
                             if reached:
-                                self.game.screen_shake(32)
+                                screen_shake(self.game, 32)
                                 print('Reached bottom')
                                 self.bottom = True
                                 self.is_attacking = False
@@ -427,7 +428,7 @@ class Vine:
                     deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
 
             if self.timer >= self.attack_time and self.animation.done:
-                self.game.screen_shake(16)
+                screen_shake(self.game, 16)
                 self.set_action('retreat')
                 self.state = 'retreat'
                 self.timer = 0
