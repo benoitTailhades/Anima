@@ -335,6 +335,8 @@ class Game:
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
+
+        self.interactable = self.teleporters.copy() + self.throwable.copy() + self.levers.copy()
         self.cutscene = False
         self.particles = []
         self.sparks = []
@@ -441,13 +443,6 @@ class Game:
             for lever in self.levers:
                 lever.render(self.display, offset=render_scroll)
 
-                if lever.can_interact(self.player.rect()):
-                    text_key = "Lever_interaction"
-                    if not self.floating_text_shown:
-                        display_text_above_player(self, text_key, duration=1)
-                    else:
-                        self.floating_texts[text_key]['end_time'] = time.time()
-
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
                 enemy.render(self.display, offset=render_scroll)
@@ -488,13 +483,7 @@ class Game:
             for o in self.throwable:
                 o.update(self.tilemap, (0, 0))
                 o.render(self.display, offset=render_scroll)
-                if o.can_interact(self.player.rect()) and not self.floating_text_shown:
-                    display_text_above_player(self,"Interaction",duration=4)
-                    
-            for tp in self.teleporters:
-                if tp.can_interact(self.player.rect())and not self.floating_text_shown:
-                    display_text_above_player(self,"Interaction",duration=4)
-                    
+
             for boss in self.bosses.copy():
                 boss.update(self.tilemap, (0, 0))
                 boss.render(self.display, offset=render_scroll)
@@ -505,6 +494,14 @@ class Game:
                     if boss.animation.done:
                         self.bosses.remove(boss)
                         self.levels[self.level]["charged"] = True
+
+            for inter in self.interactable:
+                if inter.can_interact(self.player.rect()):
+                    text_key = "Interaction"
+                    if not self.floating_text_shown:
+                        display_text_above_player(self, text_key, duration=0)
+                    else:
+                        self.floating_texts[text_key]['end_time'] = time.time()
 
             self.tilemap.render_over(self.display, offset=render_scroll)
 

@@ -30,7 +30,7 @@ def load_game_texts():
             print(f"Erreur lors du chargement des textes: {e}")
             return {}
 
-def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255), offset_y=-30):
+def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255), offset_y=-20):
     level_str = str(game.level)
     if level_str in game.game_texts and text_key in game.game_texts[level_str]:
         text = game.game_texts[level_str][text_key]
@@ -49,8 +49,8 @@ def update_floating_texts(game, render_scroll):
     current_time = time.time()
     for text_key in game.floating_texts.copy():
         text_data = game.floating_texts[text_key]
-        remaining_time = text_data['end_time'] - current_time + 1
-        if remaining_time < 0.5:
+        remaining_time = text_data['end_time'] - current_time
+        if remaining_time + 1 < 0.5:
             game.floating_texts[text_key]['opacity'] = int(255 * (remaining_time / 0.5))
 
         player_x = game.player.rect().centerx - render_scroll[0]
