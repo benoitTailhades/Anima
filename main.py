@@ -19,6 +19,7 @@ from scripts.doors import Door
 from scripts.display import *
 from scripts.text import *
 from scripts.spark import Spark
+from scripts.sound import set_game_volume
 
 
 class Game:
@@ -206,11 +207,6 @@ class Game:
         if not self.menu.start_menu_newgame():
             self.load_level(self.level)
 
-    def set_volume(self, volume):
-        self.volume = max(0, min(1, volume))
-        if self.background_music:
-            self.background_music.set_volume(self.volume)
-
     def get_environment(self, level):
         for environment in self.environments:
             if level in self.environments[environment]:
@@ -244,20 +240,6 @@ class Game:
 
         if hasattr(self, "selected_language") and self.selected_language in self.languages:
             self.selected_language = self.selected_language
-
-    def attacking_update(self):
-        self.attacking = ((self.dict_kb["key_attack"] == 1 and time.time() - self.player_last_attack_time >= 0.03)
-                          or self.player.action in ("attack/left", "attack/right")) and not self.player.is_stunned and not self.player_grabbing
-        if self.attacking and self.player.action == "attack/right" and self.player.get_direction("x") == -1:
-            self.attacking = False
-            self.dict_kb["key_attack"] = 0
-        elif self.attacking and self.player.action == "attack/left" and self.player.get_direction("x") == 1:
-            self.attacking = False
-            self.dict_kb["key_attack"] = 0
-
-        if self.attacking and self.player.animation.done:
-            self.dict_kb["key_attack"] = 0
-            self.player_last_attack_time = time.time()
 
     def save_game(self, slot=1):
         if hasattr(self, 'save_system'):
@@ -498,7 +480,7 @@ class Game:
                         if o.animation.done:
                             self.throwable.remove(o)
 
-            self.attacking_update()
+            attacking_update(self)
 
             self.player.physics_process(self.tilemap, self.dict_kb)
             self.player.render(self.display, offset=render_scroll)

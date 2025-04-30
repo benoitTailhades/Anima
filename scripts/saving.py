@@ -2,6 +2,8 @@ import json
 import os
 import time
 
+from scripts.sound import set_game_volume
+
 
 class Save:
     def __init__(self, game):  # Initialize the class and ensure that save.py exist
@@ -92,7 +94,7 @@ class Save:
 
             if "settings" in save_data:
                 volume = save_data["settings"].get("volume", 0.5)
-                self.game.set_volume(volume)
+                set_game_volume(self.game, volume)
 
                 self.game.keyboard_layout = save_data["settings"].get("keyboard_layout", "qwerty")
 

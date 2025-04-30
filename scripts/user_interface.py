@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import cv2
 import os
-from scripts.sound import run_sound
+from scripts.sound import run_sound, set_game_volume
 from scripts.utils import load_images, load_image
 from scripts.text import load_game_font
 
@@ -335,7 +335,7 @@ class Menu:
             if self.slider_rect.collidepoint(mouse_pos):
                 volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
                 volume = max(0, min(1, volume))
-                self.game.set_volume(volume)
+                set_game_volume(self.game, volume)
             return True
         return False
 
@@ -375,7 +375,7 @@ class Menu:
 
         self.volume = (constrained_x - self.slider_rect.x) / self.slider_rect.width
         self.volume = max(0, min(1, self.volume))
-        self.game.set_volume(self.volume)
+        set_game_volume(self.game, self.volume)
 
     def _update_options_positions(self, current_screen_size):#keep in mind that we always have to modify the buttons size and positions when the screen is resized
         control_x = (current_screen_size[0] - 300) // 2

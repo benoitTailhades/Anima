@@ -28,3 +28,8 @@ def load_sounds(entity, sound_paths):#useful function to load sounds. And very u
                 entity.sounds[sound_key] = pygame.mixer.Sound(path)
             except Exception as e:
                 print(f"Erreur lors du chargement du son '{sound_key}': {e}")
+
+def set_game_volume(game, volume):
+    game.volume = max(0, min(1, volume))
+    if game.background_music:
+        game.background_music.set_volume(game.volume)

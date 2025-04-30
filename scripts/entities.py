@@ -442,3 +442,17 @@ def update_throwable_objects_action(game):
         elif o.grabbed:
             o.launch([game.player.last_direction, -1], 3.2)
             return
+
+def attacking_update(game):
+    game.attacking = ((game.dict_kb["key_attack"] == 1 and time.time() - game.player_last_attack_time >= 0.03)
+                      or game.player.action in ("attack/left", "attack/right")) and not game.player.is_stunned and not game.player_grabbing
+    if game.attacking and game.player.action == "attack/right" and game.player.get_direction("x") == -1:
+        game.attacking = False
+        game.dict_kb["key_attack"] = 0
+    elif game.attacking and game.player.action == "attack/left" and game.player.get_direction("x") == 1:
+        game.attacking = False
+        game.dict_kb["key_attack"] = 0
+
+    if game.attacking and game.player.animation.done:
+        game.dict_kb["key_attack"] = 0
+        game.player_last_attack_time = time.time()
