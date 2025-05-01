@@ -833,6 +833,7 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
             continue
 
+
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (1000, 600))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -847,6 +848,9 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
                 running = False
             elif event.type == py.MOUSEBUTTONDOWN:
                 running = False
+            elif event.type == py.KEYDOWN and event.key == py.K_SPACE:
+                running = False
+
         if not sound_running:
             run_sound(
                 "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
