@@ -257,7 +257,6 @@ class Game:
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
-
         self.teleporters = []
         for tp in self.tilemap.extract([('teleporter',0)], keep=True):
             self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp['id']))
@@ -288,8 +287,8 @@ class Game:
             self.bosses = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawners[map_id] = spawner["pos"].copy()
-                    self.spawner_pos[map_id] = spawner["pos"]
+                    self.spawners[str(map_id)] = spawner["pos"].copy()
+                    self.spawner_pos[str(map_id)] = spawner["pos"]
                     self.player.pos = spawner["pos"].copy()
                 elif spawner['variant'] == 1:
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
@@ -330,13 +329,13 @@ class Game:
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
-                    self.spawner_pos[map_id] = spawner["pos"]
-            self.player.pos = self.spawners[map_id].copy()
+                    self.spawner_pos[str(map_id)] = spawner["pos"]
+            self.player.pos = self.spawners[str(map_id)].copy()
             self.tilemap.extract([('lever', 0),('lever', 1)])
             self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
-            self.bosses = self.levels[map_id]["bosses"].copy()
+            self.bosses = self.levels[map_id]["bosses"].copy() if map_id in self.boss_levels else []
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
@@ -356,7 +355,7 @@ class Game:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
                 if self.player.get_direction("x") != 0:
-                    self.spawners[self.level] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
+                    self.spawners[str(self.level)] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
@@ -395,9 +394,9 @@ class Game:
 
     def update_spawn_point(self):
         if self.level in (0, 1, 2):
-            self.spawn_point = {"pos": self.spawner_pos[0], "level": 0}
+            self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
         elif self.level in (3, 4, 5):
-            self.spawn_point = {"pos": self.spawner_pos[3], "level": 3}
+            self.spawn_point = {"pos": self.spawner_pos['3'], "level": 3}
 
     def run(self):
         while True:

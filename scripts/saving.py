@@ -20,10 +20,12 @@ class Save:
             "player": {
                 "position": self.game.player.pos,
                 "hp": self.game.player_hp,
-                "spawn_point": self.game.spawn_point
+                "spawn_point": self.game.spawn_point,
+                "spawners": self.game.spawners,
+                "spawner_pos": self.game.spawner_pos
             },
             "level": self.game.level,
-            "charged_levels": self.game.charged_levels,
+            "charged_levels": self.game.charged_levels.copy(),
             "levers": {lvl:[] for lvl in self.game.levels},  # Store lever states
             "enemies": {lvl:[] for lvl in self.game.levels},
             "throwable": [],  # Store throwable objects
@@ -42,7 +44,8 @@ class Save:
                 lever_data = {
                     "position": lever.pos,
                     "state": lever.state,
-                    "id": lever.id if hasattr(lever, "id") else 0
+                    "id": lever.id if hasattr(lever, "id") else 0,
+                    "activated": lever.activated
                 }
                 save_data["levers"][lvl].append(lever_data)
 
@@ -116,18 +119,26 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
+            self.game.load_level(level)
+            self.game.charged_levels = save_data["charged_levels"]
             for l in self.game.levels:
                 if l not in save_data["charged_levels"]:
                     self.game.levels[l]["charged"] = False
-            self.game.load_level(level)
+                else:
+                    self.game.levels[l]["charged"] = True
+            print(self.game.levels)
 
             if "player" in save_data:
                 if "position" in save_data["player"]:
                     self.game.player.pos = save_data["player"]["position"]
                 if "hp" in save_data["player"]:
                     self.game.player_hp = save_data["player"]["hp"]
+                if "spawners" in save_data["player"]:
+                    self.game.spawners = save_data["player"]["spawners"]
                 if "spawn_point" in save_data["player"]:
                     self.game.spawn_point = save_data["player"]["spawn_point"]
+                if "spawner_pos" in save_data["player"]:
+                    self.game.spawner_pos = save_data["player"]["spawner_pos"]
 
             # Load throwable objects if present in save data
             if "throwable" in save_data and isinstance(save_data["throwable"], list):
@@ -173,8 +184,7 @@ class Save:
                 # Load door states if present in save data
                 if "doors" in save_data and isinstance(save_data["doors"], dict):
                     if save_data["doors"][str(lvl)]:
-
-                        backup_doors = self.game.levels[lvl]["doors"].copy()
+                        backup_doors = self.game.levels[lvl]["doors"].copy() if "doors" in self.game.levels[lvl] else []
                         self.game.levels[lvl]['doors'] = []
 
                         try:
@@ -211,11 +221,13 @@ class Save:
                             self.game.levels[lvl]['doors'] = backup_doors
                             import traceback
                             traceback.print_exc()
+                    else:
+                        self.game.levels[lvl]['doors'] = []
                 # Load lever states if present in the save data
                 if "levers" in save_data and isinstance(save_data["levers"], dict):
                     # Clear existing levers if needed
                     if save_data["levers"][str(lvl)]:
-                        backup_levers = self.game.levels[lvl]['levers'].copy()
+                        backup_levers = self.game.levels[lvl]['levers'].copy() if "levers" in self.game.levels[lvl] else []
                         self.game.levels[lvl]['levers'] = []
 
                         try:
@@ -232,11 +244,13 @@ class Save:
                                 if matching_lever:
                                     # Update existing lever state
                                     matching_lever.state = lever_data["state"]
+                                    matching_lever.activated = lever_data["activated"]
                                     self.game.levels[lvl]['levers'].append(matching_lever)
                                 else:
                                     # Create a new lever if needed
                                     from scripts.activators import Lever
                                     new_lever = Lever(self.game, lever_data["position"], i=lever_data.get("id", 0))
+                                    new_lever.activated = lever_data["activated"]
                                     new_lever.state = lever_data["state"]
                                     self.game.levels[lvl]['levers'].append(new_lever)
 
@@ -245,11 +259,13 @@ class Save:
                             self.game.levels[lvl]['levers'] = backup_levers
                             import traceback
                             traceback.print_exc()
+                    else:
+                        self.game.levels[lvl]['levers'] = []
 
                 if "enemies" in save_data and isinstance(save_data["enemies"], dict):
                     if save_data["enemies"][str(lvl)]:
-                        backup_enemies = self.game.levels[lvl]['enemies'].copy()
-                        self.game.levels[lvl]['enemies'].clear()
+                        backup_enemies = save_data["enemies"][str(lvl)].copy() if "enemies" in self.game.levels[lvl] else []
+                        self.game.levels[lvl]['enemies'] = []
 
                         try:
                             from scripts.entities import Enemy
@@ -292,6 +308,8 @@ class Save:
                             self.game.levels[lvl]['enemies'] = backup_enemies
                             import traceback
                             traceback.print_exc()
+                    else:
+                        self.game.levels[lvl]['enemies'] = []
 
             # Update interactable objects list to include any newly loaded throwable objects
             self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.levers.copy()
