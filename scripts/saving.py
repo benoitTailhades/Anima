@@ -24,7 +24,10 @@ class Save:
             },
             "level": self.game.level,
             "charged_levels": self.game.charged_levels,
+            "levers": [],  # Store lever states
             "enemies": [],
+            "throwable": [],  # Store throwable objects
+            "doors": [],  # Store door states
             "settings": {
                 "volume": self.game.volume,
                 "keyboard_layout": self.game.keyboard_layout,
@@ -32,6 +35,38 @@ class Save:
             },
             "timestamp": time.time(),
         }
+
+        # Save lever states
+        for lever in self.game.levers:
+            lever_data = {
+                "position": lever.pos,
+                "state": lever.state,
+                "id": lever.id if hasattr(lever, "id") else 0
+            }
+            save_data["levers"].append(lever_data)
+
+        # Save throwable objects
+        for obj in self.game.throwable:
+            throwable_data = {
+                "position": obj.pos,
+                "velocity": obj.velocity,
+                "action": obj.action,
+                "grabbed": obj.grabbed if hasattr(obj, "grabbed") else False,
+                "type": obj.type if hasattr(obj, "type") else "blue_rock"
+            }
+            save_data["throwable"].append(throwable_data)
+
+        # Save door states
+        for door in self.game.doors:
+            door_data = {
+                "position": door.pos,
+                "size": door.size,
+                "type": door.type,
+                "id": door.id if hasattr(door, "id") else None,
+                "opened": door.opened,
+                "opening_speed": door.opening_speed if hasattr(door, "opening_speed") else 1
+            }
+            save_data["doors"].append(door_data)
 
         for enemy in self.game.enemies:
             attributes = {}
@@ -92,6 +127,111 @@ class Save:
                 if "spawn_point" in save_data["player"]:
                     self.game.spawn_point = save_data["player"]["spawn_point"]
 
+            # Load throwable objects if present in save data
+            if "throwable" in save_data and isinstance(save_data["throwable"], list):
+                # Clear existing throwable objects
+                if save_data["throwable"]:
+                    backup_throwable = self.game.throwable.copy()
+                    self.game.throwable = []
+
+                    try:
+                        # Import the Throwable class
+                        from scripts.entities import Throwable
+
+                        # Recreate throwable objects
+                        for obj_data in save_data["throwable"]:
+                            throwable_type = obj_data.get("type", "blue_rock")
+                            new_obj = Throwable(self.game, throwable_type, obj_data["position"], (16, 16))
+
+                            # Set additional properties
+                            new_obj.velocity = obj_data.get("velocity", [0, 0])
+                            new_obj.action = obj_data.get("action", "intact")
+                            if hasattr(new_obj, "grabbed"):
+                                new_obj.grabbed = obj_data.get("grabbed", False)
+
+                            self.game.throwable.append(new_obj)
+                    except Exception as e:
+                        print(f"Error restoring throwable objects: {e}")
+                        self.game.throwable = backup_throwable
+                        import traceback
+                        traceback.print_exc()
+
+            # Load door states if present in save data
+            if "doors" in save_data and isinstance(save_data["doors"], list):
+                if save_data["doors"]:
+                    backup_doors = self.game.doors.copy()
+                    self.game.doors = []
+
+                    try:
+                        from scripts.doors import Door
+
+                        for door_data in save_data["doors"]:
+                            # Find if the door already exists in the level (by position and type)
+                            matching_door = None
+                            for existing_door in backup_doors:
+                                if (existing_door.pos == door_data["position"] and
+                                        existing_door.type == door_data["type"]):
+                                    matching_door = existing_door
+                                    break
+
+                            if matching_door:
+                                # Update existing door state
+                                matching_door.opened = door_data["opened"]
+                                self.game.doors.append(matching_door)
+                            else:
+                                # Create a new door if needed
+                                door_id = door_data.get("id")
+                                new_door = Door(
+                                    door_data["size"],
+                                    door_data["position"],
+                                    door_data["type"],
+                                    door_id,
+                                    door_data["opened"],
+                                    door_data.get("opening_speed", 1),
+                                    self.game
+                                )
+                                self.game.doors.append(new_door)
+                    except Exception as e:
+                        print(f"Error restoring doors: {e}")
+                        self.game.doors = backup_doors
+                        import traceback
+                        traceback.print_exc()
+
+            # Load lever states if present in the save data
+            if "levers" in save_data and isinstance(save_data["levers"], list):
+                # Clear existing levers if needed
+                if save_data["levers"]:
+                    backup_levers = self.game.levers.copy()
+                    self.game.levers = []
+
+                    try:
+                        # Update lever states
+                        for lever_data in save_data["levers"]:
+                            # Find if the lever already exists in the level (by position and ID)
+                            matching_lever = None
+                            for existing_lever in backup_levers:
+                                if (existing_lever.pos == lever_data["position"] and
+                                        (not hasattr(existing_lever, "id") or existing_lever.id == lever_data["id"])):
+                                    matching_lever = existing_lever
+                                    break
+
+                            if matching_lever:
+                                # Update existing lever state
+                                matching_lever.state = lever_data["state"]
+                                self.game.levers.append(matching_lever)
+                            else:
+                                # Create a new lever if needed
+                                from scripts.activators import Lever
+                                new_lever = Lever(self.game, lever_data["position"], i=lever_data.get("id", 0))
+                                new_lever.state = lever_data["state"]
+                                self.game.levers.append(new_lever)
+
+                    except Exception as e:
+                        print(f"Error restoring levers: {e}")
+                        self.game.levers = backup_levers
+                        import traceback
+                        traceback.print_exc()
+
             if "settings" in save_data:
                 volume = save_data["settings"].get("volume", 0.5)
                 set_game_volume(self.game, volume)
@@ -150,6 +290,8 @@ class Save:
                         import traceback
                         traceback.print_exc()
 
+            # Update interactable objects list to include any newly loaded throwable objects
+            self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.levers.copy()
 
             print(f"Game loaded successfully from {save_path}")
             return True
@@ -181,6 +323,10 @@ class Save:
                         "level": save_data.get("level", "Unknown"),
                         "player_hp": save_data["player"].get("hp", 0),
                         "enemy_count": len(save_data.get("enemies", [])),
+                        "throwable_count": len(save_data.get("throwable", [])),  # Count of throwable objects
+                        "doors_count": len(save_data.get("doors", [])),  # Count of doors
+                        "open_doors": sum(1 for door in save_data.get("doors", []) if door.get("opened", False)),
+                        # Count of open doors
                         "keyboard_layout": save_data.get("settings", {}).get("keyboard_layout", "unknown")
                     })
                 except Exception as e:
@@ -199,7 +345,8 @@ class Save:
             print(f"No save found in the slot {slot}")
             return False
 
-    def get_latest_save(self):  # check, among the list of saves which one is the latest. It will be used in the main in order to load the game where the user let it when he closed it
+    def get_latest_save(
+            self):  # check, among the list of saves which one is the latest. It will be used in the main in order to load the game where the user let it when he closed it
         saves = self.list_saves()
         if not saves:
             return None
