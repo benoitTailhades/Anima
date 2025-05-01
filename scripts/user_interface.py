@@ -832,7 +832,7 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
         if not ret:
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
             continue
-            print("no")
+
 
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (1000, 600))
