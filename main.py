@@ -322,6 +322,11 @@ class Game:
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.scroll = [self.player.pos[0], self.player.pos[1]]
 
+            self.levels[self.level]["enemies"] = self.enemies.copy()
+            self.levels[self.level]["bosses"] = self.bosses.copy()
+            self.levels[self.level]["levers"] = self.levers.copy()
+            self.levels[self.level]["doors"] = self.doors.copy()
+
         else:
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
                 if spawner['variant'] == 0:
