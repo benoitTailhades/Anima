@@ -6,9 +6,10 @@ from scripts.particle import Particle
 from scripts.display import move_visual, screen_shake
 
 class Lever:
-    def __init__(self, game, pos, size=(16, 16), i=0):#Define basic attributes, that will be useful to track multiple elements from the lever(Position, activated, etc)
+    def __init__(self, game, pos, a_type, size=(16, 16), i=0):#Define basic attributes, that will be useful to track multiple elements from the lever(Position, activated, etc)
         self.game = game
         self.pos = pos
+        self.type = a_type
         self.rect = pygame.Rect(pos[0], pos[1], size[0], size[1])
         self.state = 0
         self.last_interaction_time = 0
@@ -30,7 +31,7 @@ class Lever:
         return can_interact and self.activated
 
     def render(self, surface, offset=(0, 0)):#Just display the marvellous lever design of our dear designer
-        surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_lever'][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_' + self.type][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
 class Teleporter:
     def __init__(self, game, pos, size, t_id):
@@ -75,8 +76,8 @@ def update_activators_actions(game, level):
     for lever in game.levers:
         if lever.can_interact(game.player.rect()):
             lever_id = str(lever.id)
-            if lever_id in game.activators_actions[str(level)]["levers"]:
-                action = game.activators_actions[str(level)]["levers"][lever_id]
+            if lever_id in game.activators_actions[str(level)][lever.type+'s']:
+                action = game.activators_actions[str(level)][lever.type+'s'][lever_id]
 
                 if action["type"] == "visual_and_door":
                     for door in game.doors:

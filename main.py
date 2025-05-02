@@ -64,7 +64,7 @@ class Game:
         self.b_info = {"green_cave/0":{"size":self.display.get_size()}}
 
         self.environments = {"green_cave":(0, 1, 2),
-                             "blue_cave": (3,)}
+                             "blue_cave": (3,4,5)}
 
         self.spawners = {}
 
@@ -292,7 +292,7 @@ class Game:
 
             self.levers = []
             for lever in self.tilemap.extract([('lever', 0),('lever', 1)]):
-                l = Lever(self, lever['pos'], i=lever["id"])
+                l = Lever(self, lever['pos'], lever['type'], i=lever["id"])
                 l.state = lever["variant"]
                 self.levers.append(l)
 

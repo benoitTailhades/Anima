@@ -44,6 +44,7 @@ class Save:
                 lever_data = {
                     "position": lever.pos,
                     "state": lever.state,
+                    "type": lever.type,
                     "id": lever.id if hasattr(lever, "id") else 0,
                     "activated": lever.activated
                 }
@@ -241,7 +242,7 @@ class Save:
                                 else:
                                     # Create a new lever if needed
                                     from scripts.activators import Lever
-                                    new_lever = Lever(self.game, lever_data["position"], i=lever_data.get("id", 0))
+                                    new_lever = Lever(self.game, lever_data["position"],lever_data['type'], i=lever_data.get("id", 0))
                                     new_lever.activated = lever_data["activated"]
                                     new_lever.state = lever_data["state"]
                                     self.game.levels[lvl]['levers'].append(new_lever)
