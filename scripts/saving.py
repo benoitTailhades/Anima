@@ -126,7 +126,6 @@ class Save:
                     self.game.levels[l]["charged"] = False
                 else:
                     self.game.levels[l]["charged"] = True
-            print(self.game.levels)
 
             if "player" in save_data:
                 if "position" in save_data["player"]:
@@ -337,19 +336,25 @@ class Save:
 
                     from datetime import datetime
                     save_date = datetime.fromtimestamp(save_data["timestamp"]).strftime("%Y-%m-%d")
-
-                    saves.append({
+                    level = save_data.get("level", "Unknown")
+                    save_info = {
                         "slot": slot,
                         "date": save_date,
-                        "level": save_data.get("level", "Unknown"),
+                        "level": level,
                         "player_hp": save_data["player"].get("hp", 0),
-                        "enemy_count": len(save_data.get("enemies", [])),
+                        "enemy_count": len(save_data.get("enemies", {})[str(level)]),
                         "throwable_count": len(save_data.get("throwable", [])),  # Count of throwable objects
-                        "doors_count": len(save_data.get("doors", [])),  # Count of doors
-                        "open_doors": sum(1 for door in save_data.get("doors", {})["0"] if door.get("opened", False)),
+                        "doors_count": len(save_data.get("doors", {})[str(level)]),  # Count of doors
+                        "open_doors": 0,
                         # Count of open doors
                         "keyboard_layout": save_data.get("settings", {}).get("keyboard_layout", "unknown")
-                    })
+                    }
+                    for lvl in self.game.levels:
+                        for door in save_data.get("doors", {})[str(lvl)]:
+                            if door.get("opened", False):
+                                save_info["open_doors"] += 1
+
+                    saves.append(save_info)
                 except Exception as e:
                     print(f"Error reading save file {file}: {e}")
 
@@ -373,3 +378,15 @@ class Save:
 
         saves.sort(key=lambda x: x["date"], reverse=True)
         return saves[0]["slot"]
+
+def save_game(game, slot=1):
+    if hasattr(game, 'save_system'):
+        success = game.save_system.save_game(slot)
+        return success
+    return False
+
+def load_game(game, slot=1):
+    if hasattr(game, 'save_system'):
+        success = game.save_system.load_game(slot)
+        return success
+    return False

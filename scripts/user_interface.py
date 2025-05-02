@@ -6,7 +6,7 @@ import os
 from scripts.sound import run_sound, set_game_volume
 from scripts.utils import load_images, load_image
 from scripts.text import load_game_font
-
+from scripts.saving import save_game, load_game
 
 class Menu:
 
@@ -572,7 +572,7 @@ class Menu:
 
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            if self.game.save_game(slot):
+                            if save_game(self.game, slot):
                                 saves = self.game.save_system.list_saves()
                                 used_slots = {save["slot"]: save for save in saves}
 
@@ -697,7 +697,7 @@ class Menu:
 
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            if self.game.load_game(slot):
+                            if load_game(self.game, slot):
                                 return True
 
                     if back_rect.collidepoint(mouse_pos):
@@ -800,7 +800,7 @@ class Menu:
                             if text == "RESUME":
                                 latest_save = self.game.save_system.get_latest_save()
                                 if latest_save:
-                                    self.game.load_game(latest_save)
+                                    load_game(self.game, latest_save)
                                 return True
                             elif text == "LOAD":
                                 load_result = self.load_menu()

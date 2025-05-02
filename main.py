@@ -241,18 +241,6 @@ class Game:
         if hasattr(self, "selected_language") and self.selected_language in self.languages:
             self.selected_language = self.selected_language
 
-    def save_game(self, slot=1):
-        if hasattr(self, 'save_system'):
-            success = self.save_system.save_game(slot)
-            return success
-        return False
-
-    def load_game(self, slot=1):
-        if hasattr(self, 'save_system'):
-            success = self.save_system.load_game(slot)
-            return success
-        return False
-
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
         self.light_emitting_tiles = []
@@ -471,10 +459,10 @@ class Game:
             for spike in self.tilemap.extract(s, keep=True):
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
                     self.player_hp = 0
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/3)):
+                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)
