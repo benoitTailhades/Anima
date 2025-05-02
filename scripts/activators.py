@@ -63,7 +63,7 @@ def update_teleporter(game, t_id):
             pos = (game.player.rect().x + random.random() * game.player.rect().width,
                    game.player.rect().y + 5 + random.random() * game.player.rect().height)
             game.particles.append(
-                Particle(game, 'crystal_fragment', pos, velocity=[-0.1, 4], frame=0))
+                Particle(game, 'crystal_fragment', pos, velocity=[-0.1, -4], frame=0))
             pass
         else:
             game.last_teleport_time = time.time()
