@@ -21,9 +21,9 @@ class Save:
                 "position": self.game.player.pos,
                 "hp": self.game.player_hp,
                 "spawn_point": self.game.spawn_point,
-                "spawners": self.game.spawners,
-                "spawner_pos": self.game.spawner_pos
             },
+            "spawners": self.game.spawners,
+            "spawner_pos": self.game.spawner_pos,
             "level": self.game.level,
             "charged_levels": self.game.charged_levels.copy(),
             "levers": {lvl:[] for lvl in self.game.levels},  # Store lever states
@@ -119,7 +119,6 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
-            self.game.load_level(level)
             self.game.charged_levels = save_data["charged_levels"]
             for l in self.game.levels:
                 if l not in save_data["charged_levels"]:
@@ -127,23 +126,16 @@ class Save:
                 else:
                     self.game.levels[l]["charged"] = True
 
-            if "player" in save_data:
-                if "position" in save_data["player"]:
-                    self.game.player.pos = save_data["player"]["position"]
-                if "hp" in save_data["player"]:
-                    self.game.player_hp = save_data["player"]["hp"]
-                if "spawners" in save_data["player"]:
-                    self.game.spawners = save_data["player"]["spawners"]
-                if "spawn_point" in save_data["player"]:
-                    self.game.spawn_point = save_data["player"]["spawn_point"]
-                if "spawner_pos" in save_data["player"]:
-                    self.game.spawner_pos = save_data["player"]["spawner_pos"]
+            if "spawner_pos" in save_data:
+                self.game.spawner_pos = save_data["spawner_pos"]
+            if "spawners" in save_data:
+                self.game.spawners = save_data["spawners"]
 
             # Load throwable objects if present in save data
             if "throwable" in save_data and isinstance(save_data["throwable"], list):
                 # Clear existing throwable objects
                 if save_data["throwable"]:
-                    backup_throwable = self.game.throwable.copy()
+                    backup_throwable = self.game.throwable.copy() if hasattr(self.game, "throwable") else []
                     self.game.throwable = []
 
                     try:
@@ -210,10 +202,11 @@ class Save:
                                         door_data["position"],
                                         door_data["type"],
                                         door_id,
-                                        door_data["opened"],
+                                        False,
                                         door_data.get("opening_speed", 1),
                                         self.game
                                     )
+                                    new_door.opened = door_data["opened"]
                                     self.game.levels[lvl]['doors'].append(new_door)
                         except Exception as e:
                             print(f"Error restoring doors: {e}")
@@ -310,6 +303,15 @@ class Save:
                     else:
                         self.game.levels[lvl]['enemies'] = []
 
+            self.game.scroll = list(save_data["player"]["position"])
+            self.game.load_level(level)
+            if "player" in save_data:
+                if "position" in save_data["player"]:
+                    self.game.player.pos = save_data["player"]["position"]
+                if "hp" in save_data["player"]:
+                    self.game.player_hp = save_data["player"]["hp"]
+                if "spawn_point" in save_data["player"]:
+                    self.game.spawn_point = save_data["player"]["spawn_point"]
             # Update interactable objects list to include any newly loaded throwable objects
             self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.levers.copy()
 

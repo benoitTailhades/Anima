@@ -76,7 +76,8 @@ class Game:
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
                             2:{"darkness_level":180, "light_radius": 200},
-                            3:{"darkness_level":180, "light_radius": 200}}
+                            3:{"darkness_level":180, "light_radius": 200},
+                            4: {"darkness_level": 180, "light_radius": 200}}
 
         self.assets = {
 
@@ -326,7 +327,6 @@ class Game:
             self.bosses = self.levels[map_id]["bosses"].copy() if map_id in self.boss_levels else []
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
-
 
         self.interactable = self.teleporters.copy() + self.throwable.copy() + self.levers.copy()
         self.cutscene = False

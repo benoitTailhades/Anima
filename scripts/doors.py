@@ -40,8 +40,11 @@ class Door:
             self.opened = False
             if time.time() - self.last_time_interacted >= self.opening_speed:
                 self.set_action("closed")
+
         if not self.opened and self.action == "opened":
             self.set_action("closed")
+        elif self.opened and self.action != "opened":
+            self.set_action("opened")
 
 
     def open(self):
