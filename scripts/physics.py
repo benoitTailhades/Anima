@@ -14,7 +14,7 @@ import random
 from scripts.particle import Particle
 from scripts.tilemap import Tilemap
 from scripts.sound import *
-from scripts.entities import deal_knockback
+from scripts.entities import deal_knockback, update_throwable_objects_action
 
 class PhysicsPlayer:
     def __init__(self, game, tilemap, pos, size):
@@ -431,6 +431,8 @@ class PhysicsPlayer:
         if not self.anti_dash_buffer:
             self.dash_direction = [self.get_direction("x"), max(0, self.get_direction("y"))]
             if self.dict_kb["key_dash"] == 1 and self.dash_cooldown_cur == 0 and self.dash_direction != [0, -1]:
+                if self.game.player_grabbing:
+                    update_throwable_objects_action(self.game)
                 if self.dash_amt > 0:
                     if self.dash_direction == [0, 0]:
                         self.dash_direction[0] = self.last_direction
