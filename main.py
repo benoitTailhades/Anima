@@ -202,6 +202,8 @@ class Game:
 
         self.particles = []
 
+        self.boss_music_active = False
+
         self.selected_language = "English"
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
@@ -249,7 +251,34 @@ class Game:
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
         self.teleporters = []
-        for tp in self.tilemap.extract([('teleporter',0), ('progressive_teleporter', 0)], keep=True):
+
+        # Check if we're entering a boss level
+        entering_boss_level = map_id in self.boss_levels
+        leaving_boss_level = self.level in self.boss_levels and map_id not in self.boss_levels
+
+        if entering_boss_level:
+            if self.sound_running and hasattr(self, 'background_music'):
+                self.background_music.stop()
+                try:
+                    self.background_music = pygame.mixer.Sound("assets/sounds/boss1.wav")
+                    self.background_music.set_volume(self.volume)
+                    self.background_music.play(loops=-1)
+                    self.boss_music_active = True  # Set flag when boss music is playing
+                except Exception as e:
+                    print(f"Error loading boss music: {e}")
+        elif leaving_boss_level:
+            if self.sound_running and hasattr(self, 'background_music'):
+                self.background_music.stop()
+                try:
+                    main_theme_path = "assets/sounds/maintheme.wav"
+                    self.background_music = pygame.mixer.Sound(main_theme_path)
+                    self.background_music.set_volume(self.volume)
+                    self.background_music.play(loops=-1)
+                    self.boss_music_active = False  # Reset flag when leaving boss level
+                except Exception as e:
+                    print(f"Error loading main theme: {e}")
+
+        for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
             self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp["type"], tp['id']))
 
 
@@ -489,6 +518,17 @@ class Game:
                     for enemy in self.enemies:
                         enemy.hp = 0
                     if boss.animation.done:
+                        if self.boss_music_active and self.sound_running:
+                            self.boss_music_active = False
+                            self.background_music.stop()
+                            try:
+                                main_theme_path = "assets/sounds/maintheme.wav"
+                                self.background_music = pygame.mixer.Sound(main_theme_path)
+                                self.background_music.set_volume(self.volume)
+                                self.background_music.play(loops=-1)
+                            except Exception as e:
+                                print(f"Error loading main theme after boss: {e}")
+
                         self.bosses.remove(boss)
                         self.levels[self.level]["charged"] = True
                         self.charged_levels.append(self.level)
@@ -645,5 +685,6 @@ class Game:
 
             pygame.display.update()
             self.clock.tick(60)
+
 
 Game().run()
