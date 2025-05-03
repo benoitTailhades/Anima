@@ -14,6 +14,7 @@ import random
 from scripts.particle import Particle
 from scripts.tilemap import Tilemap
 from scripts.sound import *
+from scripts.entities import deal_knockback
 
 class PhysicsPlayer:
     def __init__(self, game, tilemap, pos, size):
@@ -170,7 +171,7 @@ class PhysicsPlayer:
 
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
-                    self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+                    self.velocity = list(deal_knockback(self.game, self.stunned_by, self, 4))
 
                 # Jouer le son de stun
                 if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
