@@ -28,7 +28,7 @@ class PhysicsPlayer:
         # Constants for movement
         self.SPEED = 2.5
         self.DASH_SPEED = 6
-        self.JUMP_VELOCITY = -5.8
+        self.JUMP_VELOCITY = -6.5
         self.DASHTIME = 12
         self.JUMPTIME = 10
         self.DASH_COOLDOWN = 50

@@ -220,7 +220,7 @@ def display_level_bg(game, map_id):
         display_bg(game.display, game.assets['green_cave/1'], (-game.scroll[0] / 10, -20))
         display_bg(game.display, game.assets['green_cave/2'], (-game.scroll[0] / 10, -20))
         display_bg(game.display, game.assets['green_cave/3'], (game.scroll[0] / 50, -20))
-    if map_id == 3:
+    if map_id in (3,4):
         game.display.blit(game.assets['blue_cave/0'], (0, 0))
         display_bg(game.display, game.assets['blue_cave/1'], (-game.scroll[0] / 10, 0))
         display_bg(game.display, game.assets['blue_cave/2'], (-game.scroll[0] / 30, 0))
