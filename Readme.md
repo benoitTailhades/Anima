@@ -1,6 +1,9 @@
 # Anima  
 Project Group - Projet Transverse EFREI 2025  
 By François-Xavier Sabatier, Benoit Tailhades, Raphaël Cayeux, Aymeric Danlos and Loïc Giannini  
+
+
+[![Regarder la vidéo](https://img.youtube.com/vi/vT6RiCA_D9Q/maxresdefault.jpg)](https://youtu.be/jJIcrVEib6A)
  
 ## Concept  
 “What if the last millisecond of your life was your only chance for redemption?”
