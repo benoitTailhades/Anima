@@ -313,7 +313,7 @@ class PhysicsPlayer:
                 animation_applied = True
             # Falling
             else:
-                if self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1) or self.force_movement["r"][0]:
+                if (self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1) or self.force_movement["r"][0]) and not self.force_movement["l"][0]:
                     self.set_action('falling/right')
                 elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1) or self.force_movement["l"][0]:
                     self.set_action('falling/left')
