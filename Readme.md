@@ -2,6 +2,9 @@
 Project Group - Projet Transverse EFREI 2025  
 By François-Xavier Sabatier, Benoit Tailhades, Raphaël Cayeux, Aymeric Danlos and Loïc Giannini  
 
+[![Watch the video](https://img.youtube.com/vi/jJIcrVEib6A/maxresdefault.jpg)](https://youtu.be/jJIcrVEib6A)
+
+### [Watch this video on YouTube](https://youtu.be/jJIcrVEib6A)
 
 ## Concept  
 “What if the last millisecond of your life was your only chance for redemption?”
