@@ -131,7 +131,7 @@ class Game:
         self.levels = {i:{"charged": False} for i in range(len(os.listdir("data/maps")))}
         self.charged_levels = []
 
-        self.levers = []
+        self.activators = []
         self.activators_actions = load_activators_actions()
         self.boss_levels = [1]
         self.in_boss_level = False
@@ -292,11 +292,11 @@ class Game:
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
 
-            self.levers = []
-            for lever in self.tilemap.extract([('lever', 0), ('lever', 1), ('button', 0)]):
-                l = Lever(self, lever['pos'], lever['type'], i=lever["id"])
-                l.state = lever["variant"]
-                self.levers.append(l)
+            self.activators = []
+            for activator in self.tilemap.extract([('lever', 0), ('lever', 1), ('button', 0)]):
+                a = Activator(self, activator['pos'], activator['type'], i=activator["id"])
+                a.state = activator["variant"]
+                self.activators.append(a)
 
             self.doors = []
             for door in self.tilemap.extract(self.doors_id_pairs):
@@ -314,7 +314,7 @@ class Game:
 
             self.levels[self.level]["enemies"] = self.enemies.copy()
             self.levels[self.level]["bosses"] = self.bosses.copy()
-            self.levels[self.level]["levers"] = self.levers.copy()
+            self.levels[self.level]["activators"] = self.activators.copy()
             self.levels[self.level]["doors"] = self.doors.copy()
 
         else:
@@ -327,10 +327,10 @@ class Game:
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
             self.bosses = self.levels[map_id]["bosses"].copy() if map_id in self.boss_levels and map_id not in self.charged_levels else []
-            self.levers = self.levels[map_id]["levers"].copy()
+            self.activators = self.levels[map_id]["activators"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
-        self.interactable = self.teleporters.copy() + self.throwable.copy() + self.levers.copy()
+        self.interactable = self.teleporters.copy() + self.throwable.copy() + self.activators.copy()
         self.cutscene = False
         self.particles = []
         self.sparks = []
@@ -434,8 +434,8 @@ class Game:
 
             self.tilemap.render(self.display, offset=render_scroll)
 
-            for lever in self.levers:
-                lever.render(self.display, offset=render_scroll)
+            for activator in self.activators:
+                activator.render(self.display, offset=render_scroll)
 
             for enemy in self.enemies.copy():
                 enemy.update(self.tilemap, (0, 0))
@@ -566,7 +566,7 @@ class Game:
 
             self.levels[self.level]["enemies"] = self.enemies.copy()
             self.levels[self.level]["bosses"] = self.bosses.copy()
-            self.levels[self.level]["levers"] = self.levers.copy()
+            self.levels[self.level]["activators"] = self.activators.copy()
             self.levels[self.level]["doors"] = self.doors.copy()
 
             if self.transition:

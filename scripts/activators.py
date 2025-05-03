@@ -5,7 +5,7 @@ import random
 from scripts.particle import Particle
 from scripts.display import move_visual, screen_shake
 
-class Lever:
+class Activator:
     def __init__(self, game, pos, a_type, size=(16, 16), i=0):#Define basic attributes, that will be useful to track multiple elements from the lever(Position, activated, etc)
         self.game = game
         self.pos = pos
@@ -77,27 +77,27 @@ def update_teleporter(game, t_id):
             game.tp_id = None
 
 def update_activators_actions(game, level):
-    for lever in game.levers:
-        if lever.can_interact(game.player.rect()):
-            lever_id = str(lever.id)
-            if lever_id in game.activators_actions[str(level)][lever.type+'s']:
-                action = game.activators_actions[str(level)][lever.type+'s'][lever_id]
+    for activator in game.activators:
+        if activator.can_interact(game.player.rect()):
+            activator_id = str(activator.id)
+            if activator_id in game.activators_actions[str(level)][activator.type+'s']:
+                action = game.activators_actions[str(level)][activator.type+'s'][activator_id]
 
                 if action["type"] == "visual_and_door":
                     for door in game.doors:
                         if door.id == action["door_id"]:
-                            lever.toggle()
+                            activator.toggle()
                             move_visual(game, action["visual_duration"], door.pos)
-                            lever.activated = False
+                            activator.activated = False
                             door.open()
                     screen_shake(game, 10)
 
                 if action["type"] == "improve_tp_progress":
                     for tp in game.teleporters:
                         if tp.id == action["tp_id"]:
-                            lever.toggle()
+                            activator.toggle()
                             move_visual(game, 1, tp.pos)
-                            lever.activated = False
+                            activator.activated = False
                             tp.progress += action["amount"]
 
     for tp in game.teleporters:

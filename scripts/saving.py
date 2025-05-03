@@ -26,7 +26,7 @@ class Save:
             "spawner_pos": self.game.spawner_pos,
             "level": self.game.level,
             "charged_levels": self.game.charged_levels.copy(),
-            "levers": {lvl:[] for lvl in self.game.levels},  # Store lever states
+            "activators": {lvl:[] for lvl in self.game.levels},  # Store activators states
             "enemies": {lvl:[] for lvl in self.game.levels},
             "throwable": [],  # Store throwable objects
             "doors": {lvl:[] for lvl in self.game.levels},  # Store door states
@@ -38,17 +38,16 @@ class Save:
             "timestamp": time.time(),
         }
 
-        # Save lever states
         for lvl in self.game.charged_levels:
-            for lever in self.game.levels[lvl]["levers"].copy():
-                lever_data = {
-                    "position": lever.pos,
-                    "state": lever.state,
-                    "type": lever.type,
-                    "id": lever.id if hasattr(lever, "id") else 0,
-                    "activated": lever.activated
+            for activator in self.game.levels[lvl]["activators"].copy():
+                activator_data = {
+                    "position": activator.pos,
+                    "state": activator.state,
+                    "type": activator.type,
+                    "id": activator.id if hasattr(activator, "id") else 0,
+                    "activated": activator.activated
                 }
-                save_data["levers"][lvl].append(lever_data)
+                save_data["activators"][lvl].append(activator_data)
 
             # Save door states
             for door in self.game.levels[lvl]["doors"].copy():
@@ -216,44 +215,44 @@ class Save:
                             traceback.print_exc()
                     else:
                         self.game.levels[lvl]['doors'] = []
-                # Load lever states if present in the save data
-                if "levers" in save_data and isinstance(save_data["levers"], dict):
-                    # Clear existing levers if needed
-                    if save_data["levers"][str(lvl)]:
-                        backup_levers = self.game.levels[lvl]['levers'].copy() if "levers" in self.game.levels[lvl] else []
-                        self.game.levels[lvl]['levers'] = []
+
+                if "activators" in save_data and isinstance(save_data["activators"], dict):
+                    # Clear existing activators if needed
+                    if save_data["activators"][str(lvl)]:
+                        backup_activators = self.game.levels[lvl]['activators'].copy() if "activators" in self.game.levels[lvl] else []
+                        self.game.levels[lvl]['activators'] = []
 
                         try:
-                            # Update lever states
-                            for lever_data in save_data["levers"][str(lvl)]:
-                                # Find if the lever already exists in the level (by position and ID)
-                                matching_lever = None
-                                for existing_lever in backup_levers:
-                                    if (existing_lever.pos == lever_data["position"] and
-                                            (not hasattr(existing_lever, "id") or existing_lever.id == lever_data["id"])):
-                                        matching_lever = existing_lever
+                            # Update activator states
+                            for activator_data in save_data["activators"][str(lvl)]:
+                                # Find if the activator already exists in the level (by position and ID)
+                                matching_activator = None
+                                for existing_activator in backup_activators:
+                                    if (existing_activator.pos == activator_data["position"] and
+                                            (not hasattr(existing_activator, "id") or existing_activator.id == activator_data["id"])):
+                                        matching_activator = existing_activator
                                         break
 
-                                if matching_lever:
-                                    # Update existing lever state
-                                    matching_lever.state = lever_data["state"]
-                                    matching_lever.activated = lever_data["activated"]
-                                    self.game.levels[lvl]['levers'].append(matching_lever)
+                                if matching_activator:
+                                    # Update existing activator state
+                                    matching_activator.state = activator_data["state"]
+                                    matching_activator.activated = activator_data["activated"]
+                                    self.game.levels[lvl]['activators'].append(matching_activator)
                                 else:
-                                    # Create a new lever if needed
-                                    from scripts.activators import Lever
-                                    new_lever = Lever(self.game, lever_data["position"],lever_data['type'], i=lever_data.get("id", 0))
-                                    new_lever.activated = lever_data["activated"]
-                                    new_lever.state = lever_data["state"]
-                                    self.game.levels[lvl]['levers'].append(new_lever)
+                                    # Create a new activator if needed
+                                    from scripts.activators import Activator
+                                    new_activator = Activator(self.game, activator_data["position"],activator_data['type'], i=activator_data.get("id", 0))
+                                    new_activator.activated = activator_data["activated"]
+                                    new_activator.state = activator_data["state"]
+                                    self.game.levels[lvl]['activators'].append(new_activator)
 
                         except Exception as e:
-                            print(f"Error restoring levers: {e}")
-                            self.game.levels[lvl]['levers'] = backup_levers
+                            print(f"Error restoring activators: {e}")
+                            self.game.levels[lvl]['activators'] = backup_activators
                             import traceback
                             traceback.print_exc()
                     else:
-                        self.game.levels[lvl]['levers'] = []
+                        self.game.levels[lvl]['activators'] = []
 
                 if "enemies" in save_data and isinstance(save_data["enemies"], dict):
                     if save_data["enemies"][str(lvl)]:
@@ -314,7 +313,7 @@ class Save:
                 if "spawn_point" in save_data["player"]:
                     self.game.spawn_point = save_data["player"]["spawn_point"]
             # Update interactable objects list to include any newly loaded throwable objects
-            self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.levers.copy()
+            self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.activators.copy()
 
             print(f"Game loaded successfully from {save_path}")
             return True
