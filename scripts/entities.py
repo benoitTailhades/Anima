@@ -393,10 +393,11 @@ def death_animation(screen):
         pygame.display.flip()
         clock.tick(15)
 
-    start_time = pygame.time.get_ticks()
-    while pygame.time.get_ticks() - start_time < 3500:
+
+    while True :
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
+                print("dead")
                 return
         clock.tick(30)
 
