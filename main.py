@@ -324,7 +324,7 @@ class Game:
             self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
-            self.bosses = self.levels[map_id]["bosses"].copy() if map_id in self.boss_levels else []
+            self.bosses = self.levels[map_id]["bosses"].copy() if map_id in self.boss_levels and map_id not in self.charged_levels else []
             self.levers = self.levels[map_id]["levers"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
@@ -486,6 +486,7 @@ class Game:
                     if boss.animation.done:
                         self.bosses.remove(boss)
                         self.levels[self.level]["charged"] = True
+                        self.charged_levels.append(self.level)
 
             for inter in self.interactable:
                 if inter.can_interact(self.player.rect()):
