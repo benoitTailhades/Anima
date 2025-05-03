@@ -1,7 +1,11 @@
 # Anima  
 Project Group - Projet Transverse EFREI 2025  
 By François-Xavier Sabatier, Benoit Tailhades, Raphaël Cayeux, Aymeric Danlos and Loïc Giannini  
- 
+
+[![Watch the video](https://img.youtube.com/vi/jJIcrVEib6A/maxresdefault.jpg)](https://youtu.be/jJIcrVEib6A)
+
+### [Watch this video on YouTube](https://youtu.be/jJIcrVEib6A)
+
 ## Concept  
 “What if the last millisecond of your life was your only chance for redemption?”
 Anima is a narrative-driven platformer set in the final moment of a man's life — a criminal seeking redemption just before his death. The player dives into the dying mind of this man, navigating a surreal and decaying landscape shaped by guilt, denial, and past sins.  
