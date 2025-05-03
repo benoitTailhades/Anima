@@ -259,6 +259,7 @@ class Game:
         if entering_boss_level:
             if self.sound_running and hasattr(self, 'background_music'):
                 self.background_music.stop()
+                print("entering")
                 try:
                     self.background_music = pygame.mixer.Sound("assets/sounds/boss1.wav")
                     self.background_music.set_volume(self.volume)
