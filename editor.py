@@ -4,7 +4,7 @@ import pygame
 
 import json
 
-from scripts.utils import load_images, load_tiles, load_doors
+from scripts.utils import load_images, load_tiles, load_doors, load_activators
 from scripts.tilemap import Tilemap
 
 RENDER_SCALE = 2.0
@@ -24,8 +24,6 @@ class Editor:
         self.base_assets = {
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
-            'lever': load_images('levers/green_cave'),
-            'button': load_images('buttons'),
             'throwable':load_images('entities/elements/blue_rock/intact'),
             'teleporter':load_images('teleporters/blue_cave'),
             'progressive_teleporter': load_images('teleporters/blue_cave')
@@ -38,11 +36,16 @@ class Editor:
 
         self.base_assets.update(load_doors('editor', self.get_environment(self.level)))
         self.doors = []
+        self.levers = []
+        self.buttons = []
         for env in self.environments:
             self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
+            self.levers += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
+            self.buttons += [(button, 0) for button in load_activators(env) if "button" in button]
 
         self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
         self.assets.update(load_doors('editor', self.get_environment(self.level)))
+        self.assets.update(load_activators(self.get_environment(self.level)))
 
         self.movement = [False, False, False, False]
 
@@ -97,7 +100,7 @@ class Editor:
             tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                         int((mpos[1] +  self.scroll[1]) // self.tilemap.tile_size))
 
-            for lever in self.tilemap.extract([('lever', 0), ('lever', 1)], keep=True):
+            for lever in self.tilemap.extract(self.levers, keep=True):
                 self.levers_ids.add(lever['id'])
 
             for door in self.tilemap.extract(self.doors, keep=True):
@@ -106,7 +109,7 @@ class Editor:
             for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
                 self.tps_ids.add(tp['id'])
                 
-            for button in self.tilemap.extract([('button',0)], keep=True):
+            for button in self.tilemap.extract(self.buttons, keep=True):
                 self.buttons_ids.add(button['id'])
 
             if self.ongrid:
@@ -116,7 +119,7 @@ class Editor:
                 self.display.blit(current_tile_img, mpos)
 
             if self.clicking and self.ongrid:
-                if self.tile_list[self.tile_group] == "lever":
+                if self.tile_list[self.tile_group] in (l[0] for l in self.levers):
                     iD = int(input("Enter the lever id: "))
                     while iD in self.levers_ids:
                         print("id already used")
@@ -140,7 +143,7 @@ class Editor:
                         'pos': tile_pos,
                         'id': iD}
                     
-                elif self.tile_list[self.tile_group] == "button":
+                elif self.tile_list[self.tile_group] in (b[0] for b in self.buttons):
                     iD = int(input("Enter the button id: "))
                     while iD in self.buttons_ids:
                         print("id already used")
@@ -181,13 +184,13 @@ class Editor:
             if self.right_clicking:
                 tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                 if tile_loc in self.tilemap.tilemap:
-                    if self.tilemap.tilemap[tile_loc]['type'] == 'lever':
+                    if self.tilemap.tilemap[tile_loc]['type'] in (l[0] for l in self.levers):
                         self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
                         self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in ["teleporter", "progressive_teleporter"]:
                         self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in ['button']:
+                    if self.tilemap.tilemap[tile_loc]['type'] in (b[0] for b in self.buttons):
                         self.buttons_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     del self.tilemap.tilemap[tile_loc]
                 for tile in self.tilemap.offgrid_tiles.copy():
@@ -253,6 +256,7 @@ class Editor:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
                             self.assets.update(load_doors('editor', self.get_environment(self.level)))
+                            self.assets.update(load_activators(self.get_environment(self.level)))
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
@@ -271,6 +275,7 @@ class Editor:
                                 pass
                             self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
                             self.assets.update(load_doors('editor', self.get_environment(self.level)))
+                            self.assets.update(load_activators(self.get_environment(self.level)))
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()

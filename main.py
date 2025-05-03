@@ -81,9 +81,6 @@ class Game:
 
         self.assets = {
 
-            'green_cave_lever': load_images('levers/green_cave'),
-            'blue_cave_lever': load_images('levers/green_cave'),
-            'blue_cave_button': load_images('buttons'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'particle/crystal': Animation(load_images('particles/crystal'), loop=1),
             'particle/crystal_fragment': Animation(load_images('particles/crystal_fragment'), loop=1),
@@ -94,6 +91,7 @@ class Game:
             'progressive_teleporter': [load_image('teleporters/blue_cave/0.png')]
         }
 
+        self.assets.update(load_activators())
         self.assets.update(load_doors(self.d_info))
         self.assets.update(load_tiles())
         self.assets.update(load_entities(self.e_info))

@@ -69,7 +69,7 @@ def load_player():
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
 
-def load_doors(d_info, env = None):
+def load_doors(d_info, env=None):
     tiles = {}
     for environment in sorted(os.listdir(BASE_IMG_PATH + 'doors/')) if env is None else [env]:
         for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + environment)):
@@ -82,6 +82,16 @@ def load_doors(d_info, env = None):
                                     d_info[door]["size"]),
                         img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
                         loop=False)
+    return tiles
+
+def load_activators(env=None):
+    tiles = {}
+    for activator in sorted(os.listdir(BASE_IMG_PATH + 'activators/')):
+        for environment in sorted(os.listdir(BASE_IMG_PATH + 'activators/' + activator)) if env is None else [env]:
+            try:
+                tiles[environment + "_" + activator[:-1]] = load_images('activators/' + activator + '/' + environment)
+            except FileNotFoundError:
+                pass
     return tiles
 
 def load_backgrounds(b_info):

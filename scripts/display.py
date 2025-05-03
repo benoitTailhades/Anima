@@ -131,7 +131,6 @@ def register_light_emitting_object(game, obj, properties=None):
             obj.light_properties = properties
         game.light_emitting_objects.append(obj)
 
-
 def draw_cutscene_border(surf, color=(0, 0, 0), width=20, opacity=255):
 
         border_surface = pygame.Surface(surf.get_size(), pygame.SRCALPHA)
