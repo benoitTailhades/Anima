@@ -4,10 +4,6 @@
       "0": {
         "type": "visual_and_door",
         "visual_duration": 2,
-        "visual_pos": [
-          928,
-          208
-        ],
         "door_id": 0
       },
       "1": {
@@ -18,7 +14,72 @@
         "type": "custom",
         "action_id": "open_boss_door"
       }
+    }
+  },
+  "3":
+  {
+    "levers": {
+      "0": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 0
+      },
+      "1": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 1
+      },
+      "2": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 2
+      },
+      "3": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 3
+      }
     },
-    "buttons": {}
+    "teleporters": {
+      "0":{
+        "dest": [1264, 512],
+        "time": 2
+      },
+      "1":{
+        "dest": [1984, 704],
+        "time": 2
+      },
+      "2":{
+        "dest": [1984, 704],
+        "time": 2
+      },
+      "3":{
+        "activate_after": 4,
+        "dest": [1904, 112],
+        "time": 2
+      }
+    },
+    "buttons": {
+      "0": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "1": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "2": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "3": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      }
+    }
   }
 }

@@ -1,19 +1,81 @@
-# Anima
-Project Group (projet transverse )2025
+# Anima  
+Project Group - Projet Transverse EFREI 2025  
+By François-Xavier Sabatier, Benoit Tailhades, Raphaël Cayeux, Aymeric Danlos and Loïc Giannini  
+ 
+## Concept  
+“What if the last millisecond of your life was your only chance for redemption?”
+Anima is a narrative-driven platformer set in the final moment of a man's life — a criminal seeking redemption just before his death. The player dives into the dying mind of this man, navigating a surreal and decaying landscape shaped by guilt, denial, and past sins.  
 
-By François-Xavier Sabatier, Benoit Tailhades, Raphaël Cayeux, Aymeric Danlos and Loïc Giannini
+## Gameplay Summary  
+The game begins with a brief and implicit execution scene — a gunshot, a flash...  
+The player then enters the Main caracter’s mind, experiencing a fast-paced platformer reflecting his psychological descent that he has lived throuhought his all life.  
+Each level goes deeper, becoming darker and more chaotic, showing how he ignored his conscience throughout his life.  
+At the end, the player confronts the Main caracter’s soul — an unwinnable boss fight.  
+The journey ends with the inevitable death, underlining the game’s core moral: "It is never too late to beg pardon until it is" .  
 
-Plot:
-Intro:
-The player just get to see the execution of our main character(MC) Either a flash or a bullet... Everything that seems convincigly deadly but it has to be deduced (not too explicit).
-Then the main game will take place in our MC's brain.
-As a criminal the man is willing to save his soul before God's sends him to hell. With all his might, he wants, at the very least, say sorry for the bad he has spread during his misearable lifetime.
-The game is, therfore, a run of a millisecond... The last millisecond of his life.
+This game isn't just a platformer — it's a philosophical journey. The goal: show that waiting until your last breath to change your ways is often too late. We want players to feel the weight of choices, even in retrospect, and question the illusion of last-minute redemption. 
 
-Through multiple sounds and effects the player is being subtly shown that he is in a last breath's brain(he doesnt explicitly know it).
-As he have, during his whole lifetime, escaped from what his conscience was telling him, the further the character goes the darker and harder levels get. In deed every level has to show, how the man has deliberately chosen the wrong path and hence, pushed his soul to the very bottom of his heart. 
+## Technical tools  
+**Game engine**: Pygame   
+**Language**: Python 100%  
+**Assets**: Entirely hand drawn(on a tablet)   
+**Sound design**: Made up from pieces all over internet  
+**Version Control**: Github (I think you figured that out)   
 
-Thus the levels are going downward(it has to be understood but levels with inversed physics or so are of course a good idea)
-At the very end the man faces his soul, which he cannot defeat... and in the end our character will eventually die.
+## Getting started 
+To play **Anima** on it's early state(right now state...) You will have to do:   
+**Whatch this explaining video I made**  
 
-The moral message we are trying to send is, that, if you wait for your death to start becoming a good personn there is a massive chance that you'll not manage to do so. And if, during your life you've always chosen bad, you are not going to change at the last second...
+[![Regarder la vidéo](https://img.youtube.com/vi/vT6RiCA_D9Q/maxresdefault.jpg)](https://www.youtube.com/watch?v=vT6RiCA_D9Q)
+
+
+**Or** (if you hate me and don't want to watch my video)  
+ 
+>Open pycharm **last version**.   
+>Create a new project  
+>Paste this URL: https://github.com/benoitTailhades/Anima.git when copying repo.
+
+Then make sure to install These libraries in the Pycharm console.   
+**Install** :
+```sh
+pip install pygame
+```
+**Make sure Json python is installed** 
+```sh
+pip install json
+```
+**Enjoy !!**
+ 
+ ## Features  
+ One millisecond of gameplay stretched into hours of intense gameplay, symbolic action.  
+ Descending level design to reflect the journey into one's deep nibble(yes I used google traduction for this word) conscience.  
+ Psychological storytelling through sound, color, and game mechanics.  
+ Implicit narrative — very little amount of dialogues, most emotions and visuals.  
+ Dynamic audio assets representing thoughts, memories, regrets.  
+ Unwinnable final confrontation, emphasizing the tragic ending.  
+  
+## Team Roles  
+**Loïc Giannini** – [Project Director, Art realisation/ Designer, Major dev, Game designer]  
+  
+**Benoit Tailhades** – [Story Teller, Major dev, Documentation writer, Game designer]  
+
+**Raphaël Cayeux** – [Level designer]  
+
+**Aymeric Danlos** – [Physic Dev]  
+
+**François-Xavier Sabatier** – [Sound designer]  
+  
+## Acknoledgements/Inspirations  
+Graphic Inspiration from games like Inside, Celeste, Hollow knight    
+Unconsiously inspired by Dante's Inferno painting   
+
+## Sources   
+**Pygame**: documentation https://www.pygame.org/docs/  
+**youtube**: https://www.youtube.com/  
+**Chat GPT**: https://www.chatgpt.com/
+**Claude AI**: https://www.claude.ai/  
+**Internet documentation** : google (I guess)   
+**This video**: https://youtu.be/2gABYM5M0ww  
+
+
+

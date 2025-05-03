@@ -3,9 +3,10 @@ import sys
 import numpy as np
 import cv2
 import os
-from scripts.sound import run_sound
-from scripts.utils import load_images, load_image, load_game_font
-
+from scripts.sound import run_sound, set_game_volume
+from scripts.utils import load_images, load_image
+from scripts.text import load_game_font
+from scripts.saving import save_game, load_game
 
 class Menu:
 
@@ -52,7 +53,7 @@ class Menu:
             "dimmed": (255, 255, 255, 80)
         }
 
-    def update_settings_from_game(self):
+    def update_settings_from_game(self):#Takes the saved settings to apply them to our keyboard and language(which is not graphycally working for the moment)
         self.volume = self.game.volume
         self.keyboard_layout = self.game.keyboard_layout
         if self.game.selected_language in self.languages:
@@ -334,7 +335,7 @@ class Menu:
             if self.slider_rect.collidepoint(mouse_pos):
                 volume = (mouse_pos[0] - self.slider_rect.x) / self.slider_rect.width
                 volume = max(0, min(1, volume))
-                self.game.set_volume(volume)
+                set_game_volume(self.game, volume)
             return True
         return False
 
@@ -374,7 +375,7 @@ class Menu:
 
         self.volume = (constrained_x - self.slider_rect.x) / self.slider_rect.width
         self.volume = max(0, min(1, self.volume))
-        self.game.set_volume(self.volume)
+        set_game_volume(self.game, self.volume)
 
     def _update_options_positions(self, current_screen_size):#keep in mind that we always have to modify the buttons size and positions when the screen is resized
         control_x = (current_screen_size[0] - 300) // 2
@@ -496,7 +497,6 @@ class Menu:
             slot_width = 300
             spacing = 20
 
-            # Get mouse position for hover effect
             mouse_pos = py.mouse.get_pos()
 
             for slot in slots:
@@ -510,16 +510,13 @@ class Menu:
 
                 is_used = slot in used_slots
 
-                # Check if mouse is hovering over the slot
                 is_hovered = slot_rect.collidepoint(mouse_pos)
 
-                # Only draw a background when the mouse is hovering
                 if is_hovered:
-                    hover_color = (100, 100, 140, 150)  # Semi-transparent light blue/purple
+                    hover_color = (100, 100, 140, 150)
                     py.draw.rect(self.screen, hover_color, slot_rect, border_radius=5)
                 else:
-                    # For non-hovered state, draw just a thin border to indicate clickable area
-                    border_color = (80, 80, 80, 150)  # Semi-transparent gray
+                    border_color = (80, 80, 80, 150)
                     py.draw.rect(self.screen, border_color, slot_rect, width=1, border_radius=5)
 
                 if is_used:
@@ -575,14 +572,14 @@ class Menu:
 
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            if self.game.save_game(slot):
+                            if save_game(self.game, slot):
                                 saves = self.game.save_system.list_saves()
                                 used_slots = {save["slot"]: save for save in saves}
 
                     if back_rect.collidepoint(mouse_pos):
                         menu_running = False
 
-    def load_menu(self):
+    def load_menu(self):#this menu appear to load saves. Two states-> One display three slot with the ones filled with saves. Two: nothing when there is NO savec at all. Clicking one save button load the coresponding save.
         current_screen = self.screen.copy()
         saves = self.game.save_system.list_saves()
 
@@ -700,7 +697,7 @@ class Menu:
 
                     for slot, rect in save_rects.items():
                         if rect.collidepoint(mouse_pos):
-                            if self.game.load_game(slot):
+                            if load_game(self.game, slot):
                                 return True
 
                     if back_rect.collidepoint(mouse_pos):
@@ -708,7 +705,7 @@ class Menu:
 
         return False
 
-    def start_menu_newgame(self):
+    def start_menu_newgame(self):#This menu ONLY appear when there is, at least one save detected. It displays -> "Resume": Load the game from the last save(just comparing dates), "Load": displays all the saves then load the game from the chosen save, "New game": Pretty obvious
         has_saves = len(self.game.save_system.list_saves()) > 0
 
         if not has_saves:
@@ -803,7 +800,7 @@ class Menu:
                             if text == "RESUME":
                                 latest_save = self.game.save_system.get_latest_save()
                                 if latest_save:
-                                    self.game.load_game(latest_save)
+                                    load_game(self.game, latest_save)
                                 return True
                             elif text == "LOAD":
                                 load_result = self.load_menu()
@@ -836,6 +833,7 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
             cap.set(cv2.CAP_PROP_POS_FRAMES, frame_id)
             continue
 
+
         frame = cv2.flip(frame, 1)
         frame = cv2.resize(frame, (1000, 600))
         frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -850,6 +848,9 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
                 running = False
             elif event.type == py.MOUSEBUTTONDOWN:
                 running = False
+            elif event.type == py.KEYDOWN and event.key == py.K_SPACE:
+                running = False
+
         if not sound_running:
             run_sound(
                 "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")

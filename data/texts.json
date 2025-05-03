@@ -1,5 +1,14 @@
-{"0":{
+{"0":
+  {
   "tuto_movement": "Use Z Q S D to move",
   "tuto_FG": "Use F to attack and G to dash",
-  "tuto_space": "Use the space bar to jump"
-}}
+  "tuto_space": "Use the space bar to jump",
+  "Lever_interaction": "Press E",
+  "Interaction": "Press E"
+  },
+ "3":
+  {
+  "Interaction": "Press E"
+  }
+}
+

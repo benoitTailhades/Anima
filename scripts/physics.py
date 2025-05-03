@@ -12,6 +12,7 @@ import pygame
 import random
 
 from scripts.particle import Particle
+from scripts.entities import deal_knockback, update_throwable_objects_action
 from scripts.tilemap import Tilemap
 from scripts.sound import *
 
@@ -88,8 +89,6 @@ class PhysicsPlayer:
         self.last_action = "idle"  # Pour détecter les changements d'action
 
     def init_sound_system(self):
-        """Initialise le système de son avec tous les fichiers nécessaires"""
-        # Dictionnaire qui stockera tous les sons
         base_path = "assets/sounds/player/"
         self.sounds = {
             'jump': base_path + "jump.wav",
@@ -119,30 +118,22 @@ class PhysicsPlayer:
                 self.sounds[sound_key].play(loops=0, maxtime=0, fade_ms=0)
 
     def update_sounds(self):
-        """Met à jour et gère les sons en fonction de l'état du joueur"""
 
-        # Son d'atterrissage
         if self.is_on_floor() and not self.was_on_floor:
             self.play_sound('land', True)
 
-        # Mise à jour de l'état du sol pour le prochain frame
         self.was_on_floor = self.is_on_floor()
 
-        # Son de course/marche
         if "run" in self.action:
             self.run_sound_timer += 1
 
-            # Détermine si le joueur court ou marche
-            sound_key = 'run' if abs(self.velocity[0]) > 1.5 else 'walk'
 
-            # Joue le son à intervalles réguliers pour créer un effet de pas
             if self.run_sound_timer >= self.run_sound_interval:
                 self.play_sound('run', True)
                 self.run_sound_timer = 0
         else:
             self.run_sound_timer = 0
 
-        # Détecte les changements d'action pour les événements ponctuels
         if self.action != self.last_action:
             if self.action in ["stun"]:
                 self.play_sound('stun')
@@ -156,27 +147,23 @@ class PhysicsPlayer:
         if self.disablePlayerInput:
             self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
                             "key_noclip": 0}
-            # Consider all keys as not pressed
 
         if self.is_stunned:
-            # Calculate time since stun started
             stun_elapsed = time.time() - self.last_stun_time
             stun_duration = 0.2
 
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
-                    self.velocity = list(self.game.deal_knockback(self.stunned_by, self, 4))
+                    self.velocity = list(deal_knockback(self.stunned_by, self, 4))
 
-                # Jouer le son de stun
-                if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
+                if stun_elapsed < 0.05:
                     self.play_sound('stun')
 
-                # When stunned, only apply knockback and gravity
                 self.gravity()
                 self.apply_momentum()
                 self.apply_animations()
                 self.animation.update()
-                return  # Skip the rest of the normal update logic
+                return
             else:
                 self.stunned_by = None
                 self.is_stunned = False
@@ -207,7 +194,6 @@ class PhysicsPlayer:
             self.apply_particle()
             self.animation.update()
 
-            # Mise à jour des sons
             self.update_sounds()
 
         else:
@@ -349,20 +335,16 @@ class PhysicsPlayer:
                 self.velocity[0] = 0
 
     def disallow_movement(self,bool):
-        """allows to disable or re-enable player movement. Bool as parameter, True to disable, False to enable movement."""
         self.disablePlayerInput = bool
 
     def jump(self):
-        """Handles player jump and super/hyperdash tech"""
 
-        # Jumping
+
         if self.dict_kb["key_jump"] == 1 and self.is_on_floor() and not self.holding_jump:  # Jump on the ground
             self.jump_logic_helper()
 
-            # Jouer le son de saut
             self.play_sound('jump', True)
 
-            # Tech
             if self.dashtime_cur != 0:
                 self.dashtime_cur = 0
                 self.tech_momentum_mult = pow(abs(self.dash_direction[0]) + abs(self.dash_direction[1]), 0.5)
@@ -371,16 +353,15 @@ class PhysicsPlayer:
 
         elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and \
                 self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1 and self.can_walljump[
-            "allowed"]:  # Walljump
+            "allowed"]:
             self.jump_logic_helper()
 
-            # Jouer le son de wall jump
             self.play_sound('wall_jump', True)
 
             if self.can_walljump["wall"] == self.get_direction("x"):  # Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
                 self.velocity[1] *= 1.18
-            else:  # Jumping away from the wall
+            else:
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 1.5
 
             self.can_walljump["available"] = False
@@ -399,6 +380,8 @@ class PhysicsPlayer:
         if not self.anti_dash_buffer:
             self.dash_direction = [self.get_direction("x"), max(0, self.get_direction("y"))]
             if self.dict_kb["key_dash"] == 1 and self.dash_cooldown_cur == 0 and self.dash_direction != [0, -1]:
+                if self.game.player_grabbing:
+                    update_throwable_objects_action(self.game)
                 if self.dash_amt > 0:
                     if self.dash_direction == [0, 0]:
                         self.dash_direction[0] = self.last_direction

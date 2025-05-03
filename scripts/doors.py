@@ -9,7 +9,7 @@ from pygame.sprite import collide_rect
 
 
 class Door:
-    def __init__(self, size, pos, d_type, flip, opening_speed, game):
+    def __init__(self, size, pos, d_type, d_id, flip, opening_speed, game):
         self.size = size
         self.pos = pos
         self.type = d_type
@@ -20,6 +20,7 @@ class Door:
         self.flip = flip
         self.opening_speed = opening_speed
         self.last_time_interacted = 0
+        self.id = d_id
 
     def update(self):
         self.animation.update()
@@ -39,6 +40,11 @@ class Door:
             self.opened = False
             if time.time() - self.last_time_interacted >= self.opening_speed:
                 self.set_action("closed")
+
+        if not self.opened and self.action == "opened":
+            self.set_action("closed")
+        elif self.opened and self.action != "opened":
+            self.set_action("opened")
 
 
     def open(self):

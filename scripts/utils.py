@@ -24,16 +24,6 @@ def load_images(path, tile_size=None):
 def round_up(x):
     return int(x) + 1 if x % 1 != 0 and x > 0 else int(x)
 
-def display_bg(surf, img, pos):
-    n = pos[0]//img.get_width()
-    if pos[0] - n*img.get_width() > 0:
-        surf.blit(img, (pos[0] - n* img.get_width(), pos[1]))
-        surf.blit(img, (pos[0] - (n+1)*img.get_width() - 1, pos[1]))
-
-    elif pos[0] + n*img.get_width() < 0:
-        surf.blit(img, (pos[0] + (n+1)*img.get_width(), pos[1]))
-        surf.blit(img, (pos[0] + n* img.get_width(), pos[1]))
-
 def load_tiles(env=None):
     tiles = {}
     for environment in sorted(os.listdir(BASE_IMG_PATH + 'tiles')) if env is None else [env]:
@@ -79,15 +69,19 @@ def load_player():
             'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
             'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
 
-def load_doors(d_info):
+def load_doors(d_info, env = None):
     tiles = {}
-    for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/')):
-        for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + door)):
-            tiles[door + '/' + animation] = Animation(
-                load_images('doors/' + door + '/' + animation,
-                            d_info[door]["size"]),
-                img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
-                loop=False)
+    for environment in sorted(os.listdir(BASE_IMG_PATH + 'doors/')) if env is None else [env]:
+        for door in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + environment)):
+            if d_info == 'editor':
+                tiles[door] = load_images('doors/' + environment + '/' + door + "/closed")
+            else:
+                for animation in sorted(os.listdir(BASE_IMG_PATH + 'doors/' + environment + '/' + door)):
+                    tiles[door + '/' + animation] = Animation(
+                        load_images('doors/' + environment + '/' + door + '/' + animation,
+                                    d_info[door]["size"]),
+                        img_dur=d_info[door]["img_dur"] if animation in ("closing","opening") else 1,
+                        loop=False)
     return tiles
 
 def load_backgrounds(b_info):
@@ -122,44 +116,6 @@ class Animation:
 
     def img(self):
         return self.images[int(self.frame / self.img_duration)]
-
-def load_game_font(font_name=None, size=36):
-
-    RECOMMENDED_FONTS = [
-        'DejaVuSans-Bold.ttf',
-        'FreeMono.ttf',
-        'LiberationMono-Bold.ttf'
-    ]
-    font_paths = [
-        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,*[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
-    ]
-    for path in font_paths:
-        try:
-            if path and os.path.exists(path):
-                return pygame.font.Font(path, size)
-        except:
-            pass
-    return pygame.font.SysFont('monospace', size, bold=True)
-
-def load_game_texts():
-        """Charge les textes du jeu depuis un fichier JSON"""
-        try:
-            with open("data/texts.json", "r", encoding="utf-8") as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Erreur lors du chargement des textes: {e}")
-            return {}
-
-def load_activators_actions():
-    try:
-        with open("data/activators.json", "r") as file:
-            actions_data = json.load(file)
-            return actions_data
-
-    except Exception as e:
-        print(f"Error loading activators actions: {e}")
-        return {"levers": {}, "buttons": {}}
-
 
 
 
