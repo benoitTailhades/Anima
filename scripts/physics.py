@@ -220,7 +220,6 @@ class PhysicsPlayer:
 
     def force_player_movement(self):
         """forces some keys to be pressed"""
-        print(self.force_movement)
         if self.force_movement["r"][0] or self.force_movement["l"][0]:
             if self.force_movement["l"][0]:
                 self.walk(-1,1.5)
@@ -306,6 +305,7 @@ class PhysicsPlayer:
             if self.velocity[1] < 0 and self.air_time < 20:
                 if self.get_direction("x") == 0:
                     self.set_action("jump/top")
+
                 elif self.get_direction("x") == 1 and self.action != "jump/top":
                     self.set_action("jump/right")
                 elif self.get_direction("x") == -1 and self.action != "jump/top":
@@ -313,9 +313,9 @@ class PhysicsPlayer:
                 animation_applied = True
             # Falling
             else:
-                if self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1):
+                if self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1) or self.force_movement["r"][0]:
                     self.set_action('falling/right')
-                elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1):
+                elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1) or self.force_movement["l"][0]:
                     self.set_action('falling/left')
                 elif self.get_direction("x") == 0:
                     self.set_action('falling/vertical')
@@ -404,7 +404,6 @@ class PhysicsPlayer:
             if self.can_walljump["wall"] == self.get_direction("x"):  # Jumping into the wall
                 self.velocity[0] = -self.can_walljump["wall"] * self.SPEED * 3
                 self.velocity[1] *= 1.18
-                print("happen")
             else:  # Jumping away from the wall
                 self.velocity[0] = 0
                 if self.can_walljump["wall"] == 1:
