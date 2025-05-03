@@ -462,7 +462,10 @@ class Game:
                 r = pygame.Rect(spike["pos"][0], spike["pos"][1],
                                 self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
                 if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
-                    self.player_hp = 0
+                    self.player_hp -= 10
+                    if not self.damage_flash_active:
+                        self.damage_flash_active = True
+                        self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
                 for o in self.throwable:
                     if o.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
                         o.set_action("breaking")
