@@ -83,13 +83,15 @@ class Game:
 
             'green_cave_lever': load_images('levers/green_cave'),
             'blue_cave_lever': load_images('levers/green_cave'),
+            'blue_cave_button': load_images('buttons'),
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
             'particle/crystal': Animation(load_images('particles/crystal'), loop=1),
             'particle/crystal_fragment': Animation(load_images('particles/crystal_fragment'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16)),
-            'teleporter': load_images('teleporters/blue_cave')
+            'teleporter': [load_image('teleporters/blue_cave/0.png')],
+            'progressive_teleporter': [load_image('teleporters/blue_cave/0.png')]
         }
 
         self.assets.update(load_doors(self.d_info))
@@ -247,8 +249,8 @@ class Game:
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
         self.teleporters = []
-        for tp in self.tilemap.extract([('teleporter',0)], keep=True):
-            self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp['id']))
+        for tp in self.tilemap.extract([('teleporter',0), ('progressive_teleporter', 0)], keep=True):
+            self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp["type"], tp['id']))
 
 
         self.throwable = []
@@ -263,7 +265,7 @@ class Game:
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.crystal_spawners = []
-        for mushroom in self.tilemap.extract([("blue_decor", 0),], keep=True):
+        for mushroom in self.tilemap.extract([("blue_decor", 0)], keep=True):
             if not self.levels[map_id]["charged"]:
                 register_light_emitting_tile(self,
                     (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
@@ -291,7 +293,7 @@ class Game:
                                                   "attack_time": 0.1}))
 
             self.levers = []
-            for lever in self.tilemap.extract([('lever', 0),('lever', 1)]):
+            for lever in self.tilemap.extract([('lever', 0), ('lever', 1), ('button', 0)]):
                 l = Lever(self, lever['pos'], lever['type'], i=lever["id"])
                 l.state = lever["variant"]
                 self.levers.append(l)
@@ -320,7 +322,7 @@ class Game:
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
             self.player.pos = self.spawners[str(map_id)].copy()
-            self.tilemap.extract([('lever', 0),('lever', 1)])
+            self.tilemap.extract([('lever', 0),('lever', 1), ('button', 0)])
             self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()

@@ -34,18 +34,22 @@ class Lever:
         surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_' + self.type][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
 class Teleporter:
-    def __init__(self, game, pos, size, t_id):
+    def __init__(self, game, pos, size, t_type, t_id):
         self.game = game
+        self.type = t_type
         self.pos = list(pos)
         self.size = size
         self.id = t_id
+        self.activated = self.type == "teleporter"
+        if t_type == "progressive_teleporter":
+            self.progress = 0
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
     def can_interact(self, player_rect, interaction_distance=2):
         can_interact = self.rect().colliderect(player_rect.inflate(interaction_distance, interaction_distance))
-        return can_interact
+        return can_interact and self.activated
 
 def load_activators_actions():
     try:
@@ -86,11 +90,22 @@ def update_activators_actions(game, level):
                             move_visual(game, action["visual_duration"], door.pos)
                             lever.activated = False
                             door.open()
-
                     screen_shake(game, 10)
+
+                if action["type"] == "improve_tp_progress":
+                    for tp in game.teleporters:
+                        if tp.id == action["tp_id"]:
+                            lever.toggle()
+                            move_visual(game, 1, tp.pos)
+                            lever.activated = False
+                            tp.progress += action["amount"]
+
     for tp in game.teleporters:
         if tp.can_interact(game.player.rect()):
             if str(tp.id) in game.activators_actions[str(level)]["teleporters"]:
                 game.last_teleport_time = time.time()
                 game.teleporting = True
                 game.tp_id = tp.id
+        if tp.type == "progressive_teleporter":
+            if tp.progress == game.activators_actions[str(level)]["teleporters"][str(tp.id)]["activate_after"]:
+                tp.activated = True

@@ -25,12 +25,14 @@ class Editor:
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
             'lever': load_images('levers/green_cave'),
+            'button': load_images('buttons'),
             'throwable':load_images('entities/elements/blue_rock/intact'),
-            'teleporter':load_images('teleporters/blue_cave')
+            'teleporter':load_images('teleporters/blue_cave'),
+            'progressive_teleporter': load_images('teleporters/blue_cave')
         }
 
         self.environments = {"green_cave": (0, 1, 2),
-                             "blue_cave": (3,)}
+                             "blue_cave": (3, 4)}
 
         self.level = 0
 
@@ -59,6 +61,7 @@ class Editor:
         self.tile_variant = 0
         self.levers_ids = set()
         self.doors_ids = set()
+        self.buttons_ids = set()
         self.tps_ids = set()
 
 
@@ -100,8 +103,11 @@ class Editor:
             for door in self.tilemap.extract(self.doors, keep=True):
                 self.doors_ids.add(door['id'])
 
-            for tp in self.tilemap.extract([('teleporter', 0)], keep=True):
+            for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
                 self.tps_ids.add(tp['id'])
+                
+            for button in self.tilemap.extract([('button',0)], keep=True):
+                self.buttons_ids.add(button['id'])
 
             if self.ongrid:
                 self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
@@ -133,8 +139,20 @@ class Editor:
                         'variant': self.tile_variant,
                         'pos': tile_pos,
                         'id': iD}
+                    
+                elif self.tile_list[self.tile_group] == "button":
+                    iD = int(input("Enter the button id: "))
+                    while iD in self.buttons_ids:
+                        print("id already used")
+                        iD = int(input("Enter the button id: "))
+                    self.buttons_ids.add(iD)
+                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                        'type': self.tile_list[self.tile_group],
+                        'variant': self.tile_variant,
+                        'pos': tile_pos,
+                        'id': iD}
 
-                elif self.tile_list[self.tile_group] in ('teleporter', 0):
+                elif self.tile_list[self.tile_group] in ["teleporter", "progressive_teleporter"]:
                     iD = int(input("Enter the tp id: "))
                     while iD in self.tps_ids:
                         print("id already used")
@@ -167,8 +185,10 @@ class Editor:
                         self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
                         self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in ('teleporter'):
+                    if self.tilemap.tilemap[tile_loc]['type'] in ["teleporter", "progressive_teleporter"]:
                         self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                    if self.tilemap.tilemap[tile_loc]['type'] in ['button']:
+                        self.buttons_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     del self.tilemap.tilemap[tile_loc]
                 for tile in self.tilemap.offgrid_tiles.copy():
                     tile_img = self.assets[tile['type']][tile['variant']]
@@ -236,6 +256,7 @@ class Editor:
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
+                            self.buttons_ids = set()
                             self.tps_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0
@@ -253,6 +274,7 @@ class Editor:
                             self.tile_list = list(self.assets)
                             self.levers_ids = set()
                             self.doors_ids = set()
+                            self.buttons_ids = set()
                             self.tps_ids = set()
                             self.tile_group = 0
                             self.tile_variant = 0

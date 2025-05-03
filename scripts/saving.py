@@ -120,7 +120,6 @@ class Save:
 
             level = save_data.get("level", 0)
             self.game.level = level
-            print(save_data["charged_levels"])
             self.game.charged_levels = save_data["charged_levels"]
             for l in self.game.levels:
                 if l not in save_data["charged_levels"]:

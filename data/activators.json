@@ -54,8 +54,31 @@
         "time": 2
       },
       "3":{
+        "activate_after": 4,
         "dest": [1904, 112],
         "time": 2
+      }
+    },
+    "buttons": {
+      "0": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "1": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "2": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
+      },
+      "3": {
+        "type": "improve_tp_progress",
+        "amount": 1,
+        "tp_id": 3
       }
     }
   }
