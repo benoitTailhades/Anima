@@ -20,8 +20,6 @@ from scripts.display import *
 from scripts.text import *
 from scripts.spark import Spark
 from scripts.sound import set_game_volume
-
-
 class Game:
     def __init__(self):
         pygame.init()
@@ -568,12 +566,16 @@ class Game:
 
             display_level_fg(self, self.level)
 
-            if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
+            if self.player.pos[1] > self.max_falling_depth :
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
-
+            if self.player_hp <= 0:
+                player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
+                for key in self.dict_kb.keys():
+                    self.dict_kb[key] = 0
+                self.player_hp = 100
             for spark in self.sparks.copy():
                 kill = spark.update()
                 spark.render(self.display, offset=render_scroll)
@@ -702,6 +704,7 @@ class Game:
 
             pygame.display.update()
             self.clock.tick(60)
-
-
 Game().run()
+
+
+
