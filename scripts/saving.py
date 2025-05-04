@@ -30,6 +30,7 @@ class Save:
             "enemies": {lvl:[] for lvl in self.game.levels},
             "throwable": [],  # Store throwable objects
             "doors": {lvl:[] for lvl in self.game.levels},  # Store door states
+            "light_emitting_tiles": self.game.light_emitting_tiles,
             "settings": {
                 "volume": self.game.volume,
                 "keyboard_layout": self.game.keyboard_layout,
@@ -130,6 +131,8 @@ class Save:
                 self.game.spawner_pos = save_data["spawner_pos"]
             if "spawners" in save_data:
                 self.game.spawners = save_data["spawners"]
+            if "light_emitting_tiles" in save_data:
+                self.game.light_emitting_tiles = save_data["light_emitting_tiles"]
 
             # Load throwable objects if present in save data
             if "throwable" in save_data and isinstance(save_data["throwable"], list):

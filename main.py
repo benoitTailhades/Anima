@@ -73,7 +73,7 @@ class Game:
         self.scroll_limits = {0: {"x":(-272, 1680),"y":(-1000, 100)},
                               1: {"x":(-48, 16), "y":(-1000, 400)},
                               2: {"x":(-48, 280), "y":(-192, -80)},
-                              3: {"x":(16, 1904), "y":(0, 20000000)}}
+                              3: {"x":(16, 190400), "y":(0, 20000000)}}
 
         self.light_infos = {0:{"darkness_level":180, "light_radius": 200},
                             1:{"darkness_level":180, "light_radius":300},
@@ -84,7 +84,7 @@ class Game:
         self.assets = {
 
             'particle/leaf': Animation(load_images('particles/leaf'), loop=5),
-            'particle/crystal': Animation(load_images('particles/crystal'), loop=1),
+            'particle/crystal': Animation(load_images('particles/crystal'), loop=1000),
             'particle/crystal_fragment': Animation(load_images('particles/crystal_fragment'), loop=1),
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
@@ -166,6 +166,7 @@ class Game:
         self.tutorial_next_time = 0
         self.tutorial_messages = []
 
+
         self.doors_rects = []
 
         self.damage_flash_active = False
@@ -179,13 +180,14 @@ class Game:
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
 
+
         self.light_properties = {
             "player": {"radius": 100, "intensity": 250, "edge_softness": 255, "color": (255, 255, 255),
                        "flicker": False},
             "torch": {"radius": 80, "intensity": 220, "edge_softness": 30, "color": (255, 180, 100), "flicker": True},
             "crystal": {"radius": 120, "intensity": 200, "edge_softness": 50, "color": (100, 180, 255),
                         "flicker": False},
-            "glowing_mushroom": {"radius": 20, "intensity": 150, "edge_softness": 500, "color": (160, 230, 180),
+            "glowing_mushroom": {"radius": 20, "intensity": 80, "edge_softness": 500, "color": (160, 230, 180),
                                  "flicker": False},
             "lava": {"radius": 100, "intensity": 210, "edge_softness": 40, "color": (255, 120, 50), "flicker": True}
         }
@@ -254,8 +256,6 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
-        self.light_emitting_tiles = []
-        self.light_emitting_objects = []
         self.teleporters = []
 
 

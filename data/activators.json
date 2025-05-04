@@ -38,6 +38,11 @@
         "type": "visual_and_door",
         "visual_duration": 2,
         "door_id": 3
+      },
+      "4": {
+        "type": "visual_and_door",
+        "visual_duration": 2,
+        "door_id": 4
       }
     },
     "teleporters": {

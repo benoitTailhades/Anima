@@ -135,13 +135,7 @@ class Enemy(PhysicsEntity):
         if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
             self.hit = False
 
-        if self.is_attacking and not self.stunned:
-            if time.time() - self.first_attack_time >= self.attack_time/5:
-                deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
-                self.is_dealing_damage = False
-        elif not self.is_attacking:
-            self.last_attack_time = 0
-            self.first_attack_time = time.time()
+        self.update_attack()
 
         # Handle stun state first
         if self.stunned:
@@ -223,6 +217,15 @@ class Enemy(PhysicsEntity):
             self.action = action
             self.animation = self.game.assets[self.enemy_type + '/' + self.action].copy()
 
+    def update_attack(self):
+        if self.is_attacking and not self.stunned:
+            if time.time() - self.first_attack_time >= self.attack_time / 5:
+                deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
+                self.is_dealing_damage = False
+        elif not self.is_attacking:
+            self.last_attack_time = 0
+            self.first_attack_time = time.time()
+
     def check_if_player_close(self, vision_distance, mono_direction=True):
         if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
                 and self.game.player.pos[1]+self.game.player.size[1] == int(self.pos[1] + self.size[1])):
@@ -281,6 +284,19 @@ class Enemy(PhysicsEntity):
                     self.set_action("run")
             else:
                 self.set_action("idle")
+
+class DistanceEnemy(Enemy):
+    def __init__(self, game, enemy_type, pos, size, hp, attack_info):
+        super().__init__(game, enemy_type, pos, size, hp, attack_info)
+
+    def update_attack(self):
+        if self.is_attacking and not self.stunned:
+            if time.time() - self.first_attack_time >= self.attack_time / 5:
+                deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
+                self.is_dealing_damage = False
+        elif not self.is_attacking:
+            self.last_attack_time = 0
+            self.first_attack_time = time.time()
 
 class Throwable(PhysicsEntity):
     def __init__(self, game, o_type, pos, size):

@@ -390,6 +390,215 @@ class FirstBoss(Boss):
             elif self.action != "charge":
                 self.set_action("idle")
 
+class SecondBoss(Boss):
+    def __init__(self, game, boss_type, pos, size, hp, attack_info):
+        super().__init__(game, boss_type, pos, size, hp, attack_info)
+        self.phases = {
+            1: {'threshold': 1.0, 'speed': 1.0},
+            2: {'threshold': 0.5, 'speed': 1.0}
+        }
+        self.started = False
+        self.teleporting = False
+
+        # Introduction action attributes
+        self.intro_sequence_started = False
+        self.intro_complete = False
+        self.intro_start_time = 0
+        self.intro_duration = 6  # Duration in seconds for the intro animation
+
+        self.initialize_laser_attributes()
+
+    def teleport(self, pos):
+        self.set_action("teleport")
+        self.teleporting = True
+        if self.animation.done:
+            self.pos = pos.copy()
+
+    def laser_attack(self):
+        """
+        Boss laser attack that:
+        1. Moves to center position
+        2. Creates a warning laser
+        3. Intensifies the laser and deals damage
+        4. Rotates the laser during the attack
+        """
+        # Constants for laser attack
+        CENTER_POS = (208, 480)  # Center of the room
+        LASER_WARMUP_TIME = 1.5  # Time in seconds for the warning phase
+        LASER_ACTIVE_TIME = 3.0  # Time in seconds for active damage phase
+        LASER_COOLDOWN = 1.0  # Time after laser finishes before next action
+        LASER_DAMAGE = 10  # Damage per hit
+        LASER_LENGTH = 400  # Length of the laser beam
+        LASER_WIDTH = 16  # Width of the laser beam
+        ROTATION_SPEED = 45  # Degrees per second
+
+        # Initialize laser attack state if not already set
+        if not hasattr(self, 'laser_state'):
+            self.laser_state = 'moving'
+            self.laser_start_time = time.time()
+            self.laser_angle = 0
+            self.laser_hit_cooldown = 0
+            self.current_destination = CENTER_POS
+            print("Starting laser attack - moving to center")
+
+        current_time = time.time()
+        elapsed_time = current_time - self.laser_start_time
+
+        # State 1: Move to center position
+        if self.laser_state == 'moving':
+            if not self.is_jumping and self.current_destination is not None:
+                # Start the jump to center
+                reached = self.move_to(self.current_destination, jump_height=80)
+
+                if reached:
+                    print('Reached center position')
+                    self.current_destination = None
+                    self.laser_state = 'warning'
+                    self.laser_start_time = current_time
+                    self.set_action("laser_charge")  # Animation for charging laser
+                    screen_shake(self.game, 8)  # Small screen shake when landing
+
+        # State 2: Warning phase - laser is visible but not damaging
+        elif self.laser_state == 'warning':
+            if elapsed_time >= LASER_WARMUP_TIME:
+                self.laser_state = 'active'
+                self.laser_start_time = current_time
+                self.set_action("laser_fire")  # Animation for firing laser
+                screen_shake(self.game, 16)  # Stronger screen shake when laser activates
+
+            # Render warning laser (thinner/different color)
+            self.render_laser(alpha=128, width=LASER_WIDTH / 2, color=(255, 0, 0))
+
+        # State 3: Active phase - laser deals damage and rotates
+        elif self.laser_state == 'active':
+            if elapsed_time >= LASER_ACTIVE_TIME:
+                self.laser_state = 'cooldown'
+                self.laser_start_time = current_time
+                self.set_action("idle")  # Return to idle animation
+
+            # Update laser angle
+            self.laser_angle += ROTATION_SPEED * self.game.dt
+            if self.laser_angle >= 360:
+                self.laser_angle -= 360
+
+            # Render active laser (full width/brightness)
+            self.render_laser(alpha=255, width=LASER_WIDTH, color=(255, 50, 50))
+
+            # Check for collision with player
+            if current_time - self.laser_hit_cooldown >= 0.2:  # Hit cooldown of 0.2 seconds
+                if self.check_laser_collision():
+                    deal_dmg(self.game, self, 'player', LASER_DAMAGE, 0.1)
+                    self.game.player.velocity = list(deal_knockback(self, self.game.player, 3))
+                    self.game.player.is_stunned = True
+                    self.game.player.stunned_by = self
+                    self.game.player.last_stun_time = current_time
+                    screen_shake(self.game, 12)
+                    self.laser_hit_cooldown = current_time
+
+        # State 4: Cooldown phase
+        elif self.laser_state == 'cooldown':
+            if elapsed_time >= LASER_COOLDOWN:
+                # Reset laser attack state
+                delattr(self, 'laser_state')
+                self.last_attack_time = current_time  # Update the boss's last attack time
+
+                # Choose next action or position
+                print("Laser attack complete")
+                return True  # Attack completed
+
+        return False  # Attack still in progress
+
+    def render_laser(self, alpha=255, width=16, color=(255, 0, 0)):
+        """Render the laser beam with given properties"""
+        # Calculate laser end position based on angle and length
+        laser_length = 400
+        center_x = self.rect().centerx - self.game.scroll[0]
+        center_y = self.rect().centery - self.game.scroll[1]
+
+        # Calculate end point of laser using trigonometry
+        end_x = center_x + laser_length * math.cos(math.radians(self.laser_angle))
+        end_y = center_y + laser_length * math.sin(math.radians(self.laser_angle))
+
+        # Create a transparent surface for the laser
+        laser_surf = pygame.Surface((800, 600), pygame.SRCALPHA)
+
+        # Draw the laser beam with given properties
+        pygame.draw.line(laser_surf, (*color, alpha), (center_x, center_y), (end_x, end_y), int(width))
+
+        # Draw a glow effect around the laser
+        glow_width = width * 2
+        glow_color = (*color, alpha // 4)
+        pygame.draw.line(laser_surf, glow_color, (center_x, center_y), (end_x, end_y), int(glow_width))
+
+        # Blit the laser surface onto the game display
+        self.game.display.blit(laser_surf, (0, 0))
+
+    def check_laser_collision(self):
+        """Check if the laser is colliding with the player"""
+        # Get player rect adjusted for scroll
+        player_rect = self.game.player.rect()
+        player_x = player_rect.centerx
+        player_y = player_rect.centery
+
+        # Get laser source position (boss center)
+        source_x = self.rect().centerx
+        source_y = self.rect().centery
+
+        # Calculate laser end position
+        laser_length = 400
+        end_x = source_x + laser_length * math.cos(math.radians(self.laser_angle))
+        end_y = source_y + laser_length * math.sin(math.radians(self.laser_angle))
+
+        # Simple line-circle collision detection
+        # Check if the player (treated as a circle) is close enough to the laser line
+        player_radius = (player_rect.width + player_rect.height) / 4  # Approximate player as circle
+
+        # Calculate perpendicular distance from player to laser line
+        # Using the formula for distance from point to line
+        line_length = math.sqrt((end_x - source_x) ** 2 + (end_y - source_y) ** 2)
+        if line_length == 0:
+            return False
+
+        # Calculate the normalized direction vector of the laser
+        dx = (end_x - source_x) / line_length
+        dy = (end_y - source_y) / line_length
+
+        # Calculate the vector from source to player
+        px = player_x - source_x
+        py = player_y - source_y
+
+        # Calculate the projection of player position onto the laser line
+        projection = px * dx + py * dy
+
+        # Check if the projection falls within the line segment
+        if 0 <= projection <= line_length:
+            # Calculate the perpendicular distance
+            perp_x = source_x + projection * dx
+            perp_y = source_y + projection * dy
+            distance = math.sqrt((player_x - perp_x) ** 2 + (player_y - perp_y) ** 2)
+
+            # Check if the distance is less than player radius (collision)
+            return distance <= player_radius + self.laser_width / 2
+
+        return False
+
+    def update(self, tilemap, movement=(0, 0)):
+        # Call the parent's update method first
+        super().update(tilemap, movement)
+
+        # Additional laser-specific updates if we're in laser attack mode
+        if hasattr(self, 'laser_state') and self.hp > 0:
+            # Continue the laser attack
+            self.laser_attack()
+
+    def initialize_laser_attributes(self):
+        """Initialize attributes needed for laser attacks"""
+        self.laser_cooldown = 5.0  # Time between laser attacks
+        self.laser_width = 16  # Width of the laser beam
+        self.can_use_laser = True  # Whether the boss can use the laser attack
+
+
+
 class Vine:
     def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):
         self.game = game
