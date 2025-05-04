@@ -237,6 +237,7 @@ class PhysicsPlayer:
                 self.force_movement["r"][1] -= 1
 
     def walk(self,direction,mult=1):
+        """handles horizontal player movement in the air and ground. direction for the direction to walk in, optional multiplier mult to change walkspeed"""
         if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != direction:
             self.velocity[0] += direction * self.SPEED / 2 * mult
         elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
