@@ -99,8 +99,12 @@ class Game:
         self.assets.update(load_backgrounds(self.b_info))
 
         self.doors_id_pairs = []
+        self.levers_id_pairs = []
+        self.buttons_id_pairs = []
         for env in self.environments:
             self.doors_id_pairs += [(door, 0) for door in load_doors('editor', env)]
+            self.levers_id_pairs += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
+            self.buttons_id_pairs += [(button, 0) for button in load_activators(env) if "button" in button]
 
         self.sound_running = False
 
@@ -280,6 +284,13 @@ class Game:
         for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
             self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp["type"], tp['id']))
 
+        self.spikes = []
+        s = []
+        for n in range(4):
+            s += [("spikes", n), ("bloody_spikes", n), ("big_spikes", n), ("big_bloody_spikes", n)]
+        for spike in self.tilemap.extract(s, keep=True):
+            self.spikes.append(DamageBlock(self, spike["pos"], self.assets[spike["type"]][spike["variant"]]))
+
 
         self.throwable = []
         for o in self.tilemap.extract([('throwable',0)]):
@@ -321,7 +332,7 @@ class Game:
                                                   "attack_time": 0.1}))
 
             self.activators = []
-            for activator in self.tilemap.extract([('lever', 0), ('lever', 1), ('button', 0)]):
+            for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs):
                 a = Activator(self, activator['pos'], activator['type'], i=activator["id"])
                 a.state = activator["variant"]
                 self.activators.append(a)
@@ -350,7 +361,7 @@ class Game:
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
             self.player.pos = self.spawners[str(map_id)].copy()
-            self.tilemap.extract([('lever', 0),('lever', 1), ('button', 0)])
+            self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs)
             self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.enemies = self.levels[map_id]["enemies"].copy()
@@ -483,19 +494,19 @@ class Game:
                     if o.action == "breaking" and o.animation.done:
                         self.throwable.remove(o)
 
-            s = []
-            for n in range(4):
-                s += [("spikes", n), ("bloody_spikes", n), ("big_spikes", n), ("big_bloody_spikes", n)]
-            for spike in self.tilemap.extract(s, keep=True):
-                r = pygame.Rect(spike["pos"][0], spike["pos"][1],
-                                self.assets[spike["type"]][spike["variant"]].get_width(), self.assets[spike["type"]][spike["variant"]].get_height())
-                if self.player.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
-                    self.player_hp -= 10
-                    if not self.damage_flash_active:
-                        self.damage_flash_active = True
-                        self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
+            for spike_hitbox in self.spikes:
+                if self.player.rect().colliderect(spike_hitbox.rect()):
+                    if time.time() - spike_hitbox.last_attack_time >= 0.5:
+                        deal_dmg(self, spike_hitbox, "player", 10, 0.5)
+                        self.player.velocity = list(deal_knockback(spike_hitbox, self.player, 4))
+                        self.player.is_stunned = True
+                        self.player.stunned_by = spike_hitbox
+                        self.player.last_stun_time = time.time()
+                        if not self.damage_flash_active:
+                            self.damage_flash_active = True
+                            self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
                 for o in self.throwable:
-                    if o.rect().colliderect(r.inflate(-r.width/2, -r.height/2)):
+                    if o.rect().colliderect(spike_hitbox.rect()):
                         o.set_action("breaking")
                         if o.animation.done:
                             self.throwable.remove(o)

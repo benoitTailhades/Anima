@@ -31,7 +31,7 @@ class Activator:
         return can_interact and self.activated
 
     def render(self, surface, offset=(0, 0)):#Just display the marvellous lever design of our dear designer
-        surface.blit(self.game.assets[self.game.get_environment(self.game.level) + '_' + self.type][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        surface.blit(self.game.assets[self.type][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
 class Teleporter:
     def __init__(self, game, pos, size, t_type, t_id):
@@ -80,8 +80,8 @@ def update_activators_actions(game, level):
     for activator in game.activators:
         if activator.can_interact(game.player.rect()):
             activator_id = str(activator.id)
-            if activator_id in game.activators_actions[str(level)][activator.type+'s']:
-                action = game.activators_actions[str(level)][activator.type+'s'][activator_id]
+            if activator_id in game.activators_actions[str(level)][activator.type.rsplit('_', 1)[-1]+'s']:
+                action = game.activators_actions[str(level)][activator.type.rsplit('_', 1)[-1]+'s'][activator_id]
 
                 if action["type"] == "visual_and_door":
                     for door in game.doors:

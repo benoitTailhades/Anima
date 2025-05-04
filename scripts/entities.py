@@ -337,6 +337,23 @@ class Throwable(PhysicsEntity):
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
+class DamageBlock:
+    def __init__(self, game, pos, size):
+        self.pos = pos
+        self.size = size
+        self.last_attack_time = 0
+        self.game = game
+
+    def rect(self):
+        r = pygame.Rect(self.pos[0], self.pos[1],
+                                self.size.get_width(), self.size.get_height())
+        return r.inflate(-r.width / 2, -r.height / 2)
+
+    def render(self, surf, offset=(0, 0)):
+        r = self.rect()
+        pygame.draw.rect(surf, (255, 0, 255), pygame.Rect(r.x - offset[0], r.y - offset[1],
+                                r.width, r.height))
+
 def blur(surface, span):
     for i in range(span):
         surface = pygame.transform.smoothscale(surface, (surface.get_width() // 2, surface.get_height() // 2))
@@ -411,13 +428,13 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]
     
-def deal_dmg(game, entity, target, att_dmg=5, att_time=1):
+def deal_dmg(game, source, target, att_dmg=5, att_time=1):
     current_time = time.time()
-    if target == "player" and current_time - entity.last_attack_time >= att_time:
-        entity.last_attack_time = time.time()
+    if target == "player" and current_time - source.last_attack_time >= att_time:
+        source.last_attack_time = time.time()
         game.player_hp -= att_dmg
         game.damage_flash_active = True
-        entity.is_dealing_damage = True
+        source.is_dealing_damage = True
         game.damage_flash_end_time = pygame.time.get_ticks() + game.damage_flash_duration
 
     elif target != "player" and current_time - game.player_last_attack_time >= game.player_attack_time:

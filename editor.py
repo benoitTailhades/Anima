@@ -22,6 +22,7 @@ class Editor:
         self.tile_size = 16
 
         self.base_assets = {
+            'lever': load_images('spawners'),
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
             'throwable':load_images('entities/elements/blue_rock/intact'),

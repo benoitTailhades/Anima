@@ -171,7 +171,7 @@ class PhysicsPlayer:
 
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
-                    self.velocity = list(deal_knockback(self.game, self.stunned_by, self, 4))
+                    self.velocity = list(deal_knockback(self.stunned_by, self, 4))
 
                 # Jouer le son de stun
                 if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
@@ -186,6 +186,7 @@ class PhysicsPlayer:
             else:
                 self.stunned_by = None
                 self.is_stunned = False
+                self.knockback_dir = [0, 0]
 
         if not self.noclip:
             if self.dict_kb["key_noclip"] == 1 and self.allowNoClip:
