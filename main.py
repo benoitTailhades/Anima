@@ -580,6 +580,8 @@ class Game:
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
+                print("is dead")
+
             if self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
                 for key in self.dict_kb.keys():
