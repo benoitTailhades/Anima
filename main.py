@@ -260,7 +260,7 @@ class Game:
         self.light_emitting_objects = []
         self.teleporters = []
 
-        # Check if we're entering a boss level
+
         entering_boss_level = map_id in self.boss_levels
         leaving_boss_level = self.level in self.boss_levels and map_id not in self.boss_levels
 
@@ -272,7 +272,7 @@ class Game:
                     self.background_music = pygame.mixer.Sound("assets/sounds/boss1.wav")
                     self.background_music.set_volume(self.volume)
                     self.background_music.play(loops=-1)
-                    self.boss_music_active = True  # Set flag when boss music is playing
+                    self.boss_music_active = True
                 except Exception as e:
                     print(f"Error loading boss music: {e}")
         elif leaving_boss_level:
@@ -283,7 +283,7 @@ class Game:
                     self.background_music = pygame.mixer.Sound(main_theme_path)
                     self.background_music.set_volume(self.volume)
                     self.background_music.play(loops=-1)
-                    self.boss_music_active = False  # Reset flag when leaving boss level
+                    self.boss_music_active = False
                 except Exception as e:
                     print(f"Error loading main theme: {e}")
 
