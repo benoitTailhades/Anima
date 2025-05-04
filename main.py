@@ -202,6 +202,8 @@ class Game:
         self.player_grabbing = False
         self.interacting = False
 
+        self.spike_knockback_on = True
+
         self.particles = []
 
         self.boss_music_active = False
@@ -495,16 +497,21 @@ class Game:
                         self.throwable.remove(o)
 
             for spike_hitbox in self.spikes:
-                if self.player.rect().colliderect(spike_hitbox.rect()):
-                    if time.time() - spike_hitbox.last_attack_time >= 0.5:
+                if time.time() - spike_hitbox.last_attack_time >= 0.5:
+                    if self.player.rect().colliderect(spike_hitbox.rect()):
                         deal_dmg(self, spike_hitbox, "player", 10, 0.5)
-                        self.player.velocity = list(deal_knockback(spike_hitbox, self.player, 4))
+                        self.spike_knockback_on = False
+                        self.player.knockback_dir[0] = 1 if spike_hitbox.rect().centerx < self.player.rect().centerx else -1
+                        self.player.velocity = list(
+                            deal_knockback(spike_hitbox, self.player, 3, knockback="custom"))
+                        self.player.knockback_strenght = 3
                         self.player.is_stunned = True
                         self.player.stunned_by = spike_hitbox
                         self.player.last_stun_time = time.time()
                         if not self.damage_flash_active:
                             self.damage_flash_active = True
                             self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
+
                 for o in self.throwable:
                     if o.rect().colliderect(spike_hitbox.rect()):
                         o.set_action("breaking")

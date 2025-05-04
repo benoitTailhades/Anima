@@ -65,6 +65,7 @@ class PhysicsPlayer:
         self.last_stun_time = 0
         self.stunned_by = None
         self.knockback_dir = [0, 0]
+        self.knockback_strenght = 4
 
         self.allowNoClip = True  # MANUALLY TURN IT ON HERE TO USE NOCLIP
 
@@ -171,7 +172,7 @@ class PhysicsPlayer:
 
             if stun_elapsed < stun_duration:
                 if self.stunned_by:
-                    self.velocity = list(deal_knockback(self.stunned_by, self, 4))
+                    self.velocity = list(deal_knockback(self.stunned_by, self, self.knockback_strenght))
 
                 # Jouer le son de stun
                 if stun_elapsed < 0.05:  # Pour ne jouer le son qu'une fois au début du stun
