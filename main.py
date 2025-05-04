@@ -39,6 +39,10 @@ class Game:
                                 "size": (16, 16),
                                 "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
                                 "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
+            "glorbo": {"left/right": [],
+                      "size": (16, 16),
+                      "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
+                      "loop": {"idle": True, "run": True, "attack": False, "death": False, "hit": False}},
             "vine":{"left/right":[],
                                "size": (16, 48),
                                "img_dur":{"warning": 12, "attack": 1, "retreat": 3},
@@ -317,13 +321,18 @@ class Game:
         if not self.levels[map_id]["charged"]:
             self.enemies = []
             self.bosses = []
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3)]):
                 if spawner['variant'] == 0:
                     self.spawners[str(map_id)] = spawner["pos"].copy()
                     self.spawner_pos[str(map_id)] = spawner["pos"]
                     self.player.pos = spawner["pos"].copy()
-                elif spawner['variant'] == 1:
+                elif spawner['variant'] == 1 :
                     self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
+                                              {"attack_distance": 20,
+                                               "attack_dmg": 10,
+                                               "attack_time": 1.5}))
+                elif spawner['variant'] == 3 :
+                    self.enemies.append(Enemy(self, "glorbo", spawner['pos'], (16, 16), 100,
                                               {"attack_distance": 20,
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
@@ -359,7 +368,7 @@ class Game:
             self.levels[self.level]["doors"] = self.doors.copy()
 
         else:
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2)]):
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3)]):
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
             self.player.pos = self.spawners[str(map_id)].copy()

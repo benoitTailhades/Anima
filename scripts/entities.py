@@ -251,7 +251,11 @@ class Enemy(PhysicsEntity):
                 return self.enemy_x < self.player_x
 
     def render(self, surf, offset=(0, 0)):
-        surf.blit(self.animation.img(),(self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        if self.game.e_info[self.enemy_type]["left/right"]:
+            surf.blit(self.animation.img(),(self.pos[0] - offset[0], self.pos[1] - offset[1]))
+        else:
+            surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False),
+                      (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
     def animations(self, movement):
 
@@ -268,10 +272,13 @@ class Enemy(PhysicsEntity):
 
         if not self.is_attacking and not animation_running:
             if movement[0] != 0:
-                if self.flip:
-                    self.set_action("run/left")
+                if self.game.e_info[self.enemy_type]["left/right"]:
+                    if self.flip:
+                        self.set_action("run/left")
+                    else:
+                        self.set_action("run/right")
                 else:
-                    self.set_action("run/right")
+                    self.set_action("run")
             else:
                 self.set_action("idle")
 
