@@ -6,6 +6,7 @@ import random
 from scripts.particle import Particle
 from scripts.spark import Spark
 from pygame.sprite import collide_rect
+from scripts.sound import *
 
 
 class Door:
@@ -22,11 +23,15 @@ class Door:
         self.last_time_interacted = 0
         self.id = d_id
 
+        self.breaking_sound = pygame.mixer.Sound('assets/sounds/door_breaking.wav')
+
     def update(self):
         self.animation.update()
 
-        if self.type == 'breakable_stalactite' and self.game.attacking and self.rect().colliderect(self.game.player.rect().inflate(32, 32)):
-            pos = (self.rect().x + random.random() * self.rect().width, self.rect().y + 5 + random.random() * self.rect().height)
+        if self.type == 'breakable_stalactite' and self.game.attacking and self.rect().colliderect(
+                self.game.player.rect().inflate(32, 32)):
+            pos = (self.rect().x + random.random() * self.rect().width,
+                   self.rect().y + 5 + random.random() * self.rect().height)
             self.game.particles.append(
                 Particle(self.game, 'crystal_fragment', pos, velocity=[-0.1, 1.2], frame=0))
             self.open()
@@ -46,11 +51,13 @@ class Door:
         elif self.opened and self.action != "opened":
             self.set_action("opened")
 
-
     def open(self):
         if not self.opened:
             self.set_action("opening")
             self.last_time_interacted = time.time()
+
+            if self.type == 'breakable_stalactite':
+                self.breaking_sound.play()
 
     def close(self):
         if self.opened:

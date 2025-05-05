@@ -355,7 +355,7 @@ class Throwable(PhysicsEntity):
         else:
             # If direction vector is zero, just throw upward
             self.velocity[0] = 0
-            self.velocity[1] = -strength  # Negative y is up in most game coordinate systems
+            self.velocity[1] = -strength
 
     def rect(self):
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
