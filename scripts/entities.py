@@ -288,11 +288,19 @@ class Enemy(PhysicsEntity):
 class DistanceEnemy(Enemy):
     def __init__(self, game, enemy_type, pos, size, hp, attack_info):
         super().__init__(game, enemy_type, pos, size, hp, attack_info)
+        self.projectile_sent = False
 
     def update_attack(self):
         if self.is_attacking and not self.stunned:
-            if time.time() - self.first_attack_time >= self.attack_time / 5:
-                deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
+            if time.time() - self.first_attack_time >= self.attack_time/5:
+                if time.time() - self.last_attack_time >= self.attack_time:
+                    self.last_attack_time = time.time()
+                    self.game.projectiles.append({"type": self.enemy_type + "_projectile",
+                                                      "pos":self.pos.copy(),
+                                                      "direction": [-1 if self.flip else 1, 0],
+                                                      "timer":0,
+                                                      "dmg":10})
+                    self.is_dealing_damage = True
                 self.is_dealing_damage = False
         elif not self.is_attacking:
             self.last_attack_time = 0

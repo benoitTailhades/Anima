@@ -409,7 +409,8 @@ class SecondBoss(Boss):
         self.initialize_laser_attributes()
 
     def update(self, tilemap, movement=(0, 0)):
-
+        print(self.action)
+        self.animation.update()
         #Intro
 
         #Phase 1 Projectiles + Tp around
@@ -423,10 +424,16 @@ class SecondBoss(Boss):
 
 
     def teleport(self, pos):
-        self.set_action("teleport")
-        self.teleporting = True
+        if self.action != "appear":
+            self.set_action("teleport")
+            self.teleporting = True
         if self.animation.done:
-            self.pos = pos.copy()
+            self.set_action("appear")
+            self.pos = list(pos).copy()
+            if self.animation.done:
+                self.teleporting = False
+                return True
+        return False
 
     def laser_attack(self):
         """
@@ -442,9 +449,8 @@ class SecondBoss(Boss):
         LASER_ACTIVE_TIME = 6.0  # Time in seconds for active damage phase
         LASER_COOLDOWN = 1.0  # Time after laser finishes before next action
         LASER_DAMAGE = 10  # Damage per hit
-        LASER_LENGTH = 400  # Length of the laser beam
         LASER_WIDTH = 8  # Width of the laser beam
-        ROTATION_SPEED = 2  # Degrees per second
+        ROTATION_SPEED = 1  # Degrees per second
 
         # Initialize laser attack state if not already set
         if not hasattr(self, 'laser_state'):
@@ -462,7 +468,7 @@ class SecondBoss(Boss):
         if self.laser_state == 'moving':
             if self.current_destination is not None:
                 # Start the jump to center
-                reached = self.move_to(self.current_destination, jump_height=80)
+                reached = self.teleport(self.current_destination)
 
 
                 if reached:
@@ -526,7 +532,7 @@ class SecondBoss(Boss):
     def render_laser(self, alpha=255, width=16, color=(255, 0, 0)):
         """Render the laser beam with given properties"""
         # Calculate laser end position based on angle and length
-        laser_length = 400
+        laser_length = self.laser_lenght
         center_x = self.rect().centerx - self.game.scroll[0]
         center_y = self.rect().centery - self.game.scroll[1]
 
@@ -560,7 +566,7 @@ class SecondBoss(Boss):
         source_y = self.rect().centery
 
         # Calculate laser end position
-        laser_length = 400
+        laser_length = self.laser_lenght
         end_x = source_x + laser_length * math.cos(math.radians(self.laser_angle))
         end_y = source_y + laser_length * math.sin(math.radians(self.laser_angle))
 
@@ -602,6 +608,7 @@ class SecondBoss(Boss):
         self.laser_cooldown = 5.0  # Time between laser attacks
         self.laser_width = 16  # Width of the laser beam
         self.can_use_laser = True  # Whether the boss can use the laser attack
+        self.laser_lenght = 400  # Length of the laser beam
 
     def update_attack(self):
         print("attack")

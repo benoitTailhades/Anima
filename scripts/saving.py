@@ -2,6 +2,8 @@ import json
 import os
 import time
 
+from scripts.boss import SecondBoss
+from scripts.entities import DistanceEnemy
 from scripts.sound import set_game_volume
 
 
@@ -284,14 +286,24 @@ class Save:
                                     if "attributes" in enemy_data and isinstance(enemy_data["attributes"], dict):
                                         attributes.update(enemy_data["attributes"])
 
-                                    enemy = Enemy(
-                                        self.game,
-                                        enemy_type,
-                                        enemy_data["position"],
-                                        enemy_data.get("size", (16, 16)),
-                                        enemy_data.get("hp", 100),
-                                        attributes
-                                    )
+                                    if enemy_type != "glorbo":
+                                        enemy = Enemy(
+                                            self.game,
+                                            enemy_type,
+                                            enemy_data["position"],
+                                            enemy_data.get("size", (16, 16)),
+                                            enemy_data.get("hp", 100),
+                                            attributes
+                                        )
+                                    else:
+                                        enemy = DistanceEnemy(
+                                            self.game,
+                                            enemy_type,
+                                            enemy_data["position"],
+                                            enemy_data.get("size", (16, 16)),
+                                            enemy_data.get("hp", 100),
+                                            attributes
+                                        )
 
                                     self.game.levels[lvl]['enemies'].append(enemy)
 

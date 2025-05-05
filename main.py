@@ -55,8 +55,8 @@ class Game:
                       "loop": {"intact":False, "breaking":False}},
             "ego": {"left/right": [],
                       "size": (48, 48),
-                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5},
-                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False}},
+                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5, "teleport":5, "appear":5},
+                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False, "teleport":False, "appear":False}},
                        }
 
         self.d_info = {
@@ -93,6 +93,7 @@ class Game:
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16)),
+            'glorbo_projectile': load_image('projectiles/glorbo_projectile.png', (16, 16)),
         }
 
         self.assets.update(load_activators())
@@ -106,6 +107,7 @@ class Game:
         self.levers_id_pairs = []
         self.buttons_id_pairs = []
         self.tp_id_pairs = []
+        self.projectiles = []
         for env in self.environments:
             self.doors_id_pairs += [(door, 0) for door in load_doors('editor', env)]
             self.levers_id_pairs += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
@@ -260,6 +262,8 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
+        self.light_emitting_tiles = []
+        self.light_emitting_objects = []
 
         entering_boss_level = map_id in self.boss_levels
         leaving_boss_level = self.level in self.boss_levels and map_id not in self.boss_levels
@@ -307,11 +311,10 @@ class Game:
 
         self.crystal_spawners = []
         for mushroom in self.tilemap.extract([("blue_decor", 0)], keep=True):
-            if not self.levels[map_id]["charged"]:
-                register_light_emitting_tile(self,
-                    (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
-                    "glowing_mushroom"
-                )
+            register_light_emitting_tile(self,
+                (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
+                "glowing_mushroom"
+            )
             self.crystal_spawners.append(pygame.Rect(4 + mushroom['pos'][0], 4 + mushroom['pos'][1], 23, 13))
 
         if not self.levels[map_id]["charged"]:
@@ -328,8 +331,8 @@ class Game:
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 3 :
-                    self.enemies.append(Enemy(self, "glorbo", spawner['pos'], (16, 16), 100,
-                                              {"attack_distance": 20,
+                    self.enemies.append(DistanceEnemy(self, "glorbo", spawner['pos'], (16, 16), 100,
+                                              {"attack_distance": 100,
                                                "attack_dmg": 10,
                                                "attack_time": 1.5}))
                 elif spawner['variant'] == 2:
@@ -339,7 +342,7 @@ class Game:
                                                   "attack_time": 0.1}))
                 elif spawner['variant'] == 4:
                     self.bosses.append(SecondBoss(self, "ego", spawner['pos'], (48, 48), 500,
-                                                 {"attack_distance": 25,
+                                                 {"attack_distance": 80,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
 
@@ -398,8 +401,6 @@ class Game:
                 if self.player.get_direction("x") != 0:
                     self.spawners[str(self.level)] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
                 self.level = transition["destination"]
-                self.light_emitting_tiles = []
-                self.light_emitting_objects = []
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
@@ -484,6 +485,20 @@ class Game:
                 if not door.opened:
                     ds.append(door.rect())
             self.doors_rects = ds
+
+            for projectile in self.projectiles:
+                projectile['pos'][0] += projectile['direction'][0]
+                projectile['pos'][1] += projectile['direction'][1]
+                img = self.assets[projectile['type']]
+                self.display.blit(pygame.transform.flip(img, projectile['direction'][0], False), (projectile['pos'][0] - img.get_width()/2 - render_scroll[0],
+                                        projectile['pos'][1] - img.get_height()/2 - render_scroll[1]))
+                if self.tilemap.solid_check(projectile['pos']) or projectile['timer'] > 360:
+                    self.projectiles.remove(projectile)
+                elif self.player.rect().collidepoint(projectile['pos']):
+                    self.player_hp -= 10
+                    self.damage_flash_active = True
+                    self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
+                    self.projectiles.remove(projectile)
 
             self.tilemap.render(self.display, offset=render_scroll)
 
