@@ -509,7 +509,7 @@ class Game:
                         self.throwable.remove(o)
 
             for spike_hitbox in self.spikes:
-                if time.time() - spike_hitbox.last_attack_time >= 0.5:
+                if time.time() - spike_hitbox.last_attack_time >= 0.01:
                     if self.player.rect().colliderect(spike_hitbox.rect()) and not self.player.noclip:
                         deal_dmg(self, spike_hitbox, "player", 10, 0.5)
                         self.spike_knockback_on = False
@@ -719,6 +719,7 @@ class Game:
 
             pygame.display.update()
             self.clock.tick(60)
+
 Game().run()
 
 

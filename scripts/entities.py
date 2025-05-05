@@ -468,9 +468,8 @@ def deal_dmg(game, source, target, att_dmg=5, att_time=1):
         game.player_last_attack_time = time.time()
         target.hp -= game.player_dmg
         
-def deal_knockback(entity, target, strenght, knockback=None):
+def deal_knockback(entity, target, strenght, knockback=None, stun_duration=0.5):
         stun_elapsed = time.time() - target.last_stun_time
-        stun_duration = 0.5
         knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
 
         if not target.knockback_dir[0] and not target.knockback_dir[1] and knockback is None:
