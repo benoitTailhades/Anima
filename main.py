@@ -128,8 +128,8 @@ class Game:
             self.sound_running = True
             if not self.sound_running:
                 print("Failed to start background music")
-        except Exception as e:
-            print(f"Error initializing sound: {e}")
+        except Exception as erora:
+            print(f"Error initializing sound: {erora}")
 
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0, "key_jump": 0, "key_dash": 0,
                         "key_noclip": 0, "key_attack": 0}
@@ -267,7 +267,6 @@ class Game:
         if entering_boss_level:
             if self.sound_running and hasattr(self, 'background_music'):
                 self.background_music.stop()
-                print("entering")
                 try:
                     self.background_music = pygame.mixer.Sound("assets/sounds/boss1.wav")
                     self.background_music.set_volume(self.volume)
@@ -586,7 +585,6 @@ class Game:
                 for key in self.dict_kb.keys():
                     self.dict_kb[key] = 0
                 self.player_hp = 100
-                print("is dead")
 
             if self.player_hp <= 0:
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])

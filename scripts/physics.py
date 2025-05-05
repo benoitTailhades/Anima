@@ -232,8 +232,6 @@ class PhysicsPlayer:
                 self.walk(1,1.5)
             if (self.force_movement["l"][1] < 1 and self.force_movement["l"][0]) or (self.force_movement["r"][0] and self.force_movement["r"][1] < 1) or self.is_on_floor():
                 self.force_movement = {"r":[False,0],"l":[False,0]}
-                #print("hHAPPEN")
-                #sleep(1)
             else:
                 self.force_movement["l"][1] -= 1
                 self.force_movement["r"][1] -= 1
