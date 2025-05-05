@@ -410,6 +410,15 @@ class SecondBoss(Boss):
 
     def update(self, tilemap, movement=(0, 0)):
 
+        #Intro
+
+        #Phase 1 Projectiles + Tp around
+
+        #Phase 2 Laser + Tp around
+
+        #Phase 3 Vert/Horiz lasers + Tp around
+
+
         self.laser_attack()
 
 

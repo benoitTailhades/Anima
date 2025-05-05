@@ -377,6 +377,10 @@ class DamageBlock:
         pygame.draw.rect(surf, (255, 0, 255), pygame.Rect(r.x - offset[0], r.y - offset[1],
                                 r.width, r.height))
 
+class Projectile:
+    def __init__(self):
+        pass
+
 def blur(surface, span):
     for i in range(span):
         surface = pygame.transform.smoothscale(surface, (surface.get_width() // 2, surface.get_height() // 2))

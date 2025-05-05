@@ -511,7 +511,7 @@ class Game:
 
             for spike_hitbox in self.spikes:
                 if time.time() - spike_hitbox.last_attack_time >= 0.5:
-                    if self.player.rect().colliderect(spike_hitbox.rect()):
+                    if self.player.rect().colliderect(spike_hitbox.rect()) and not self.player.noclip:
                         deal_dmg(self, spike_hitbox, "player", 10, 0.5)
                         self.spike_knockback_on = False
                         self.player.knockback_dir[0] = 1 if spike_hitbox.rect().centerx < self.player.rect().centerx else -1
