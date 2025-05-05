@@ -218,6 +218,8 @@ class PhysicsPlayer:
         else:
             self.pos[0] += self.SPEED * self.get_direction("x")
             self.pos[1] += self.SPEED * -self.get_direction("y")
+
+
             if self.dict_kb["key_noclip"] == 1:
                 self.noclip = False
 
