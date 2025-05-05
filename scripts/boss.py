@@ -597,6 +597,8 @@ class SecondBoss(Boss):
         self.laser_width = 16  # Width of the laser beam
         self.can_use_laser = True  # Whether the boss can use the laser attack
 
+    def update_attack(self):
+        print("attack")
 
 
 class Vine:

@@ -11,7 +11,7 @@ from scripts.utils import *
 from scripts.tilemap import Tilemap
 from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
-from scripts.boss import FirstBoss
+from scripts.boss import *
 from scripts.activators import *
 from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
@@ -52,7 +52,11 @@ class Game:
             "blue_rock": {"left/right": [],
                       "size": (16, 16),
                       "img_dur": {"intact":1, "breaking":2},
-                      "loop": {"intact":False, "breaking":False}}
+                      "loop": {"intact":False, "breaking":False}},
+            "ego": {"left/right": [],
+                      "size": (48, 48),
+                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5},
+                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False}},
                        }
 
         self.d_info = {
@@ -89,8 +93,6 @@ class Game:
             'full_heart': load_image('full_heart.png', (16, 16)),
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16)),
-            'teleporter': [load_image('teleporters/blue_cave/0.png')],
-            'progressive_teleporter': [load_image('teleporters/blue_cave/0.png')]
         }
 
         self.assets.update(load_activators())
@@ -103,10 +105,12 @@ class Game:
         self.doors_id_pairs = []
         self.levers_id_pairs = []
         self.buttons_id_pairs = []
+        self.tp_id_pairs = []
         for env in self.environments:
             self.doors_id_pairs += [(door, 0) for door in load_doors('editor', env)]
             self.levers_id_pairs += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
             self.buttons_id_pairs += [(button, 0) for button in load_activators(env) if "button" in button]
+            self.tp_id_pairs += [(tp, 0) for tp in load_activators(env) if "teleporter" in tp]
 
         self.sound_running = False
 
@@ -256,8 +260,6 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
-        self.teleporters = []
-
 
         entering_boss_level = map_id in self.boss_levels
         leaving_boss_level = self.level in self.boss_levels and map_id not in self.boss_levels
@@ -284,9 +286,6 @@ class Game:
                     self.boss_music_active = False
                 except Exception as e:
                     print(f"Error loading main theme: {e}")
-
-        for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
-            self.teleporters.append(Teleporter(self, tp['pos'], (16, 16), tp["type"], tp['id']))
 
         self.spikes = []
         s = []
@@ -319,7 +318,7 @@ class Game:
         if not self.levels[map_id]["charged"]:
             self.enemies = []
             self.bosses = []
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3)]):
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)]):
                 if spawner['variant'] == 0:
                     self.spawners[str(map_id)] = spawner["pos"].copy()
                     self.spawner_pos[str(map_id)] = spawner["pos"]
@@ -339,9 +338,14 @@ class Game:
                                                  {"attack_distance": 25,
                                                   "attack_dmg": 50,
                                                   "attack_time": 0.1}))
+                elif spawner['variant'] == 4:
+                    self.bosses.append(SecondBoss(self, "ego", spawner['pos'], (48, 48), 500,
+                                                 {"attack_distance": 25,
+                                                  "attack_dmg": 50,
+                                                  "attack_time": 0.1}))
 
             self.activators = []
-            for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs):
+            for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs + self.tp_id_pairs):
                 a = Activator(self, activator['pos'], activator['type'], i=activator["id"])
                 a.state = activator["variant"]
                 self.activators.append(a)
@@ -366,7 +370,7 @@ class Game:
             self.levels[self.level]["doors"] = self.doors.copy()
 
         else:
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3)]):
+            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)]):
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
             self.player.pos = self.spawners[str(map_id)].copy()
@@ -378,7 +382,7 @@ class Game:
             self.activators = self.levels[map_id]["activators"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
-        self.interactable = self.teleporters.copy() + self.throwable.copy() + self.activators.copy()
+        self.interactable = self.throwable.copy() + self.activators.copy()
         self.cutscene = False
         self.particles = []
         self.sparks = []

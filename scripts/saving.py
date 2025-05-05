@@ -316,7 +316,7 @@ class Save:
                 if "spawn_point" in save_data["player"]:
                     self.game.spawn_point = save_data["player"]["spawn_point"]
             # Update interactable objects list to include any newly loaded throwable objects
-            self.game.interactable = self.game.teleporters.copy() + self.game.throwable.copy() + self.game.activators.copy()
+            self.game.interactable = self.game.throwable.copy() + self.game.activators.copy()
 
             print(f"Game loaded successfully from {save_path}")
             return True

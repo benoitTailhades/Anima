@@ -25,8 +25,6 @@ class Editor:
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
             'throwable':load_images('entities/elements/blue_rock/intact'),
-            'teleporter':load_images('teleporters/blue_cave'),
-            'progressive_teleporter': load_images('teleporters/blue_cave')
         }
 
         self.environments = {"green_cave": (0, 1, 2),
@@ -38,10 +36,13 @@ class Editor:
         self.doors = []
         self.levers = []
         self.buttons = []
+        self.teleporters = []
         for env in self.environments:
             self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
             self.levers += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
             self.buttons += [(button, 0) for button in load_activators(env) if "button" in button]
+            self.teleporters += [(tp, 0) for tp in load_activators(env) if "teleporter" in tp]
+
 
         self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
         self.assets.update(load_doors('editor', self.get_environment(self.level)))
@@ -106,7 +107,7 @@ class Editor:
             for door in self.tilemap.extract(self.doors, keep=True):
                 self.doors_ids.add(door['id'])
 
-            for tp in self.tilemap.extract([('teleporter', 0), ('progressive_teleporter', 0)], keep=True):
+            for tp in self.tilemap.extract(self.teleporters, keep=True):
                 self.tps_ids.add(tp['id'])
                 
             for button in self.tilemap.extract(self.buttons, keep=True):
@@ -155,7 +156,8 @@ class Editor:
                         'pos': tile_pos,
                         'id': iD}
 
-                elif self.tile_list[self.tile_group] in ["teleporter", "progressive_teleporter"]:
+                elif self.tile_list[self.tile_group] in (tp[0] for tp in self.teleporters):
+                    print(self.tile_list[self.tile_group])
                     iD = int(input("Enter the tp id: "))
                     while iD in self.tps_ids:
                         print("id already used")

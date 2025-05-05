@@ -47,19 +47,22 @@
     },
     "teleporters": {
       "0":{
+        "type": "normal_tp",
         "dest": [1264, 512],
         "time": 2
       },
       "1":{
+        "type": "normal_tp",
         "dest": [1984, 704],
         "time": 2
       },
       "2":{
+        "type": "normal_tp",
         "dest": [1984, 704],
         "time": 2
       },
       "3":{
-        "activate_after": 4,
+        "type": "progressive_tp",
         "dest": [1904, 112],
         "time": 2
       }

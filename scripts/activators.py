@@ -15,7 +15,7 @@ class Activator:
         self.last_interaction_time = 0
         self.interaction_cooldown = 0.5
         self.id = i
-        self.activated = True
+        self.activated = "progressive_teleporter" not in self.type
 
     def toggle(self):#Basically change the state of the lever from activated to not activated. Takes into account the countdown(useful for silly people trying to destroy the game)
         current_time = time.time()
@@ -32,24 +32,6 @@ class Activator:
 
     def render(self, surface, offset=(0, 0)):#Just display the marvellous lever design of our dear designer
         surface.blit(self.game.assets[self.type][self.state], (self.pos[0] - offset[0], self.pos[1] - offset[1]))
-
-class Teleporter:
-    def __init__(self, game, pos, size, t_type, t_id):
-        self.game = game
-        self.type = t_type
-        self.pos = list(pos)
-        self.size = size
-        self.id = t_id
-        self.activated = self.type == "teleporter"
-        if t_type == "progressive_teleporter":
-            self.progress = 0
-
-    def rect(self):
-        return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
-
-    def can_interact(self, player_rect, interaction_distance=2):
-        can_interact = self.rect().colliderect(player_rect.inflate(interaction_distance, interaction_distance))
-        return can_interact and self.activated
 
 def load_activators_actions():
     try:
@@ -93,19 +75,18 @@ def update_activators_actions(game, level):
                     screen_shake(game, 10)
 
                 if action["type"] == "improve_tp_progress":
-                    for tp in game.teleporters:
+                    teleporters = [tp for tp in game.activators if "teleporter" in tp.type]
+                    for tp in teleporters:
                         if tp.id == action["tp_id"]:
                             activator.toggle()
                             move_visual(game, 1, tp.pos)
                             activator.activated = False
-                            tp.progress += action["amount"]
+                            tp.state += action["amount"]
+                            if tp.state == 4:
+                                tp.activated = True
+                            break
 
-    for tp in game.teleporters:
-        if tp.can_interact(game.player.rect()):
-            if str(tp.id) in game.activators_actions[str(level)]["teleporters"]:
-                game.last_teleport_time = time.time()
-                game.teleporting = True
-                game.tp_id = tp.id
-        if tp.type == "progressive_teleporter":
-            if tp.progress == game.activators_actions[str(level)]["teleporters"][str(tp.id)]["activate_after"]:
-                tp.activated = True
+                if action["type"] in ("normal_tp", "progressive_tp"):
+                    game.last_teleport_time = time.time()
+                    game.teleporting = True
+                    game.tp_id = activator_id
