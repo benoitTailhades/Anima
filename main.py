@@ -399,6 +399,8 @@ class Game:
                 if self.player.get_direction("x") != 0:
                     self.spawners[str(self.level)] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
                 self.level = transition["destination"]
+                self.light_emitting_tiles = []
+                self.light_emitting_objects = []
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 

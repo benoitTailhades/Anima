@@ -408,6 +408,11 @@ class SecondBoss(Boss):
 
         self.initialize_laser_attributes()
 
+    def update(self, tilemap, movement=(0, 0)):
+
+        self.laser_attack()
+
+
     def teleport(self, pos):
         self.set_action("teleport")
         self.teleporting = True
@@ -423,14 +428,14 @@ class SecondBoss(Boss):
         4. Rotates the laser during the attack
         """
         # Constants for laser attack
-        CENTER_POS = (208, 480)  # Center of the room
+        CENTER_POS = (304, -48)  # Center of the room
         LASER_WARMUP_TIME = 1.5  # Time in seconds for the warning phase
-        LASER_ACTIVE_TIME = 3.0  # Time in seconds for active damage phase
+        LASER_ACTIVE_TIME = 6.0  # Time in seconds for active damage phase
         LASER_COOLDOWN = 1.0  # Time after laser finishes before next action
         LASER_DAMAGE = 10  # Damage per hit
         LASER_LENGTH = 400  # Length of the laser beam
-        LASER_WIDTH = 16  # Width of the laser beam
-        ROTATION_SPEED = 45  # Degrees per second
+        LASER_WIDTH = 8  # Width of the laser beam
+        ROTATION_SPEED = 2  # Degrees per second
 
         # Initialize laser attack state if not already set
         if not hasattr(self, 'laser_state'):
@@ -446,9 +451,10 @@ class SecondBoss(Boss):
 
         # State 1: Move to center position
         if self.laser_state == 'moving':
-            if not self.is_jumping and self.current_destination is not None:
+            if self.current_destination is not None:
                 # Start the jump to center
                 reached = self.move_to(self.current_destination, jump_height=80)
+
 
                 if reached:
                     print('Reached center position')
@@ -477,7 +483,7 @@ class SecondBoss(Boss):
                 self.set_action("idle")  # Return to idle animation
 
             # Update laser angle
-            self.laser_angle += ROTATION_SPEED * self.game.dt
+            self.laser_angle += ROTATION_SPEED
             if self.laser_angle >= 360:
                 self.laser_angle -= 360
 
@@ -581,15 +587,6 @@ class SecondBoss(Boss):
             return distance <= player_radius + self.laser_width / 2
 
         return False
-
-    def update(self, tilemap, movement=(0, 0)):
-        # Call the parent's update method first
-        super().update(tilemap, movement)
-
-        # Additional laser-specific updates if we're in laser attack mode
-        if hasattr(self, 'laser_state') and self.hp > 0:
-            # Continue the laser attack
-            self.laser_attack()
 
     def initialize_laser_attributes(self):
         """Initialize attributes needed for laser attacks"""
