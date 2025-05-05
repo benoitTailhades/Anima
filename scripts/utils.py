@@ -2,18 +2,18 @@ import pygame
 import os
 import json
 
-from numpy.f2py.crackfortran import skipfuncs
+
 
 BASE_IMG_PATH = "assets/images/"
 
-def load_image(path, size=None):
+def load_image(path, size=None):#Takes a path and load the coresponding image. Can resize the image if size given
     img = pygame.image.load(BASE_IMG_PATH + path)
     img.set_colorkey((0, 0, 0))
     if size:
         img = pygame.transform.scale(img, size)  # Resize image if size is provided
     return img
 
-def load_images(path, tile_size=None):
+def load_images(path, tile_size=None):#Sort in alpha order every images of a given file. Will be used for animations or image variants
     images = []
     if type(tile_size) is not tuple and tile_size:
         tile_size = (tile_size, tile_size)
@@ -21,17 +21,17 @@ def load_images(path, tile_size=None):
         images.append(load_image(path + '/' + img_name, (tile_size[0], tile_size[1]) if tile_size else None))
     return images
 
-def round_up(x):
+def round_up(x):#pretty basic
     return int(x) + 1 if x % 1 != 0 and x > 0 else int(x)
 
-def load_tiles(env=None):
+def load_tiles(env=None):#load every tiles (graphic components) coresponding to a given environement
     tiles = {}
     for environment in sorted(os.listdir(BASE_IMG_PATH + 'tiles')) if env is None else [env]:
         for tile in sorted(os.listdir(BASE_IMG_PATH + 'tiles/' + environment)):
             tiles[tile] = load_images('tiles/' + environment + '/' + tile)
     return tiles
 
-def load_entities(e_info):
+def load_entities(e_info):#load every info on every entities
     tiles = {}
     for ent in sorted(os.listdir(BASE_IMG_PATH + 'entities/')):
         if ent != "player":
