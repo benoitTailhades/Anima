@@ -3,32 +3,44 @@ import pygame
 import json
 import os
 
+
 def load_game_font(font_name=None, size=36):
 
-    RECOMMENDED_FONTS = [
+    try:
+        return pygame.font.SysFont('Times New Roman', size, bold=True)
+    except Exception:
+        try:
+            times_path = os.path.join(os.path.dirname(__file__), 'fonts', 'TimesNewRoman-Bold.ttf')
+            if os.path.exists(times_path):
+                return pygame.font.Font(times_path, size)
+        except Exception:
+            pass
+
+    FALLBACK_FONTS = [
         'DejaVuSans-Bold.ttf',
         'FreeMono.ttf',
         'LiberationMono-Bold.ttf'
     ]
-    font_paths = [
-        os.path.join(os.path.dirname(__file__), 'fonts', font_name) if font_name else None,*[os.path.join(os.path.dirname(__file__), 'fonts', f) for f in RECOMMENDED_FONTS]
-    ]
-    for path in font_paths:
+
+    for fallback in FALLBACK_FONTS:
         try:
-            if path and os.path.exists(path):
+            path = os.path.join(os.path.dirname(__file__), 'fonts', fallback)
+            if os.path.exists(path):
                 return pygame.font.Font(path, size)
-        except:
+        except Exception:
             pass
-    return pygame.font.SysFont('monospace', size, bold=True)
+
+    return pygame.font.SysFont('serif', size, bold=True)
+
 
 def load_game_texts():
-        """Charge les textes du jeu depuis un fichier JSON"""
-        try:
-            with open("data/texts.json", "r", encoding="utf-8") as file:
-                return json.load(file)
-        except Exception as e:
-            print(f"Erreur lors du chargement des textes: {e}")
-            return {}
+    try:
+        with open("data/texts.json", "r", encoding="utf-8") as file:
+            return json.load(file)
+    except Exception as e:
+        print(f"Erreur lors du chargement des textes: {e}")
+        return {}
+
 
 def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255), offset_y=-20):
     level_str = str(game.level)
@@ -45,6 +57,7 @@ def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255
     else:
         print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
 
+
 def update_floating_texts(game, render_scroll):
     current_time = time.time()
     for text_key in game.floating_texts.copy():
@@ -57,7 +70,7 @@ def update_floating_texts(game, render_scroll):
         player_y = game.player.rect().top - render_scroll[1] + text_data['offset_y']
 
         try:
-            font = pygame.font.SysFont("Arial", 14)
+            font = load_game_font(size=14)
         except:
             font = pygame.font.Font(None, 18)
 
