@@ -10,7 +10,7 @@ def load_image(path, size=None):#Takes a path and load the coresponding image. C
     img = pygame.image.load(BASE_IMG_PATH + path)
     img.set_colorkey((0, 0, 0))
     if size:
-        img = pygame.transform.scale(img, size).convert_alpha()  # Resize image if size is provided
+        img = pygame.transform.scale(img, size)  # Resize image if size is provided
     return img
 
 def load_images(path, tile_size=None):#Sort in alpha order every images of a given file. Will be used for animations or image variants

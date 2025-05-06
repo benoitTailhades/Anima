@@ -226,6 +226,7 @@ class FirstBoss(Boss):
         self.intro_start_time = 0
         self.intro_duration = 6  # Duration in seconds for the intro animation
 
+
     def update(self, tilemap, movement=(0, 0)):
         self.start_condition = self.game.player.is_on_floor()
         if self.start_condition and not self.started:
@@ -415,6 +416,8 @@ class SecondBoss(Boss):
         self.actual_attack = None
         self.cycle_defined = False
         self.last_tp_time = 0
+        self.end_tp_time = 0
+        self.game.display = pygame.Surface((720, 432))
 
     def update(self, tilemap, movement=(0, 0)):
         self.animation.update()
@@ -429,27 +432,37 @@ class SecondBoss(Boss):
                 if not self.cycle_defined:
                     self.define_cycle()
                     self.cycle_defined = True
-                if self.tps < self.max_tps:
-                    if current_time - self.last_tp_time >= 5:
-                        self.teleport_to_random_position()
-                        reached = self.teleport(self.teleport_destination)
-                        if reached:
-                            self.last_tp_time = time.time()
-                            self.tps += 1
-                            self.teleport_destination = None
                 else:
-                    if self.actual_attack is None:
-                        self.actual_attack = random.choice(self.available_attacks)
+                    if self.tps < self.max_tps:
+                        if current_time - self.end_tp_time >= 1:
+                            self.current_destination = random.choice([
+                                                                    (208, -176),
+                                                                    (432, -176),
+                                                                    (400, -16),
+                                                                    (288, 48),
+                                                                    (112, 0)
+                                                                ]) if self.current_destination is None else self.current_destination
+                            reached = self.teleport(self.current_destination)
+                            if reached:
+                                self.current_destination = None
+                                self.end_tp_time = time.time()
+                                self.tps += 1
+                                if self.tps == self.max_tps:
+                                    self.end_tp_time = time.time()
                     else:
-                        if self.actual_attack():
-                            self.actual_attack = None
-                            self.cycle_defined = False
-                            self.tps = 0
-
+                        if current_time - self.end_tp_time >= 1:
+                            if self.actual_attack is None:
+                                self.actual_attack = random.choice(self.available_attacks)
+                            else:
+                                if self.actual_attack():
+                                    self.actual_attack = None
+                                    self.cycle_defined = False
 
     def define_cycle(self):
         self.max_tps = self.phases[self.phase]['max_tps']
+        self.end_tp_time = 0
         self.available_attacks = self.phases[self.phase]['available_attacks']
+        self.tps = 0
         self.cycle_defined = True
 
     def teleport_to_random_position(self):
@@ -505,9 +518,11 @@ class SecondBoss(Boss):
             self.teleporting = True
         if not self.action == 'teleport' or self.animation.done:
             self.set_action("appear")
+            print(pos)
             self.pos = list(pos).copy()
             if self.animation.done:
                 self.teleporting = False
+                self.set_action("idle")
                 return True
         return False
 
@@ -826,7 +841,6 @@ class SecondBoss(Boss):
                 outer_radius = warning_radius + 4 + pulse * 4
                 pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)),
                                    int(outer_radius), 2)  # Width=2 for ring
-
 
 class Vine:
     def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):

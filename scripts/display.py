@@ -220,11 +220,11 @@ def display_level_bg(game, map_id):
         display_bg(game.display, game.assets['green_cave/2'], (-game.scroll[0] / 10, -20))
         display_bg(game.display, game.assets['green_cave/3'], (game.scroll[0] / 50, -20))
     if map_id in (3,4):
-        game.display.blit(game.assets['blue_cave/0'], (0, 0))
-        display_bg(game.display, game.assets['blue_cave/1'], (-game.scroll[0] / 10, 0))
-        display_bg(game.display, game.assets['blue_cave/2'], (-game.scroll[0] / 30, 0))
-        display_bg(game.display, game.assets['blue_cave/3'], (game.scroll[0] / 30, 0))
-        display_bg(game.display, game.assets['blue_cave/4'], (game.scroll[0] / 50, 0))
+        game.display.blit(pygame.transform.scale(game.assets['blue_cave/0'], game.display.get_size()), (0, 0))
+        display_bg(game.display, pygame.transform.scale(game.assets['blue_cave/1'], game.display.get_size()), (-game.scroll[0] / 10, 0))
+        display_bg(game.display, pygame.transform.scale(game.assets['blue_cave/2'], game.display.get_size()), (-game.scroll[0] / 30, 0))
+        display_bg(game.display, pygame.transform.scale(game.assets['blue_cave/3'], game.display.get_size()), (game.scroll[0] / 30, 0))
+        display_bg(game.display, pygame.transform.scale(game.assets['blue_cave/4'], game.display.get_size()), (game.scroll[0] / 50, 0))
 
 def draw_boss_health_bar(game, boss):
     if not game.bosses or boss.hp <= 0:

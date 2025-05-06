@@ -531,7 +531,7 @@ class Game:
                 projectile['timer'] += 1
 
                 # Draw the projectile
-                img = self.assets[projectile['type']]
+                img = self.assets[projectile['type']].convert_alpha()
 
                 # Special handling for missiles - rotate the sprite to face direction of travel
                 if 'homing' in projectile and projectile['homing']:
