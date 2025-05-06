@@ -182,8 +182,8 @@ class Tilemap:
                         tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
 
     def render_over(self, surf, offset = (0, 0)):
-        for x in range(offset[0] // self.tile_size - 2, (offset[0] + surf.get_width()) // self.tile_size + 3):
-            for y in range(offset[1] // self.tile_size - 2, (offset[1] + surf.get_height()) // self.tile_size + 3):
+        for x in range(offset[0] // self.tile_size - 3, (offset[0] + surf.get_width()) // self.tile_size + 4):
+            for y in range(offset[1] // self.tile_size - 3, (offset[1] + surf.get_height()) // self.tile_size + 4):
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
