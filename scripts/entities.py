@@ -413,7 +413,7 @@ def death_animation(screen):
 
     citations = {
         "Lingagu ligaligali wasa.": "Giannini Loic, Ingenio magno",
-        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri, 'Il Poeto'",
+        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri, 'Il sommo Poeta'",
         "You cannot find peace by avoiding life": "Virginia Woolf, Writer ",
         "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates, Founder of Philosophy",
         "The wounds of conscience are the voice of God within the soul.": "Saint Augustine, Founder of Theology",
