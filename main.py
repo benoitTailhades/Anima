@@ -55,8 +55,8 @@ class Game:
                       "loop": {"intact":False, "breaking":False}},
             "ego": {"left/right": [],
                       "size": (48, 48),
-                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5, "teleport":5, "appear":5},
-                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False, "teleport":False, "appear":False}},
+                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5, "missile_charge":8, "missile_fire":5, "teleport":5, "appear":5},
+                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False, "missile_charge":False, "missile_fire":False, "teleport":False, "appear":False}},
                        }
 
         self.d_info = {
@@ -94,6 +94,7 @@ class Game:
             'half_heart': load_image('half_heart.png', (16, 16)),
             'empty_heart': load_image('empty_heart.png', (16, 16)),
             'glorbo_projectile': load_image('projectiles/glorbo_projectile.png', (16, 16)),
+            'missile': load_image('projectiles/missile.png', (16, 16)),
         }
 
         self.assets.update(load_activators())
@@ -486,19 +487,86 @@ class Game:
                     ds.append(door.rect())
             self.doors_rects = ds
 
+            # Add this code to your run function after your existing projectile handling
             for projectile in self.projectiles:
+                # Check if this is a homing missile
+                if 'homing' in projectile and projectile['homing']:
+                    # Update direction to follow player
+                    player_pos = [self.player.rect().centerx, self.player.rect().centery]
+                    missile_pos = projectile['pos']
+
+                    # Calculate direction vector to player
+                    dx = player_pos[0] - missile_pos[0]
+                    dy = player_pos[1] - missile_pos[1]
+
+                    # Normalize the direction vector
+                    magnitude = math.sqrt(dx ** 2 + dy ** 2)
+                    if magnitude > 0:
+                        # Gradually adjust direction (for smoother tracking)
+                        # The 0.1 factor makes the turning more gradual - adjust as needed
+                        turning_factor = 0.1
+                        missile_speed = projectile['speed']
+
+                        # Current direction components
+                        current_dx = projectile['direction'][0]
+                        current_dy = projectile['direction'][1]
+
+                        # Target direction components (normalized)
+                        target_dx = (dx / magnitude) * missile_speed
+                        target_dy = (dy / magnitude) * missile_speed
+
+                        # Blend current and target directions
+                        new_dx = current_dx + (target_dx - current_dx) * turning_factor
+                        new_dy = current_dy + (target_dy - current_dy) * turning_factor
+
+                        # Normalize the new direction to maintain consistent speed
+                        new_magnitude = math.sqrt(new_dx ** 2 + new_dy ** 2)
+                        if new_magnitude > 0:
+                            projectile['direction'][0] = (new_dx / new_magnitude) * missile_speed
+                            projectile['direction'][1] = (new_dy / new_magnitude) * missile_speed
+
+                # Update position (this applies to all projectiles including missiles)
                 projectile['pos'][0] += projectile['direction'][0]
                 projectile['pos'][1] += projectile['direction'][1]
+                projectile['timer'] += 1
+
+                # Draw the projectile
                 img = self.assets[projectile['type']]
-                self.display.blit(pygame.transform.flip(img, projectile['direction'][0], False), (projectile['pos'][0] - img.get_width()/2 - render_scroll[0],
-                                        projectile['pos'][1] - img.get_height()/2 - render_scroll[1]))
+
+                # Special handling for missiles - rotate the sprite to face direction of travel
+                if 'homing' in projectile and projectile['homing']:
+                    # Calculate angle based on direction
+                    angle = math.degrees(math.atan2(projectile['direction'][1], projectile['direction'][0]))
+                    rotated_img = pygame.transform.rotate(img, -angle)  # Negative because pygame rotates clockwise
+
+                    # Get the rectangle for the rotated image and center it
+                    rot_rect = rotated_img.get_rect(center=img.get_rect().center)
+                    screen_pos = (projectile['pos'][0] - rot_rect.width / 2 - render_scroll[0],
+                                  projectile['pos'][1] - rot_rect.height / 2 - render_scroll[1])
+
+                    self.display.blit(rotated_img, screen_pos)
+                else:
+                    # Regular projectile rendering
+                    screen_pos = (projectile['pos'][0] - img.get_width() / 2 - render_scroll[0],
+                                  projectile['pos'][1] - img.get_height() / 2 - render_scroll[1])
+                    self.display.blit(
+                        pygame.transform.flip(img, True if projectile['direction'][0] < 0 else False, False),
+                        screen_pos)
+
+                # Check for collisions
                 if self.tilemap.solid_check(projectile['pos']) or projectile['timer'] > 360:
                     self.projectiles.remove(projectile)
+                    if 'homing' in projectile and projectile['homing']:
+                        screen_shake(self, 20)
                 elif self.player.rect().collidepoint(projectile['pos']):
-                    self.player_hp -= 10
+                    damage = projectile['damage'] if 'damage' in projectile else 10
+                    self.player_hp -= damage
                     self.damage_flash_active = True
                     self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
                     self.projectiles.remove(projectile)
+
+                    if 'homing' in projectile and projectile['homing']:
+                        screen_shake(self, 10)
 
             self.tilemap.render(self.display, offset=render_scroll)
 

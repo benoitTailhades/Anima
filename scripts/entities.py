@@ -95,6 +95,7 @@ class Enemy(PhysicsEntity):
         self.vision_distance = 100
         self.is_attacking = False
         self.is_chasing = False
+        self.mono_direction_attack_check = False
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
         self.enemy_y = self.rect().centery
@@ -193,7 +194,7 @@ class Enemy(PhysicsEntity):
                 else:
                     self.is_chasing = False
 
-                if self.check_if_player_close(self.attack_distance, False) or (
+                if self.check_if_player_close(self.attack_distance, self.mono_direction_attack_check) or (
                         not self.game.player.is_on_floor() and self.is_attacking):
                     self.walking = 0
                     self.is_attacking = True
@@ -289,6 +290,7 @@ class DistanceEnemy(Enemy):
     def __init__(self, game, enemy_type, pos, size, hp, attack_info):
         super().__init__(game, enemy_type, pos, size, hp, attack_info)
         self.projectile_sent = False
+        self.mono_direction_attack_check = True
 
     def update_attack(self):
         if self.is_attacking and not self.stunned:
@@ -384,10 +386,6 @@ class DamageBlock:
         r = self.rect()
         pygame.draw.rect(surf, (255, 0, 255), pygame.Rect(r.x - offset[0], r.y - offset[1],
                                 r.width, r.height))
-
-class Projectile:
-    def __init__(self):
-        pass
 
 def blur(surface, span):
     for i in range(span):

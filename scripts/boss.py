@@ -405,11 +405,11 @@ class SecondBoss(Boss):
         self.intro_complete = False
         self.intro_start_time = 0
         self.intro_duration = 6  # Duration in seconds for the intro animation
+        self.CENTER_POS = (304, -48)  # Center of the room
 
         self.initialize_laser_attributes()
 
     def update(self, tilemap, movement=(0, 0)):
-        print(self.action)
         self.animation.update()
         #Intro
 
@@ -418,9 +418,9 @@ class SecondBoss(Boss):
         #Phase 2 Laser + Tp around
 
         #Phase 3 Vert/Horiz lasers + Tp around
+        self.missile_attack()
 
-
-        self.laser_attack()
+        #self.laser_attack()
 
 
     def teleport(self, pos):
@@ -444,7 +444,6 @@ class SecondBoss(Boss):
         4. Rotates the laser during the attack
         """
         # Constants for laser attack
-        CENTER_POS = (304, -48)  # Center of the room
         LASER_WARMUP_TIME = 1.5  # Time in seconds for the warning phase
         LASER_ACTIVE_TIME = 6.0  # Time in seconds for active damage phase
         LASER_COOLDOWN = 1.0  # Time after laser finishes before next action
@@ -458,7 +457,7 @@ class SecondBoss(Boss):
             self.laser_start_time = time.time()
             self.laser_angle = 0
             self.laser_hit_cooldown = 0
-            self.current_destination = CENTER_POS
+            self.current_destination = self.CENTER_POS
             print("Starting laser attack - moving to center")
 
         current_time = time.time()
@@ -610,8 +609,147 @@ class SecondBoss(Boss):
         self.can_use_laser = True  # Whether the boss can use the laser attack
         self.laser_lenght = 400  # Length of the laser beam
 
-    def update_attack(self):
-        print("attack")
+    def missile_attack(self):
+        """
+        Boss missile attack that:
+        1. Moves to center position
+        2. Creates warning indicators for missile spawns
+        3. Launches missiles that track the player
+        4. Has a cooldown period before next action
+        """
+        # Constants for missile attack
+        MISSILE_WARMUP_TIME = 1.5  # Time in seconds for the warning phase
+        MISSILE_LAUNCH_TIME = 4.0  # Time in seconds for launching missiles
+        MISSILE_COOLDOWN = 1.0  # Time after missiles finish before next action
+        MISSILE_DAMAGE = 10  # Damage per hit
+        MISSILE_SPEED = 2  # Base speed of missiles
+        MISSILE_COUNT = 3  # Total number of missiles to launch
+        MISSILE_INTERVAL = 0.4  # Time between missile launches
+        MISSILE_LIFETIME = 360  # Frames the missile lives for (same as your projectile timer)
+
+        # Initialize missile attack state if not already set
+        if not hasattr(self, 'missile_state'):
+            self.missile_state = 'moving'
+            self.missile_start_time = time.time()
+            self.missiles_launched = 0
+            self.last_missile_time = 0
+            self.current_destination = self.CENTER_POS
+            self.missile_warning_positions = []
+            print("Starting missile attack - moving to center")
+
+        current_time = time.time()
+        elapsed_time = current_time - self.missile_start_time
+
+        # State 1: Move to center position
+        if self.missile_state == 'moving':
+            if self.current_destination is not None:
+                # Start the jump to center
+                reached = self.teleport(self.current_destination)
+
+                if reached:
+                    print('Reached center position')
+                    self.current_destination = None
+                    self.missile_state = 'warning'
+                    self.missile_start_time = current_time
+                    self.set_action("missile_charge")  # Animation for charging missiles
+                    screen_shake(self.game, 8)  # Small screen shake when landing
+
+                    # Generate warning positions in a circle around the boss
+                    self.missile_warning_positions = []
+                    for i in range(MISSILE_COUNT):
+                        angle = (i / MISSILE_COUNT) * 2 * math.pi
+                        radius = 64  # Distance from boss center where missiles will spawn
+                        spawn_x = self.rect().centerx + radius * math.cos(angle)
+                        spawn_y = self.rect().centery + radius * math.sin(angle)
+                        self.missile_warning_positions.append((spawn_x, spawn_y))
+
+        # State 2: Warning phase - missile spawn indicators
+        elif self.missile_state == 'warning':
+            if elapsed_time >= MISSILE_WARMUP_TIME:
+                self.missile_state = 'launching'
+                self.missile_start_time = current_time
+                self.set_action("missile_fire")  # Animation for firing missiles
+                screen_shake(self.game, 12)  # Screen shake when missiles start launching
+
+            # Render warning indicators
+            self.render_missile_warnings()
+
+        # State 3: Launching phase - create missiles that track the player
+        elif self.missile_state == 'launching':
+            # Continue showing warning indicators during launch
+            self.render_missile_warnings()
+
+            if elapsed_time >= MISSILE_LAUNCH_TIME:
+                self.missile_state = 'cooldown'
+                self.missile_start_time = current_time
+                self.set_action("idle")  # Return to idle animation
+            else:
+                # Launch missiles at intervals
+                time_since_last_missile = current_time - self.last_missile_time
+                if time_since_last_missile >= MISSILE_INTERVAL and self.missiles_launched < MISSILE_COUNT:
+                    # Launch a new missile
+                    if self.missiles_launched < len(self.missile_warning_positions):
+                        spawn_pos = self.missile_warning_positions[self.missiles_launched]
+
+                        # Calculate initial direction toward player
+                        player_pos = [self.game.player.rect().centerx, self.game.player.rect().centery]
+                        dx = player_pos[0] - spawn_pos[0]
+                        dy = player_pos[1] - spawn_pos[1]
+                        magnitude = math.sqrt(dx ** 2 + dy ** 2)
+
+                        if magnitude > 0:
+                            dx = (dx / magnitude) * MISSILE_SPEED
+                            dy = (dy / magnitude) * MISSILE_SPEED
+                        else:
+                            dx, dy = 0, MISSILE_SPEED
+
+                        # Create the missile projectile with special 'homing' property
+                        self.game.projectiles.append({
+                            'pos': list(spawn_pos),
+                            'direction': [dx, dy],
+                            'type': 'missile',  # Ensure you have a missile sprite in assets
+                            'timer': 0,
+                            'homing': True,  # Special flag to identify homing missiles
+                            'speed': MISSILE_SPEED,
+                            'damage': MISSILE_DAMAGE
+                        })
+
+                        self.missiles_launched += 1
+                        self.last_missile_time = current_time
+                        screen_shake(self.game, 4)  # Small shake per missile launch
+
+        # State 4: Cooldown phase
+        elif self.missile_state == 'cooldown':
+            if elapsed_time >= MISSILE_COOLDOWN:
+                # Reset missile attack state
+                delattr(self, 'missile_state')
+                self.last_attack_time = current_time  # Update the boss's last attack time
+
+                # Choose next action or position
+                print("Missile attack complete")
+                return True  # Attack completed
+
+        return False  # Attack still in progress
+
+    def render_missile_warnings(self):
+        """Render warning indicators for missile spawn locations"""
+        if hasattr(self, 'missile_warning_positions'):
+            for pos in self.missile_warning_positions:
+                # Draw a warning circle at each spawn point
+                warning_radius = 8
+                warning_color = (255, 0, 0)  # Red
+
+                # Calculate position on screen (adjusted for scroll)
+                screen_x = pos[0] - self.game.scroll[0]
+                screen_y = pos[1] - self.game.scroll[1]
+
+                # Draw warning circle
+                pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)), warning_radius)
+                # Draw outer ring that pulses
+                pulse = (math.sin(time.time() * 10) + 1) / 2  # Value between 0 and 1
+                outer_radius = warning_radius + 4 + pulse * 4
+                pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)),
+                                   int(outer_radius), 2)  # Width=2 for ring
 
 
 class Vine:
