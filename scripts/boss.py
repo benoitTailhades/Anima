@@ -3,6 +3,8 @@ import time
 import math
 import random
 
+from pygame.gfxdraw import aaellipse
+
 from scripts.entities import Enemy, PhysicsEntity
 
 import pygame
@@ -394,8 +396,8 @@ class SecondBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
         self.phases = {
-            1: {'threshold': 1.0, 'speed': 1.0},
-            2: {'threshold': 0.5, 'speed': 1.0}
+            1: {'threshold': 1.0, 'max_tps': 3, 'available_attacks':[self.missile_attack]},
+            2: {'threshold': 0.5, 'max_tps': 4, 'available_attacks':[self.missile_attack, self.laser_attack]}
         }
         self.started = False
         self.teleporting = False
@@ -408,26 +410,100 @@ class SecondBoss(Boss):
         self.CENTER_POS = (304, -48)  # Center of the room
 
         self.initialize_laser_attributes()
+        self.tps = 0
+        self.available_attacks = []
+        self.actual_attack = None
+        self.cycle_defined = False
+        self.last_tp_time = 0
 
     def update(self, tilemap, movement=(0, 0)):
         self.animation.update()
-        #Intro
+        current_time = time.time()
 
-        #Phase 1 Projectiles + Tp around
+        if not self.intro_complete:
+            self.intro_complete = True
+            pass
+        else:
+            if not self.hp <= 0:
+                self.game.cutscene = False
+                if not self.cycle_defined:
+                    self.define_cycle()
+                    self.cycle_defined = True
+                if self.tps < self.max_tps:
+                    if current_time - self.last_tp_time >= 5:
+                        self.teleport_to_random_position()
+                        reached = self.teleport(self.teleport_destination)
+                        if reached:
+                            self.last_tp_time = time.time()
+                            self.tps += 1
+                            self.teleport_destination = None
+                else:
+                    if self.actual_attack is None:
+                        self.actual_attack = random.choice(self.available_attacks)
+                    else:
+                        if self.actual_attack():
+                            self.actual_attack = None
+                            self.cycle_defined = False
+                            self.tps = 0
 
-        #Phase 2 Laser + Tp around
 
-        #Phase 3 Vert/Horiz lasers + Tp around
-        self.missile_attack()
+    def define_cycle(self):
+        self.max_tps = self.phases[self.phase]['max_tps']
+        self.available_attacks = self.phases[self.phase]['available_attacks']
+        self.cycle_defined = True
 
-        #self.laser_attack()
+    def teleport_to_random_position(self):
+        """Teleport the boss to a random position in the room"""
+        # Define possible teleport locations
+        possible_positions = [
+            (208, -176),
+            (432, -176),
+            (400, -16),
+            (288, 48),
+            (112, 0)
+        ]
 
+        # Filter out positions too close to the player
+        player_pos = (self.game.player.rect().centerx, self.game.player.rect().centery)
+        safe_positions = [pos for pos in possible_positions
+                          if math.dist(pos, player_pos) > 5]
+
+        # If all positions are too close, use the original list
+        if not safe_positions:
+            safe_positions = possible_positions
+
+        # Choose a random position
+        self.teleport_destination = random.choice(safe_positions)
+
+    def handle_teleportation(self):
+        """Handle the teleportation sequence"""
+        current_time = time.time()
+        elapsed_time = current_time - self.teleport_start_time
+
+        if self.teleporting_state == 'start':
+            self.set_action('teleport')
+            if self.animation.done:
+                self.teleporting_state = 'moving'
+                self.teleport_start_time = current_time
+
+        elif self.teleporting_state == 'moving':
+            # Move to the destination
+            self.pos = list(self.teleport_destination)
+            self.teleporting_state = 'appear'
+            self.teleport_start_time = current_time
+            self.set_action('appear')
+
+        elif self.teleporting_state == 'appear':
+            if self.animation.done:
+                # Teleportation complete
+                delattr(self, 'teleporting_state')
+                self.last_attack_time = current_time  # Reset attack timer
 
     def teleport(self, pos):
         if self.action != "appear":
             self.set_action("teleport")
             self.teleporting = True
-        if self.animation.done:
+        if not self.action == 'teleport' or self.animation.done:
             self.set_action("appear")
             self.pos = list(pos).copy()
             if self.animation.done:
