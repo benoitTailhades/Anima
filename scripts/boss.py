@@ -397,7 +397,7 @@ class SecondBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
         self.phases = {
-            1: {'threshold': 1.0, 'max_tps': 3, 'available_attacks':[self.missile_attack]},
+            1: {'threshold': 1.0, 'max_tps': 3, 'available_attacks':[self.missile_attack, self.laser_attack]},
             2: {'threshold': 0.5, 'max_tps': 4, 'available_attacks':[self.missile_attack, self.laser_attack]}
         }
         self.started = False
@@ -422,6 +422,13 @@ class SecondBoss(Boss):
     def update(self, tilemap, movement=(0, 0)):
         self.animation.update()
         current_time = time.time()
+        self.player_x = self.game.player.rect().centerx
+        self.enemy_x = self.rect().centerx
+        self.enemy_y = self.rect().centery
+        self.is_attacked = (self.game.attacking
+                            and self.distance_with_player() <= self.game.player_attack_dist
+                            and self.player_looking_at_entity()
+                            and not self.is_attacked)
 
         if not self.intro_complete:
             self.intro_complete = True
@@ -435,13 +442,13 @@ class SecondBoss(Boss):
                 else:
                     if self.tps < self.max_tps:
                         if current_time - self.end_tp_time >= 1:
-                            self.current_destination = random.choice([
+                            self.current_destination = random.choice([p for p in[
                                                                     (208, -176),
                                                                     (432, -176),
                                                                     (400, -16),
                                                                     (288, 48),
                                                                     (112, 0)
-                                                                ]) if self.current_destination is None else self.current_destination
+                                                                ] if list(p) != self.pos])if self.current_destination is None else self.current_destination
                             reached = self.teleport(self.current_destination)
                             if reached:
                                 self.current_destination = None
@@ -599,7 +606,7 @@ class SecondBoss(Boss):
             if current_time - self.laser_hit_cooldown >= 0.2:  # Hit cooldown of 0.2 seconds
                 if self.check_laser_collision():
                     deal_dmg(self.game, self, 'player', LASER_DAMAGE, 0.1)
-                    self.game.player.velocity = list(deal_knockback(self, self.game.player, 3))
+                    self.game.player.velocity = list(deal_knockback(self, self.game.player, 1, stun_duration=0.2))
                     self.game.player.is_stunned = True
                     self.game.player.stunned_by = self
                     self.game.player.last_stun_time = current_time
