@@ -455,8 +455,8 @@ def player_death(game, screen, spawn_pos, spawn_level):
     game.cutscene = False
 
     death_animation(screen)
-    game.load_level(spawn_level)
     game.level = spawn_level
+    game.load_level(spawn_level)
     update_light(game)
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]

@@ -390,7 +390,7 @@ class Game:
         self.particles = []
         self.sparks = []
         self.transition = -30
-        self.max_falling_depth = 50000000 if self.level in (1,3) else 500
+        self.max_falling_depth = 50000000000000000 if self.level in (1,3) else 500
         update_light(self)
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
