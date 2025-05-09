@@ -26,6 +26,182 @@ This game isn't just a platformer — it's a philosophical journey. The goal: sh
 **Sound design**: Made up from pieces all over internet  
 **Version Control**: Github (I think you figured that out)   
 
+## Code's structure 
+```
+└── benoittailhades-anima/
+    ├── Readme.md
+    ├── editor.py
+    ├── main.py
+    ├── assets/
+    │   ├── images/
+    │   │   ├── activators/
+    │   │   │   ├── buttons/
+    │   │   │   │   └── blue_cave/
+    │   │   │   ├── levers/
+    │   │   │   │   ├── blue_cave/
+    │   │   │   │   └── green_cave/
+    │   │   │   ├── progressive_teleporters/
+    │   │   │   │   └── blue_cave/
+    │   │   │   └── teleporters/
+    │   │   │       └── blue_cave/
+    │   │   ├── backgrounds/
+    │   │   │   ├── blue_cave/
+    │   │   │   └── green_cave/
+    │   │   ├── clouds/
+    │   │   ├── doors/
+    │   │   │   ├── blue_cave/
+    │   │   │   │   ├── blue_vine_door_h/
+    │   │   │   │   │   ├── closed/
+    │   │   │   │   │   ├── closing/
+    │   │   │   │   │   ├── opened/
+    │   │   │   │   │   └── opening/
+    │   │   │   │   ├── blue_vine_door_v/
+    │   │   │   │   │   ├── closed/
+    │   │   │   │   │   ├── closing/
+    │   │   │   │   │   ├── opened/
+    │   │   │   │   │   └── opening/
+    │   │   │   │   └── breakable_stalactite/
+    │   │   │   │       ├── closed/
+    │   │   │   │       ├── opened/
+    │   │   │   │       └── opening/
+    │   │   │   └── green_cave/
+    │   │   │       ├── vines_door_h/
+    │   │   │       │   ├── closed/
+    │   │   │       │   ├── closing/
+    │   │   │       │   ├── opened/
+    │   │   │       │   └── opening/
+    │   │   │       └── vines_door_v/
+    │   │   │           ├── closed/
+    │   │   │           ├── closing/
+    │   │   │           ├── opened/
+    │   │   │           └── opening/
+    │   │   ├── entities/
+    │   │   │   ├── bosses/
+    │   │   │   │   ├── ego/
+    │   │   │   │   │   ├── appear/
+    │   │   │   │   │   ├── idle/
+    │   │   │   │   │   ├── laser_charge/
+    │   │   │   │   │   ├── laser_fire/
+    │   │   │   │   │   ├── missile_charge/
+    │   │   │   │   │   ├── missile_fire/
+    │   │   │   │   │   └── teleport/
+    │   │   │   │   └── wrath/
+    │   │   │   │       ├── charge/
+    │   │   │   │       ├── death/
+    │   │   │   │       ├── hit/
+    │   │   │   │       ├── idle/
+    │   │   │   │       ├── jump/
+    │   │   │   │       └── run/
+    │   │   │   │           ├── left/
+    │   │   │   │           └── right/
+    │   │   │   ├── elements/
+    │   │   │   │   ├── blue_rock/
+    │   │   │   │   │   ├── breaking/
+    │   │   │   │   │   └── intact/
+    │   │   │   │   └── vine/
+    │   │   │   │       ├── attack/
+    │   │   │   │       ├── retreat/
+    │   │   │   │       └── warning/
+    │   │   │   ├── enemies/
+    │   │   │   │   ├── glorbo/
+    │   │   │   │   │   ├── attack/
+    │   │   │   │   │   ├── death/
+    │   │   │   │   │   ├── hit/
+    │   │   │   │   │   ├── idle/
+    │   │   │   │   │   └── run/
+    │   │   │   │   └── picko/
+    │   │   │   │       ├── attack/
+    │   │   │   │       ├── death/
+    │   │   │   │       ├── hit/
+    │   │   │   │       ├── idle/
+    │   │   │   │       └── run/
+    │   │   │   │           ├── left/
+    │   │   │   │           └── right/
+    │   │   │   └── player/
+    │   │   │       ├── attack/
+    │   │   │       │   ├── left/
+    │   │   │       │   └── right/
+    │   │   │       ├── dash/
+    │   │   │       │   ├── left/
+    │   │   │       │   ├── right/
+    │   │   │       │   └── top/
+    │   │   │       ├── falling/
+    │   │   │       │   ├── left/
+    │   │   │       │   ├── right/
+    │   │   │       │   └── vertical/
+    │   │   │       ├── idle/
+    │   │   │       ├── jump/
+    │   │   │       │   ├── left/
+    │   │   │       │   ├── right/
+    │   │   │       │   └── top/
+    │   │   │       ├── run/
+    │   │   │       │   ├── left/
+    │   │   │       │   └── right/
+    │   │   │       └── wall_slide/
+    │   │   │           ├── left/
+    │   │   │           └── right/
+    │   │   ├── particles/
+    │   │   │   ├── crystal/
+    │   │   │   ├── crystal_fragment/
+    │   │   │   ├── leaf/
+    │   │   │   └── particle/
+    │   │   ├── projectiles/
+    │   │   ├── spawners/
+    │   │   ├── tiles/
+    │   │   │   ├── blue_cave/
+    │   │   │   │   ├── big_bloody_spikes/
+    │   │   │   │   ├── big_spikes/
+    │   │   │   │   ├── bloody_spikes/
+    │   │   │   │   ├── blue_decor/
+    │   │   │   │   ├── blue_grass/
+    │   │   │   │   ├── blue_large_decor/
+    │   │   │   │   └── spikes/
+    │   │   │   └── green_cave/
+    │   │   │       ├── dark_vine/
+    │   │   │       ├── gray_mossy_stone/
+    │   │   │       ├── hanging_vine/
+    │   │   │       ├── mossy_stone/
+    │   │   │       ├── mossy_stone_decor/
+    │   │   │       ├── vine/
+    │   │   │       ├── vine_decor/
+    │   │   │       ├── vine_transp/
+    │   │   │       └── vine_transp_back/
+    │   │   └── transition/
+    │   └── sounds/
+    │       ├── effects
+    │       ├── musics
+    │       └── player/
+    ├── data/
+    │   ├── activators.json
+    │   ├── texts.json
+    │   └── maps/
+    │       ├── 0.json
+    │       ├── 1.json
+    │       ├── 2.json
+    │       ├── 3.json
+    │       └── 4.json
+    ├── scripts/
+    │   ├── activators.py
+    │   ├── boss.py
+    │   ├── display.py
+    │   ├── doors.py
+    │   ├── entities.py
+    │   ├── particle.py
+    │   ├── physics.py
+    │   ├── saving.py
+    │   ├── sound.py
+    │   ├── spark.py
+    │   ├── text.py
+    │   ├── tilemap.py
+    │   ├── user_interface.py
+    │   └── utils.py
+    └── utilities/
+        ├── animations
+        └── helpers
+```
+
+
+
 ## Getting started 
 To play **Anima** on it's early state(right now state...) You will have to do:   
 **Whatch this explaining video I made**  
