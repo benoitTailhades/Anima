@@ -241,12 +241,15 @@ class Enemy(PhysicsEntity):
         return False
 
     def distance_with_player(self):
-        return math.sqrt((self.enemy_x - self.player_x) ** 2 + (
+        relative_player_pos = 1 if self.player_x > self.enemy_x else -1
+        if self.pos[0] < self.player_x < self.pos[0] + self.size[0]:
+            return True
+        return math.sqrt((self.enemy_x + relative_player_pos * self.size[0]/2 - self.player_x) ** 2 + (
                     (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
 
     def player_looking_at_entity(self):
         if (not (self.game.tilemap.between_check(self.game.player.pos, self.pos))
-                and self.game.player.pos[1] + self.game.player.size[1] == int(self.pos[1] + self.size[1])):
+                and self.game.player.pos[1] <= self.pos[1] + self.size[1]):
             if self.pos[0] + self.size[0] >= self.player_x >= self.pos[0]:
                 return True
             elif self.game.player.last_direction == 1:

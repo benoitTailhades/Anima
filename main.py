@@ -144,7 +144,7 @@ class Game:
 
         self.activators = []
         self.activators_actions = load_activators_actions()
-        self.boss_levels = [1]
+        self.boss_levels = [1, 4]
         self.in_boss_level = False
 
         self.spawner_pos = {}
@@ -477,7 +477,7 @@ class Game:
                         Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
             display_level_bg(self, self.level)
-            self.player.can_walljump["allowed"] = self.level not in self.boss_levels or not self.bosses
+            self.player.can_walljump["allowed"] = self.level != 1 or not self.bosses
 
             ds = []
             for door in self.doors:

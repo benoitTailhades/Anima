@@ -226,7 +226,6 @@ class FirstBoss(Boss):
         self.intro_start_time = 0
         self.intro_duration = 6  # Duration in seconds for the intro animation
 
-
     def update(self, tilemap, movement=(0, 0)):
         self.start_condition = self.game.player.is_on_floor()
         if self.start_condition and not self.started:
@@ -397,7 +396,7 @@ class SecondBoss(Boss):
     def __init__(self, game, boss_type, pos, size, hp, attack_info):
         super().__init__(game, boss_type, pos, size, hp, attack_info)
         self.phases = {
-            1: {'threshold': 1.0, 'max_tps': 3, 'available_attacks':[self.missile_attack, self.laser_attack]},
+            1: {'threshold': 1.0, 'max_tps': 3, 'available_attacks':[self.missile_attack]},
             2: {'threshold': 0.5, 'max_tps': 4, 'available_attacks':[self.missile_attack, self.laser_attack]}
         }
         self.started = False
@@ -424,46 +423,80 @@ class SecondBoss(Boss):
         current_time = time.time()
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
-        self.enemy_y = self.rect().centery
         self.is_attacked = (self.game.attacking
                             and self.distance_with_player() <= self.game.player_attack_dist
                             and self.player_looking_at_entity()
                             and not self.is_attacked)
 
-        if not self.intro_complete:
-            self.intro_complete = True
-            pass
-        else:
-            if not self.hp <= 0:
-                self.game.cutscene = False
-                if not self.cycle_defined:
-                    self.define_cycle()
-                    self.cycle_defined = True
-                else:
-                    if self.tps < self.max_tps:
-                        if current_time - self.end_tp_time >= 1:
-                            self.current_destination = random.choice([p for p in[
-                                                                    (208, -176),
-                                                                    (432, -176),
-                                                                    (400, -16),
-                                                                    (288, 48),
-                                                                    (112, 0)
-                                                                ] if list(p) != self.pos])if self.current_destination is None else self.current_destination
-                            reached = self.teleport(self.current_destination)
-                            if reached:
-                                self.current_destination = None
-                                self.end_tp_time = time.time()
-                                self.tps += 1
-                                if self.tps == self.max_tps:
-                                    self.end_tp_time = time.time()
+        self.start_condition = self.game.player.is_on_floor()
+        if self.start_condition and not self.started:
+            self.pos[1] = -256
+            self.intro_start_time = time.time()
+        if not self.game.cutscene and not self.started:
+            self.game.cutscene = True
+
+        if self.started or self.start_condition:
+            self.started = True
+            if not self.intro_complete:
+                if time.time() - self.intro_start_time <= self.intro_duration:
+                    move_visual(self.game, 0.1, self.pos)
+                    if not self.pos[1] > self.CENTER_POS[1]:
+                        self.animation.update()
+                        movement = (movement[0], movement[1] + 0.8)
+                        frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
+                        self.pos[0] += frame_movement[0]
+                        self.pos[1] += frame_movement[1]
+                        self.animations(movement)
                     else:
-                        if current_time - self.end_tp_time >= 1:
-                            if self.actual_attack is None:
-                                self.actual_attack = random.choice(self.available_attacks)
-                            else:
-                                if self.actual_attack():
-                                    self.actual_attack = None
-                                    self.cycle_defined = False
+                        self.intro_complete = True
+
+            else:
+                if self.hp <= 0:
+                    self.animation.update()
+                    return
+
+                if self.is_attacked and not self.hit:
+                    if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
+                        deal_dmg(self.game, 'player', self)
+                        self.stunned = True
+                        self.hit = True
+                        self.last_stun_time = time.time()
+
+                if not self.game.holding_attack and (
+                        not ("attack" in self.game.player.action) or self.game.player.animation.done):
+                    self.hit = False
+
+                if not self.hp <= 0:
+                    self.game.cutscene = False
+                    if not self.cycle_defined:
+                        self.define_cycle()
+                        self.cycle_defined = True
+                    else:
+                        if self.tps < self.max_tps:
+                            if current_time - self.end_tp_time >= 50:
+                                self.current_destination = random.choice([p for p in [
+                                    (208, -176),
+                                    (432, -176),
+                                    (400, -16),
+                                    (288, 48),
+                                    (112, 0)
+                                ] if list(
+                                    p) != self.pos]) if self.current_destination is None else self.current_destination
+                                reached = self.teleport(self.current_destination)
+                                if reached:
+                                    self.current_destination = None
+                                    self.end_tp_time = time.time()
+                                    self.tps += 1
+                                    if self.tps == self.max_tps:
+                                        self.end_tp_time = time.time()
+                        else:
+                            if current_time - self.end_tp_time >= 1:
+                                if self.actual_attack is None:
+                                    self.actual_attack = random.choice(self.available_attacks)
+                                else:
+                                    if self.actual_attack():
+                                        self.actual_attack = None
+                                        self.cycle_defined = False
 
     def define_cycle(self):
         self.max_tps = self.phases[self.phase]['max_tps']
@@ -525,7 +558,6 @@ class SecondBoss(Boss):
             self.teleporting = True
         if not self.action == 'teleport' or self.animation.done:
             self.set_action("appear")
-            print(pos)
             self.pos = list(pos).copy()
             if self.animation.done:
                 self.teleporting = False
@@ -606,7 +638,7 @@ class SecondBoss(Boss):
             if current_time - self.laser_hit_cooldown >= 0.2:  # Hit cooldown of 0.2 seconds
                 if self.check_laser_collision():
                     deal_dmg(self.game, self, 'player', LASER_DAMAGE, 0.1)
-                    self.game.player.velocity = list(deal_knockback(self, self.game.player, 1, stun_duration=0.2))
+                    self.game.player.velocity = list(deal_knockback(self, self.game.player, 3))
                     self.game.player.is_stunned = True
                     self.game.player.stunned_by = self
                     self.game.player.last_stun_time = current_time
