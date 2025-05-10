@@ -473,7 +473,7 @@ class SecondBoss(Boss):
                         self.cycle_defined = True
                     else:
                         if self.tps < self.max_tps:
-                            if current_time - self.end_tp_time >= 50:
+                            if current_time - self.end_tp_time >= 2:
                                 self.current_destination = random.choice([p for p in [
                                     (208, -176),
                                     (432, -176),

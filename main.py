@@ -311,7 +311,7 @@ class Game:
             self.leaf_spawners.append(pygame.Rect(4 + plant['pos'][0], 4 + plant['pos'][1], 23, 13))
 
         self.crystal_spawners = []
-        for mushroom in self.tilemap.extract([("blue_decor", 0)], keep=True):
+        for mushroom in self.tilemap.extract([("blue_decor", 14), ("blue_decor", 15)], keep=True):
             register_light_emitting_tile(self,
                 (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8),
                 "glowing_mushroom"

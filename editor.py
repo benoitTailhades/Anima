@@ -178,6 +178,7 @@ class Editor:
                         'destination': direction}
 
                 else:
+                    print(self.tile_variant)
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                         'type': self.tile_list[self.tile_group],
                         'variant': self.tile_variant,
