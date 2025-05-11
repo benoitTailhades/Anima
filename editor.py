@@ -157,7 +157,6 @@ class Editor:
                         'id': iD}
 
                 elif self.tile_list[self.tile_group] in (tp[0] for tp in self.teleporters):
-                    print(self.tile_list[self.tile_group])
                     iD = int(input("Enter the tp id: "))
                     while iD in self.tps_ids:
                         print("id already used")
@@ -178,7 +177,6 @@ class Editor:
                         'destination': direction}
 
                 else:
-                    print(self.tile_variant)
                     self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                         'type': self.tile_list[self.tile_group],
                         'variant': self.tile_variant,
