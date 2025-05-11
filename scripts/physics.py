@@ -238,7 +238,8 @@ class PhysicsPlayer:
                 self.force_movement["r"][1] -= 1
 
     def walk(self,direction,mult=1):
-        """handles horizontal player movement in the air and ground. direction for the direction to walk in, optional multiplier mult to change walkspeed"""
+        """handles horizontal player movement in the air and ground. direction for the direction
+        to walk in, optional multiplier mult to change walkspeed"""
         if self.velocity[0] != 0 and abs(self.velocity[0]) / self.velocity[0] != direction:
             self.velocity[0] += direction * self.SPEED / 2 * mult
         elif abs(self.velocity[0]) <= abs(direction * self.SPEED):
@@ -377,7 +378,7 @@ class PhysicsPlayer:
             if self.get_direction("x") == 0 and not self.is_stunned:
                 self.velocity[0] = 0
 
-    def disallow_movement(self,bool):
+    def disallow_movement(self, bool):
         """allows to disable or re-enable player movement. Bool as parameter, True to disable, False to enable movement."""
         self.disablePlayerInput = bool
 

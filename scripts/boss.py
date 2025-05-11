@@ -455,12 +455,23 @@ class SecondBoss(Boss):
                     self.animation.update()
                     return
 
-                if self.is_attacked and not self.hit:
+                if self.is_attacked and not self.hit and not self.is_attacking and not self.teleporting:
                     if time.time() - self.game.player_last_attack_time >= self.game.player_attack_time:
                         deal_dmg(self.game, 'player', self)
                         self.stunned = True
                         self.hit = True
                         self.last_stun_time = time.time()
+
+                if self.stunned:
+                    # Calculate time since stun started
+                    stun_elapsed = time.time() - self.last_stun_time
+                    stun_duration = 0.5
+
+                    if stun_elapsed >= stun_duration:
+                        self.stunned = False
+                    else:
+                        self.animations(movement)
+                        return
 
                 if not self.game.holding_attack and (
                         not ("attack" in self.game.player.action) or self.game.player.animation.done):
@@ -494,9 +505,14 @@ class SecondBoss(Boss):
                                 if self.actual_attack is None:
                                     self.actual_attack = random.choice(self.available_attacks)
                                 else:
+                                    self.is_attacking = True
                                     if self.actual_attack():
                                         self.actual_attack = None
                                         self.cycle_defined = False
+                                        self.is_attacking = False
+
+
+        self.update_phase()
 
     def define_cycle(self):
         self.max_tps = self.phases[self.phase]['max_tps']
@@ -880,6 +896,23 @@ class SecondBoss(Boss):
                 outer_radius = warning_radius + 4 + pulse * 4
                 pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)),
                                    int(outer_radius), 2)  # Width=2 for ring
+
+    def animations(self, movement):
+
+        animation_running = False
+
+        if self.stunned:
+            self.set_action("hit")
+            animation_running = True
+
+        if not self.is_attacking and not animation_running:
+            if movement[0] != 0:
+                if self.flip:
+                    self.set_action("run/left")
+                else:
+                    self.set_action("run/right")
+            else:
+                self.set_action("idle")
 
 class Vine:
     def __init__(self, size, pos, attack_time, attack_dmg, warning_duration, game):

@@ -54,9 +54,9 @@ class Game:
                       "img_dur": {"intact":1, "breaking":2},
                       "loop": {"intact":False, "breaking":False}},
             "ego": {"left/right": [],
-                      "size": (48, 48),
-                      "img_dur": {"idle": 12, "laser_charge":8, "laser_fire":5, "missile_charge":8, "missile_fire":5, "teleport":5, "appear":5},
-                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False, "missile_charge":False, "missile_fire":False, "teleport":False, "appear":False}},
+                      "size": (64, 64),
+                      "img_dur": {"idle": 20, "laser_charge":8, "laser_fire":5, "missile_charge":8, "missile_fire":5, "teleport":5, "appear":5, "hit":1, "death":5},
+                      "loop": {"idle": True, "laser_charge":False, "laser_fire":False, "missile_charge":False, "missile_fire":False, "teleport":False, "appear":False, "hit":False, "death":False}},
                        }
 
         self.d_info = {
@@ -263,6 +263,7 @@ class Game:
 
     def load_level(self, map_id):
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
+        self.display = pygame.Surface((480, 288))
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
 
@@ -344,8 +345,8 @@ class Game:
                 elif spawner['variant'] == 4:
                     self.bosses.append(SecondBoss(self, "ego", spawner['pos'], (48, 48), 500,
                                                  {"attack_distance": 80,
-                                                  "attack_dmg": 50,
-                                                  "attack_time": 0.1}))
+                                                  "attack_dmg": 10,
+                                                  "attack_time": 1}))
 
             self.activators = []
             for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs + self.tp_id_pairs):
