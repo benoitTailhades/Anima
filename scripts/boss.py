@@ -510,6 +510,15 @@ class SecondBoss(Boss):
                                         self.actual_attack = None
                                         self.cycle_defined = False
                                         self.is_attacking = False
+                                    if self.rect().colliderect(self.game.player.rect()) and not self.teleporting:
+                                        deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
+                                        if self.is_dealing_damage:
+                                            self.game.player.velocity = list(deal_knockback(self, self.game.player, 4))
+                                            self.game.player.is_stunned = True
+                                            self.game.player.stunned_by = self
+                                            self.game.player.last_stun_time = time.time()
+                                        self.is_dealing_damage = False
+
 
 
         self.update_phase()
