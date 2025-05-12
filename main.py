@@ -481,14 +481,6 @@ class Game:
             display_level_bg(self, self.level)
             self.player.can_walljump["allowed"] = self.level != 1 or not self.bosses
 
-            ds = []
-            for door in self.doors:
-                door.update()
-                door.render(self.display, offset=render_scroll)
-                if not door.opened:
-                    ds.append(door.rect())
-            self.doors_rects = ds
-
             # Add this code to your run function after your existing projectile handling
             for projectile in self.projectiles:
                 # Check if this is a homing missile
@@ -665,6 +657,16 @@ class Game:
 
             display_level_fg(self, self.level)
 
+            apply_lighting(self, render_scroll)
+
+            ds = []
+            for door in self.doors:
+                door.update()
+                door.render(self.display, offset=render_scroll)
+                if not door.opened:
+                    ds.append(door.rect())
+            self.doors_rects = ds
+
             if self.player.pos[1] > self.max_falling_depth :
                 player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
                 for key in self.dict_kb.keys():
@@ -737,7 +739,6 @@ class Game:
                 transition_surf.set_colorkey((255, 255, 255))
                 self.display.blit(transition_surf, (0, 0))
 
-            apply_lighting(self, render_scroll)
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
             update_floating_texts(self, render_scroll)
 
