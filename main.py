@@ -195,7 +195,7 @@ class Game:
             "torch": {"radius": 80, "intensity": 220, "edge_softness": 30, "color": (255, 180, 100), "flicker": True},
             "crystal": {"radius": 120, "intensity": 200, "edge_softness": 50, "color": (100, 180, 255),
                         "flicker": False},
-            "glowing_mushroom": {"radius": 20, "intensity": 80, "edge_softness": 500, "color": (160, 230, 180),
+            "glowing_mushroom": {"radius": 80, "intensity": 80, "edge_softness": 500, "color": (160, 230, 180),
                                  "flicker": False},
             "lava": {"radius": 100, "intensity": 210, "edge_softness": 40, "color": (255, 120, 50), "flicker": True}
         }

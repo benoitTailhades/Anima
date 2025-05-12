@@ -31,6 +31,7 @@ class Tilemap:
         self.show_collisions = False
 
     def extract(self, id_pairs, keep=False):
+        """dict, bool -> list"""
         matches = []
         for tile in self.offgrid_tiles.copy():
             if (tile['type'], tile['variant']) in id_pairs:
@@ -182,7 +183,9 @@ class Tilemap:
                         tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
 
     def render_over(self, surf, offset = (0, 0)):
+        # In order to make the render more optimized, we make blocks render only if they are visible on the screen
         for x in range(offset[0] // self.tile_size - 3, (offset[0] + surf.get_width()) // self.tile_size + 4):
+            # There the coordinates are only in those seen on the screen
             for y in range(offset[1] // self.tile_size - 3, (offset[1] + surf.get_height()) // self.tile_size + 4):
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
