@@ -5,7 +5,7 @@ import os
 
 
 def load_game_font(font_name=None, size=36):
-
+    # This function tries to load a font for the game, falling back to alternatives if the primary font fails
     try:
         return pygame.font.SysFont('Times New Roman', size, bold=True)
     except Exception:
@@ -31,18 +31,16 @@ def load_game_font(font_name=None, size=36):
             pass
 
     return pygame.font.SysFont('serif', size, bold=True)
-
-
 def load_game_texts():
+    # This function loads game text content from a JSON file
     try:
         with open("data/texts.json", "r", encoding="utf-8") as file:
             return json.load(file)
     except Exception as e:
         print(f"Erreur lors du chargement des textes: {e}")
         return {}
-
-
 def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255), offset_y=-20):
+    # This function creates a floating text that appears above the player character
     level_str = str(game.level)
     if level_str in game.game_texts and text_key in game.game_texts[level_str]:
         text = game.game_texts[level_str][text_key]
@@ -56,9 +54,8 @@ def display_text_above_player(game, text_key, duration=2.0, color=(255, 255, 255
         }
     else:
         print(f"Texte non trouvé: niveau {level_str}, clé {text_key}")
-
-
 def update_floating_texts(game, render_scroll):
+    # This function updates and renders all active floating texts, handling fade-out and positioning
     current_time = time.time()
     for text_key in game.floating_texts.copy():
         text_data = game.floating_texts[text_key]
