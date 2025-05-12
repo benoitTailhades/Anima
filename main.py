@@ -228,12 +228,12 @@ class Game:
         if not self.menu.start_menu_newgame():
             self.load_level(self.level)
 
-    def get_environment(self, level):
+    def get_environment(self, level):#Return environment for any given level. Go through every env and check if the level is in it
         for environment in self.environments:
             if level in self.environments[environment]:
                 return environment
 
-    def get_key_map(self):
+    def get_key_map(self):#declare every key layouts(2 for the moment)
         if self.keyboard_layout.lower() == "azerty":
             return {
                 pygame.K_z: "key_up",
@@ -255,14 +255,14 @@ class Game:
                 pygame.K_n: "key_noclip",
             }
 
-    def update_settings_from_game(self):
+    def update_settings_from_game(self):#useful function to keep track of settings from saves or manual changes
         self.volume = self.volume
         self.keyboard_layout = self.keyboard_layout
 
         if hasattr(self, "selected_language") and self.selected_language in self.languages:
             self.selected_language = self.selected_language
 
-    def load_level(self, map_id):
+    def load_level(self, map_id):#load every single elements that has been saved(maps/enemies)
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
         self.display = pygame.Surface((480, 288))
         self.light_emitting_tiles = []
@@ -397,7 +397,7 @@ class Game:
         if map_id == 0 and not self.levels[map_id]["charged"]:
             self.start_tutorial_sequence()
 
-    def check_transition(self):
+    def check_transition(self):#check if the player pos  are in a transition place.
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
@@ -407,7 +407,7 @@ class Game:
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
-    def start_tutorial_sequence(self):
+    def start_tutorial_sequence(self):#start tutorial if the player is at level 0. It takes the .json text
         self.tutorial_active = True
         self.tutorial_step = 0
         self.tutorial_next_time = time.time()
@@ -420,7 +420,7 @@ class Game:
                 {"key": "Interaction","duration":4.0,"delay":1.0,"color":(255,255,255)}
             ]
 
-    def update_tutorial_sequence(self):
+    def update_tutorial_sequence(self):#useful to display the texts boxes as wanted. Options to change colors or delay for example
         if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
             self.tutorial_active = False
             return
@@ -439,7 +439,7 @@ class Game:
             self.tutorial_next_time = current_time + message["duration"] + message["delay"]
             self.tutorial_step += 1
 
-    def update_spawn_point(self):
+    def update_spawn_point(self):#Spawn point is updated every time the player switches level
         if self.level in (0, 1, 2):
             self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
         elif self.level in (3, 4, 5):
