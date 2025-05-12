@@ -23,11 +23,17 @@ from scripts.sound import set_game_volume
 class Game:
     def __init__(self):
         pygame.init()
-        start_menu()
+        start_menu()#start a separate screen with anima logo
+
         pygame.display.set_caption("Anima")
         self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
         self.display = pygame.Surface((480, 288))
         self.clock = pygame.time.Clock()
+
+        icon_img = pygame.image.load("assets/images/logo.png").convert_alpha()
+        icon_img = pygame.transform.smoothscale(icon_img, (32, 32))
+        pygame.display.set_icon(icon_img)
+
         self.fullscreen = False
 
         self.tile_size = 16
