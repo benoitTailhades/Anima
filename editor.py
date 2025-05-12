@@ -189,7 +189,7 @@ class Editor:
                         self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
                         self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in ["teleporter", "progressive_teleporter"]:
+                    if self.tilemap.tilemap[tile_loc]['type'] in (tp[0] for tp in self.teleporters):
                         self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
                     if self.tilemap.tilemap[tile_loc]['type'] in (b[0] for b in self.buttons):
                         self.buttons_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
