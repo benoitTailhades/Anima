@@ -530,8 +530,8 @@ class SecondBoss(Boss):
             (208, -176),
             (432, -176),
             (400, -16),
-            (288, 48),
-            (112, 32)
+            (288, 32),
+            (112, 0)
         ]
 
         # Filter out positions too close to the player

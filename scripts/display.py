@@ -276,7 +276,7 @@ def draw_boss_health_bar(game, boss):
     except:
         font = pygame.font.Font(None, 26)
 
-    boss_name = boss.name if hasattr(boss, 'name') else "Wrath"
+    boss_name = boss.enemy_type if hasattr(boss, 'enemy_type') else "Wrath"
 
     text_surface = font.render(boss_name, True, (255, 255, 255))
     text_rect = text_surface.get_rect(centerx=bar_x + bar_width // 2, bottom=bar_y - 4)
