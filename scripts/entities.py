@@ -1,13 +1,14 @@
 import time
-
 import pygame
 import random
 import math
 
 from scripts.display import update_light
 
+
 class PhysicsEntity:
     def __init__(self, game, e_type, pos, size):
+        # Initialize a physics-based entity with position, size and movement properties
         self.game = game
         self.type = e_type
         self.pos = list(pos)
@@ -27,14 +28,17 @@ class PhysicsEntity:
         self.last_movement = [0, 0]
 
     def rect(self):
+        # Return the collision rectangle for this entity
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
     def set_action(self, action):
+        # Change the animation action for this entity
         if action != self.action:
             self.action = action
             self.animation = self.game.assets[self.type + '/' + self.action].copy()
 
     def update(self, tilemap, movement=(0, 0)):
+        # Update entity position, handle collisions with environment and apply physics
         self.collisions = {'up': False, 'down': False, 'right': False, 'left': False}
 
         frame_movement = (movement[0] + self.velocity[0], movement[1] + self.velocity[1])
@@ -81,11 +85,14 @@ class PhysicsEntity:
         self.animation.update()
 
     def render(self, surf, offset=(0, 0)):
+        # Draw the entity on the screen with proper orientation
         surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False),
                   (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
+
 class Enemy(PhysicsEntity):
     def __init__(self, game, enemy_type, pos, size, hp, attack_info):
+        # Initialize an enemy entity with behavior and combat stats
         super().__init__(game, 'enemy', pos, size)
 
         self.walking = 0
@@ -113,6 +120,7 @@ class Enemy(PhysicsEntity):
         self.animation = self.game.assets[self.enemy_type + '/idle'].copy()
 
     def update(self, tilemap, movement=(0, 0)):
+        # Update enemy behavior, AI and combat state
         self.player_x = self.game.player.rect().centerx
         self.enemy_x = self.rect().centerx
         self.is_attacked = (self.game.attacking
@@ -133,7 +141,8 @@ class Enemy(PhysicsEntity):
                 self.hit = True
                 self.last_stun_time = time.time()
 
-        if not self.game.holding_attack and (not("attack" in self.game.player.action) or self.game.player.animation.done) :
+        if not self.game.holding_attack and (
+                not ("attack" in self.game.player.action) or self.game.player.animation.done):
             self.hit = False
 
         self.update_attack()
@@ -214,11 +223,13 @@ class Enemy(PhysicsEntity):
         self.animations(movement)
 
     def set_action(self, action):
+        # Set the enemy's animation based on its current action
         if action != self.action:
             self.action = action
             self.animation = self.game.assets[self.enemy_type + '/' + self.action].copy()
 
     def update_attack(self):
+        # Handle enemy attack logic and timing
         if self.is_attacking and not self.stunned:
             if time.time() - self.first_attack_time >= self.attack_time / 5:
                 deal_dmg(self.game, self, 'player', self.attack_dmg, self.attack_time)
@@ -228,8 +239,9 @@ class Enemy(PhysicsEntity):
             self.first_attack_time = time.time()
 
     def check_if_player_close(self, vision_distance, mono_direction=True):
-        if (not(self.game.tilemap.between_check(self.game.player.pos, self.pos))
-                and self.game.player.pos[1]+self.game.player.size[1] == int(self.pos[1] + self.size[1])):
+        # Check if the player is within detection distance and line of sight
+        if (not (self.game.tilemap.between_check(self.game.player.pos, self.pos))
+                and self.game.player.pos[1] + self.game.player.size[1] == int(self.pos[1] + self.size[1])):
             if abs(self.player_x - self.enemy_x) <= vision_distance:
                 if mono_direction:
                     if self.flip and self.player_x < self.enemy_x:
@@ -241,13 +253,15 @@ class Enemy(PhysicsEntity):
         return False
 
     def distance_with_player(self):
+        # Calculate the distance between enemy and player
         relative_player_pos = 1 if self.player_x > self.enemy_x else -1
         if self.pos[0] < self.player_x < self.pos[0] + self.size[0]:
             return True
-        return math.sqrt((self.enemy_x + relative_player_pos * self.size[0]/2 - self.player_x) ** 2 + (
-                    (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
+        return math.sqrt((self.enemy_x + relative_player_pos * self.size[0] / 2 - self.player_x) ** 2 + (
+                (self.pos[1] + self.size[1]) - (self.game.player.pos[1] + self.game.player.size[1])) ** 2)
 
     def player_looking_at_entity(self):
+        # Check if the player is facing the enemy
         if (not (self.game.tilemap.between_check(self.game.player.pos, self.pos))
                 and self.game.player.pos[1] <= self.pos[1] + self.size[1]):
             if self.pos[0] + self.size[0] >= self.player_x >= self.pos[0]:
@@ -258,14 +272,15 @@ class Enemy(PhysicsEntity):
                 return self.enemy_x < self.player_x
 
     def render(self, surf, offset=(0, 0)):
+        # Draw the enemy on screen with proper orientation
         if self.game.e_info[self.enemy_type]["left/right"]:
-            surf.blit(self.animation.img(),(self.pos[0] - offset[0], self.pos[1] - offset[1]))
+            surf.blit(self.animation.img(), (self.pos[0] - offset[0], self.pos[1] - offset[1]))
         else:
             surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False),
                       (self.pos[0] - offset[0], self.pos[1] - offset[1]))
 
     def animations(self, movement):
-
+        # Set appropriate animation based on enemy state
         animation_running = False
 
         if self.stunned:
@@ -289,30 +304,35 @@ class Enemy(PhysicsEntity):
             else:
                 self.set_action("idle")
 
+
 class DistanceEnemy(Enemy):
     def __init__(self, game, enemy_type, pos, size, hp, attack_info):
+        # Initialize a ranged enemy that can fire projectiles
         super().__init__(game, enemy_type, pos, size, hp, attack_info)
         self.projectile_sent = False
         self.mono_direction_attack_check = True
 
     def update_attack(self):
+        # Handle ranged attack logic and create projectiles
         if self.is_attacking and not self.stunned:
-            if time.time() - self.first_attack_time >= self.attack_time/5:
+            if time.time() - self.first_attack_time >= self.attack_time / 5:
                 if time.time() - self.last_attack_time >= self.attack_time:
                     self.last_attack_time = time.time()
                     self.game.projectiles.append({"type": self.enemy_type + "_projectile",
-                                                      "pos":self.pos.copy(),
-                                                      "direction": [-1 if self.flip else 1, 0],
-                                                      "timer":0,
-                                                      "dmg":10})
+                                                  "pos": self.pos.copy(),
+                                                  "direction": [-1 if self.flip else 1, 0],
+                                                  "timer": 0,
+                                                  "dmg": 10})
                     self.is_dealing_damage = True
                 self.is_dealing_damage = False
         elif not self.is_attacking:
             self.last_attack_time = 0
             self.first_attack_time = time.time()
 
+
 class Throwable(PhysicsEntity):
     def __init__(self, game, o_type, pos, size):
+        # Initialize an object that can be picked up and thrown
         super().__init__(game, o_type, pos, size)
         self.action = ''
         self.flip = False
@@ -324,6 +344,7 @@ class Throwable(PhysicsEntity):
         self.grabbing_entity = None
 
     def update(self, tilemap, movement=(0, 0)):
+        # Update physics for throwable objects, handle grabbing state
         if not self.grabbed:
             self.game.player_grabbing = False
 
@@ -338,18 +359,22 @@ class Throwable(PhysicsEntity):
 
         else:
             self.game.player_grabbing = True
-            self.pos = [self.grabbing_entity.rect().centerx + 5 if self.grabbing_entity.last_direction == 1 else self.grabbing_entity.rect().centerx - 15,
-                        self.grabbing_entity.rect().centery-10]
+            self.pos = [
+                self.grabbing_entity.rect().centerx + 5 if self.grabbing_entity.last_direction == 1 else self.grabbing_entity.rect().centerx - 15,
+                self.grabbing_entity.rect().centery - 10]
 
     def can_interact(self, player_rect, interaction_distance=2):
+        # Check if player is close enough to interact with this object
         can_interact = self.rect().colliderect(player_rect.inflate(interaction_distance, interaction_distance))
         return can_interact
 
     def grab(self, entity):
+        # Player grabs this object
         self.grabbed = True
         self.grabbing_entity = entity
 
     def launch(self, direction, strength):
+        # Throw the object in a specific direction with given strength
         # Release from grabbed state
         self.grabbed = False
 
@@ -371,32 +396,41 @@ class Throwable(PhysicsEntity):
             self.velocity[1] = -strength
 
     def rect(self):
+        # Return collision rectangle
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
+
 
 class DamageBlock:
     def __init__(self, game, pos, size):
+        # Initialize a block that damages the player on contact
         self.pos = pos
         self.size = size
         self.last_attack_time = 0
         self.game = game
 
     def rect(self):
+        # Return collision rectangle
         r = pygame.Rect(self.pos[0], self.pos[1],
-                                self.size.get_width(), self.size.get_height())
+                        self.size.get_width(), self.size.get_height())
         return r.inflate(-r.width / 2, -r.height / 2)
 
     def render(self, surf, offset=(0, 0)):
+        # Draw the damage block on screen
         r = self.rect()
         pygame.draw.rect(surf, (255, 0, 255), pygame.Rect(r.x - offset[0], r.y - offset[1],
-                                r.width, r.height))
+                                                          r.width, r.height))
+
 
 def blur(surface, span):
+    # Apply a blur effect to a surface
     for i in range(span):
         surface = pygame.transform.smoothscale(surface, (surface.get_width() // 2, surface.get_height() // 2))
         surface = pygame.transform.smoothscale(surface, (surface.get_width() * 2, surface.get_height() * 2))
     return surface
 
+
 def message_display(surface, message, auteur, font, couleur):
+    # Show a message with author on the screen
     texte = font.render(message, True, couleur)
     auteur_texte = font.render(f"- {auteur}", True, couleur)
 
@@ -407,14 +441,16 @@ def message_display(surface, message, auteur, font, couleur):
     surface.blit(texte, texte_rect)
     surface.blit(auteur_texte, auteur_rect)
 
+
 def death_animation(screen):
+    # Display death animation with philosophical quotes
     clock = pygame.time.Clock()
     pygame.font.init()
     font = pygame.font.Font(None, 36)
 
     citations = {
         "Lingagu ligaligali wasa.": "Giannini Loic, Ingenio magno",
-        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis." : "Dante Alighieri, 'Il sommo Poeta'",
+        "The darkest places in hell are reserved for those who maintain their neutrality intimes of moral crisis.": "Dante Alighieri, 'Il sommo Poeta'",
         "You cannot find peace by avoiding life": "Virginia Woolf, Writer ",
         "All men's souls are immortal, but the souls of the righteous are immortal and divine.": "Socrates, Founder of Philosophy",
         "The wounds of conscience are the voice of God within the soul.": "Saint Augustine, Founder of Theology",
@@ -425,9 +461,9 @@ def death_animation(screen):
         "Every saint has a past, and every sinner has a future.": "Oscar Wilde, Writer ",
         "We are each our own devil, and we make this world our hell.": "Oscar wilde, Writer ",
         "It is not death that a man should fear, but never beginning to live.": "Marcus Aurelius, Pontifex Maximus",
-        "No man is lost while he still hopes.":"Miguel Cervantes, Lépante Soldier, Writer, Poet, SceneWriter",
+        "No man is lost while he still hopes.": "Miguel Cervantes, Lépante Soldier, Writer, Poet, SceneWriter",
         "Death is nothing, but to live defeated and without glory is to die every day.": "Napoléon Bonaparte, Emperor of Europe",
-        "It is not death i am afraid of, It is not to have lived enough ":"Napoléon Bonaparte, Emperor of Europe",
+        "It is not death i am afraid of, It is not to have lived enough ": "Napoléon Bonaparte, Emperor of Europe",
         "Language is a subset of humanity": "Benoît Tailhades, Ingenio Magno, "
     }
 
@@ -446,15 +482,16 @@ def death_animation(screen):
         pygame.display.flip()
         clock.tick(15)
 
-
-    while True :
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.KEYDOWN and event.key == pygame.K_SPACE:
                 print("dead")
                 return
         clock.tick(30)
 
+
 def player_death(game, screen, spawn_pos, spawn_level):
+    # Handle player death, respawn them at the proper position
     game.cutscene = False
 
     death_animation(screen)
@@ -463,8 +500,10 @@ def player_death(game, screen, spawn_pos, spawn_level):
     update_light(game)
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]
-    
+
+
 def deal_dmg(game, source, target, att_dmg=5, att_time=1):
+    # Handle damage dealing between entities
     current_time = time.time()
     if target == "player" and current_time - source.last_attack_time >= att_time:
         source.last_attack_time = time.time()
@@ -476,17 +515,21 @@ def deal_dmg(game, source, target, att_dmg=5, att_time=1):
     elif target != "player" and current_time - game.player_last_attack_time >= game.player_attack_time:
         game.player_last_attack_time = time.time()
         target.hp -= game.player_dmg
-        
-def deal_knockback(entity, target, strenght, knockback=None, stun_duration=0.5):
-        stun_elapsed = time.time() - target.last_stun_time
-        knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
 
-        if not target.knockback_dir[0] and not target.knockback_dir[1] and knockback is None:
-            target.knockback_dir[0] = 1 if entity.rect().centerx < target.rect().centerx else -1
-            target.knockback_dir[1] = 0
-        return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
+
+def deal_knockback(entity, target, strenght, knockback=None, stun_duration=0.5):
+    # Apply knockback force to targets when hit
+    stun_elapsed = time.time() - target.last_stun_time
+    knockback_force = max(0, strenght * (1.0 - stun_elapsed / stun_duration))
+
+    if not target.knockback_dir[0] and not target.knockback_dir[1] and knockback is None:
+        target.knockback_dir[0] = 1 if entity.rect().centerx < target.rect().centerx else -1
+        target.knockback_dir[1] = 0
+    return target.knockback_dir[0] * knockback_force, target.knockback_dir[1] * knockback_force
+
 
 def update_throwable_objects_action(game):
+    # Handle interaction with throwable objects
     for o in game.throwable:
         if not o.grabbed and not game.player_grabbing:
             if o.can_interact(game.player.rect()):
@@ -496,9 +539,12 @@ def update_throwable_objects_action(game):
             o.launch([game.player.last_direction, -1], 3.2)
             return
 
+
 def attacking_update(game):
+    # Update player attack state and handle attack direction
     game.attacking = ((game.dict_kb["key_attack"] == 1 and time.time() - game.player_last_attack_time >= 0.03)
-                      or game.player.action in ("attack/left", "attack/right")) and not game.player.is_stunned and not game.player_grabbing
+                      or game.player.action in (
+                      "attack/left", "attack/right")) and not game.player.is_stunned and not game.player_grabbing
     if game.attacking and game.player.action == "attack/right" and game.player.get_direction("x") == -1:
         game.attacking = False
         game.dict_kb["key_attack"] = 0

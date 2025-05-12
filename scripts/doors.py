@@ -25,7 +25,7 @@ class Door:
 
         self.breaking_sound = pygame.mixer.Sound('assets/sounds/door_breaking.wav')
 
-    def update(self):
+    def update(self):#for every frame the state of the door is updated(state/ open/ trnasitions)
         self.animation.update()
 
         if self.type == 'breakable_stalactite' and self.game.attacking and self.rect().colliderect(
@@ -51,7 +51,7 @@ class Door:
         elif self.opened and self.action != "opened":
             self.set_action("opened")
 
-    def open(self):
+    def open(self):#mainly useful for the state of door and sound play
         if not self.opened:
             self.set_action("opening")
             self.last_time_interacted = time.time()
@@ -59,22 +59,22 @@ class Door:
             if self.type == 'breakable_stalactite':
                 self.breaking_sound.play()
 
-    def close(self):
+    def close(self):#not useful for the moment but might in the future
         if self.opened:
             self.set_action("closing")
             self.last_time_interacted = time.time()
 
-    def rect(self):
+    def rect(self):#is very useful because when the door is broken the player has to be able to go through the updated frame
         if self.action == "opened":
             return pygame.Rect(self.pos[0], self.pos[1], 0, 0)
         else:
             return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
 
-    def set_action(self, action):
+    def set_action(self, action):#load the animation for door breaking
         if action != self.action:
             self.action = action
             self.animation = self.game.assets[self.type + '/' + self.action].copy()
 
-    def render(self, surf, offset=(0, 0)):
+    def render(self, surf, offset=(0, 0)):#display the animation
         surf.blit(pygame.transform.flip(self.animation.img(), self.flip, False),
                   (self.pos[0] - offset[0], self.pos[1] - offset[1]))

@@ -544,13 +544,11 @@ class Menu:
                 50
             )
 
-            # Check if mouse is hovering over the back button
             is_back_hovered = back_rect.collidepoint(mouse_pos)
 
             if is_back_hovered:
                 py.draw.rect(self.screen, (120, 120, 120), back_rect, border_radius=5)  # Lighter when hovered
             else:
-                # Draw just a border for the back button when not hovered
                 py.draw.rect(self.screen, (80, 80, 80), back_rect, width=1, border_radius=5)
 
             back_text = self.button_font.render("BACK", True, self.COLORS["white"])
