@@ -187,14 +187,11 @@ class Boss(Enemy):
             try:
                 self.set_action("jump")
             except KeyError:
-                # If jump_up animation doesn't exist
                 pass
         else:
-            # Falling part of jump
             try:
                 self.set_action("jump")
             except KeyError:
-                # If jump_down animation doesn't exist
                 pass
 
         return False  # Still moving
@@ -288,12 +285,9 @@ class FirstBoss(Boss):
                                     self.has_performed_initial_jump = True
                                     self.bottom = False
                                     # Next action after reaching position
-                                    # For example, start attacking the player
                         else:
                             # Behavior after first jump is complete (attack patterns, etc.)
-                            # For example:
                             if not self.is_jumping and time.time() - self.last_attack_time > 3.0 and self.vines_cyles != self.phases[self.phase]["max_cycles"]:
-                                # Maybe jump to a new position
                                 possible_positions = [(144, 480), (32, 496), (304, 496), (384, 480)]
                                 r = random.choice(possible_positions)
                                 while r == self.last_dest:
@@ -310,7 +304,6 @@ class FirstBoss(Boss):
                                     screen_shake(self.game, 16)
                                     print('Reached new position')
                                     self.current_destination = None
-                                    # Maybe start an attack sequence
 
                     if self.vines_cyles == self.phases[self.phase]["max_cycles"] and len(self.vines) == 0:
                         if self.rect().colliderect(self.game.player.rect()):
@@ -550,7 +543,6 @@ class SecondBoss(Boss):
         if not safe_positions:
             safe_positions = possible_positions
 
-        # Choose a random position
         self.teleport_destination = random.choice(safe_positions)
 
     def handle_teleportation(self):
@@ -679,9 +671,9 @@ class SecondBoss(Boss):
 
                 # Choose next action or position
                 print("Laser attack complete")
-                return True  # Attack completed
+                return True
 
-        return False  # Attack still in progress
+        return False
 
     def render_laser(self, alpha=255, width=16, color=(255, 0, 0)):
         """Render the laser beam with given properties"""
@@ -898,9 +890,7 @@ class SecondBoss(Boss):
                 screen_x = pos[0] - self.game.scroll[0]
                 screen_y = pos[1] - self.game.scroll[1]
 
-                # Draw warning circle
                 pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)), warning_radius)
-                # Draw outer ring that pulses
                 pulse = (math.sin(time.time() * 10) + 1) / 2  # Value between 0 and 1
                 outer_radius = warning_radius + 4 + pulse * 4
                 pygame.draw.circle(self.game.display, warning_color, (int(screen_x), int(screen_y)),
