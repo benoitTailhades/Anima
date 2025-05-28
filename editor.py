@@ -356,9 +356,10 @@ class Editor:
                 main_area_width = self.screen_width - SIDEBAR_WIDTH
                 if mpos[0] < main_area_width:  # Only if mouse is over main area
                     # Scale mouse position to account for display scaling
-                    scale_x = main_area_width / 480
-                    scale_y = self.screen_height / 288
-                    mpos = (mpos[0] / scale_x, mpos[1] / scale_y)
+                    scale_x = (960) / (self.screen.get_size()[0] - SIDEBAR_WIDTH)
+                    scale_y = 576 / (self.screen.get_size()[1])
+                    mpos = ((mpos[0] / RENDER_SCALE) * scale_x * self.zoom,
+                            (mpos[1] / RENDER_SCALE) * scale_y * self.zoom)
                     tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                                 int((mpos[1] + self.scroll[1]) // self.tilemap.tile_size))
 
