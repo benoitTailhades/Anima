@@ -7,9 +7,11 @@ import json
 from scripts.utils import load_images, load_tiles, load_doors, load_activators
 from scripts.tilemap import Tilemap
 from scripts.button import Button
+from scripts.activators import load_activators_actions
 
 RENDER_SCALE = 2.0
 SIDEBAR_WIDTH = 200
+UNDERBAR_HEIGHT = 200
 
 
 class Editor:
@@ -43,6 +45,7 @@ class Editor:
         self.buttons = []
         self.teleporters = []
         self.categories = {}
+        self.activators = {}
         for env in self.environments:
             self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
             self.levers += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
@@ -54,6 +57,8 @@ class Editor:
         self.assets.update(load_activators(self.get_environment(self.level)))
         self.get_categories()
         self.category_changed = False
+        self.activators_categories_shown = False
+        self.current_activator_category = "All"
 
         self.movement = [False, False, False, False]
 
@@ -75,6 +80,8 @@ class Editor:
         self.tps_ids = set()
 
         self.zoom = 1
+        self.edit_properties_mode_on = False
+        self.holding_i = False
 
         self.clicking = False
         self.right_clicking = False
@@ -131,10 +138,70 @@ class Editor:
             if button.pressed(mpos):
                 if self.current_category_name != "Entities":
                     self.tile_group = self.tile_list.index(element)
+                    self.tile_variant = 0
                 else:
                     self.tile_group = 0
                     self.tile_variant = self.categories["Entities"].index(element)
             pos[1] += 40
+
+    def move_visual_to(self, pos):
+        self.scroll[0] = pos[0]*16 - (self.screen_width-SIDEBAR_WIDTH)//(2*int(RENDER_SCALE))
+        self.scroll[1] = pos[1]*16 - self.screen_height//(2*int(RENDER_SCALE))
+
+    def render_underbar(self):
+        mpos = (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1] - (self.screen.get_size()[1] - UNDERBAR_HEIGHT))
+
+        self.underbar = pygame.Surface((self.screen.get_size()[0] - SIDEBAR_WIDTH, UNDERBAR_HEIGHT))
+        self.underbar.fill((35, 35, 35))
+
+        category_text = self.font.render(self.current_activator_category, True, (255, 255, 255))
+        category_button = Button(20, 10, 100, 20, self.clicking)
+
+        activators = self.activators[self.current_activator_category] if self.current_activator_category != "All" else \
+        self.activators["Levers"] | self.activators["Teleporters"] | self.activators["Buttons"]
+        r = c = 0
+        cell_width = 150
+        cell_h_offset = 15
+        cell_height = 40
+        cell_v_offset = 50
+
+        for activator in activators:
+            act_button = Button(cell_h_offset + (cell_width+cell_h_offset)*c, cell_v_offset + (cell_height+10)*r, cell_width, cell_height, self.clicking)
+            if self.activators_categories_shown:
+                act_button.activated = False
+            act_button.draw(self.underbar, (60, 60, 60), mpos)
+            info_r = 0
+            for info in ["id", "pos"]:
+                info_name = self.small_font.render(info+":", True, (255, 255, 255))
+                info_value = self.small_font.render(str(activators[activator][info]), True, (255, 255, 255))
+                self.underbar.blit(info_name, (20 + (cell_width+cell_h_offset) * c, cell_v_offset+5 + (cell_height+10) * r + 18*info_r))
+                self.underbar.blit(info_value, (20 + (cell_width+cell_h_offset) * c + info_name.get_width() + 2, cell_v_offset+5 + (cell_height+10) * r + 18*info_r))
+                info_r += 1
+            c += 1
+            if cell_h_offset + (cell_width+cell_h_offset) * c + cell_width > self.underbar.get_width():
+                c = 0
+                r += 1
+            if act_button.pressed(mpos):
+                self.move_visual_to(activators[activator]["pos"])
+
+        category_button.draw(self.underbar, (50, 50, 50), mpos)
+        self.underbar.blit(category_text, ((140 - category_text.get_width())/2, 13))
+
+        if self.activators_categories_shown:
+            categories = ["All", "Levers", "Teleporters", "Buttons"]
+            categories.remove(self.current_activator_category)
+            for category in categories:
+                c_text = self.font.render(category, True, (255, 255, 255))
+                c_button = Button(20, 10 + 20*(categories.index(category)+1), 100, 20, self.clicking)
+                c_button.draw(self.underbar, (50, 50, 50), mpos)
+                self.underbar.blit(c_text, ((140 - c_text.get_width())/2, 13 + 20*(categories.index(category)+1)))
+                if c_button.pressed(mpos):
+                    self.current_activator_category = category
+
+        if category_button.pressed(mpos):
+            self.activators_categories_shown = True
+        elif self.clicking:
+            self.activators_categories_shown = False
 
     def get_categories(self):
         self.categories["Blocks"] = [b for b in list(load_tiles(self.get_environment(self.level)).keys()) if "decor" not in b]
@@ -144,6 +211,16 @@ class Editor:
         self.categories["Entities"] = self.base_assets["spawners"].copy()
         self.current_category = 0
         self.current_category_name = list(self.categories.keys())[self.current_category]
+
+    def get_activators(self):
+        for a in ["Levers", "Teleporters", "Buttons"]:
+            self.activators[a] = {pos : {"id" : self.tilemap.tilemap[pos]["id"], "pos": self.tilemap.tilemap[pos]["pos"]} for pos in self.tilemap.tilemap if a.lower()[:-1] in self.tilemap.tilemap[pos]["type"]}
+            activators_actions = load_activators_actions()
+            for activator in self.activators[a]:
+                id_l = self.activators[a][activator]["id"]
+                #Systeme de ajout d'un nouveau activator
+                for info in activators_actions[str(self.level)][a.lower()][str(id_l)]:
+                    self.activators[a][activator][info] = activators_actions[str(self.level)][a.lower()][str(id_l)].copy()[info]
 
     def run(self):
         while True:
@@ -159,19 +236,22 @@ class Editor:
             current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
             current_tile_img.set_alpha(100)
 
+            self.get_activators()
+
             # Calculate mouse position (only for main display area)
             mpos = pygame.mouse.get_pos()
             main_area_width = self.screen_width - SIDEBAR_WIDTH
-            if mpos[0] < main_area_width:  # Only if mouse is over main area
+            main_area_height = self.screen_height - UNDERBAR_HEIGHT if self.edit_properties_mode_on else self.screen_height
+            if mpos[0] < main_area_width and mpos[1] < main_area_height:  # Only if mouse is over main area
                 # Scale mouse position to account for display scaling
-                scale_x = (960) / (self.screen.get_size()[0] - SIDEBAR_WIDTH)
+                scale_x = 960 / (self.screen.get_size()[0] - SIDEBAR_WIDTH)
                 scale_y = 576 / (self.screen.get_size()[1])
                 mpos = ((mpos[0] / RENDER_SCALE) * scale_x * self.zoom,
                         (mpos[1] / RENDER_SCALE) * scale_y * self.zoom)
                 tile_pos = (int((mpos[0] + self.scroll[0]) // self.tilemap.tile_size),
                             int((mpos[1] + self.scroll[1]) // self.tilemap.tile_size))
 
-            mpos_in_mainarea = mpos[0] < main_area_width
+            mpos_in_mainarea = mpos[0] < main_area_width and mpos[1] < main_area_height
 
             for lever in self.tilemap.extract(self.levers, keep=True):
                 self.levers_ids.add(lever['id'])
@@ -294,7 +374,7 @@ class Editor:
                                                                mpos[0] + self.scroll[0], mpos[1] + self.scroll[1])})
                     if event.button == 3:
                         self.right_clicking = True
-                    if self.shift:
+                    if not self.shift and self.tile_group:
                         if event.button == 4:
                             self.tile_variant = (self.tile_variant - 1) % len(
                                 self.assets[self.tile_list[self.tile_group]])
@@ -307,6 +387,9 @@ class Editor:
                     if event.button == 3:
                         self.right_clicking = False
                 if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_i and not self.holding_i:
+                        self.edit_properties_mode_on = not self.edit_properties_mode_on
+                        self.holding_i = True
                     if event.key == pygame.K_q:
                         self.movement[0] = True
                     if event.key == pygame.K_RIGHT:
@@ -382,6 +465,8 @@ class Editor:
                     if event.key == pygame.K_c:
                         print((tile_pos[0] * 16, tile_pos[1] * 16))
                 if event.type == pygame.KEYUP:
+                    if event.key == pygame.K_i:
+                        self.holding_i = False
                     if event.key == pygame.K_q:
                         self.movement[0] = False
                     if event.key == pygame.K_d:
@@ -395,16 +480,20 @@ class Editor:
                 if event.type == pygame.VIDEORESIZE:
                     # Update screen dimensions
                     self.screen_width = max(event.w, 480 + SIDEBAR_WIDTH)  # Minimum width
-                    self.screen_height = max(event.h, 288)  # Minimum height
+                    self.screen_height = max(event.h, 288 + UNDERBAR_HEIGHT)  # Minimum height
                     self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
 
             # Calculate main area dimensions for scaling
             main_area_width = self.screen_width - SIDEBAR_WIDTH
+            main_area_height = self.screen_height
 
             # Blit everything to screen
-            scaled_display = pygame.transform.scale(self.display, (main_area_width, self.screen_height))
+            scaled_display = pygame.transform.scale(self.display, (main_area_width, main_area_height))
             self.screen.blit(scaled_display, (0, 0))
             self.screen.blit(self.sidebar, (main_area_width, 0))
+            if self.edit_properties_mode_on:
+                self.render_underbar()
+                self.screen.blit(self.underbar, (0, main_area_height - UNDERBAR_HEIGHT))
             pygame.display.update()
             self.clock.tick(60)
 
