@@ -61,6 +61,7 @@ class Editor:
         self.activators_categories_shown = False
         self.current_activator_category = "All"
         self.selected_activator = None
+        self.selected_activator_type = None
         self.edited_info = None
         self.edited_value = None
 
@@ -88,6 +89,7 @@ class Editor:
         self.holding_i = False
         self.window_mode = False
         self.showing_properties_window = False
+        self.get_activators()
 
         self.clicking = False
         self.right_clicking = False
@@ -299,11 +301,10 @@ class Editor:
         while True:
             self.display.fill((0, 0, 0))
 
+
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
-
-            self.get_activators()
 
             self.tilemap.render(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
             self.tilemap.render_over(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
@@ -427,8 +428,8 @@ class Editor:
                             if t in self.activators_types:
                                 self.set_window_mode()
                                 self.showing_properties_window = True
-                                a_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
-                                self.selected_activator = {"image": self.assets[t][0], "infos":self.activators[a_type][tile_loc]}
+                                self.selected_activator_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
+                                self.selected_activator = {"image": self.assets[t][0], "infos":self.activators[self.selected_activator_type][tile_loc]}
                                 self.clicking = False
 
             if self.right_clicking and mpos_in_mainarea:
@@ -516,6 +517,7 @@ class Editor:
                                 self.tile_group = 0
                                 self.tile_variant = 0
                                 self.get_categories()
+                                self.get_activators()
                         if event.key == pygame.K_LEFT:
                             if self.level > 0:
                                 self.tilemap.save('data/maps/' + str(self.level) + '.json')
@@ -536,6 +538,7 @@ class Editor:
                                 self.tile_group = 0
                                 self.tile_variant = 0
                                 self.get_categories()
+                                self.get_activators()
                         if event.key == pygame.K_DOWN:
                             self.zoom = self.zoom * 2
                             self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
@@ -582,9 +585,17 @@ class Editor:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             if self.edited_info:
-                                self.edited_info = False
+                                self.edited_info = None
                             else:
                                 self.window_mode = False
+                        if event.key == pygame.K_RETURN:
+                            if self.edited_info:
+                                pos = str(self.selected_activator["infos"]["pos"])
+                                tile_loc = pos[1:-1].replace(', ', ';')
+                                self.selected_activator["infos"][self.edited_info] = self.edited_value
+                                self.activators[self.selected_activator_type][tile_loc][self.edited_info] = self.edited_value
+                                self.edited_value = None
+                                self.edited_info = None
                         if self.edited_info and 48 <= ord(self.edited_value[0] if len(
                                 self.edited_value) else '0') <= 57:
                             if event.key == pygame.K_BACKSPACE:
@@ -594,6 +605,7 @@ class Editor:
                                     self.edited_value += chr(event.key)
                                 else:
                                     print("max id reached")
+
 
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
