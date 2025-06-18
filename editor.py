@@ -46,6 +46,7 @@ class Editor:
         self.teleporters = []
         self.categories = {}
         self.activators = {}
+        self.activators_types = set()
         for env in self.environments:
             self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
             self.levers += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
@@ -59,6 +60,9 @@ class Editor:
         self.category_changed = False
         self.activators_categories_shown = False
         self.current_activator_category = "All"
+        self.selected_activator = None
+        self.edited_info = None
+        self.edited_value = None
 
         self.movement = [False, False, False, False]
 
@@ -82,6 +86,8 @@ class Editor:
         self.zoom = 1
         self.edit_properties_mode_on = False
         self.holding_i = False
+        self.window_mode = False
+        self.showing_properties_window = False
 
         self.clicking = False
         self.right_clicking = False
@@ -145,8 +151,10 @@ class Editor:
             pos[1] += 40
 
     def move_visual_to(self, pos):
-        self.scroll[0] = pos[0]*16 - (self.screen_width-SIDEBAR_WIDTH)//(2*int(RENDER_SCALE))
-        self.scroll[1] = pos[1]*16 - self.screen_height//(2*int(RENDER_SCALE))
+        scale_x = 960 / (self.screen.get_size()[0] - SIDEBAR_WIDTH)
+        scale_y = 576 / (self.screen.get_size()[1])
+        self.scroll[0] = pos[0]*16 - ((self.screen_width-SIDEBAR_WIDTH)*scale_x)//(2*int(RENDER_SCALE *self.zoom))
+        self.scroll[1] = pos[1]*16 - self.screen_height*scale_y//(2*int(RENDER_SCALE *self.zoom))
 
     def render_underbar(self):
         mpos = (pygame.mouse.get_pos()[0], pygame.mouse.get_pos()[1] - (self.screen.get_size()[1] - UNDERBAR_HEIGHT))
@@ -203,6 +211,68 @@ class Editor:
         elif self.clicking:
             self.activators_categories_shown = False
 
+    def set_window_mode(self):
+        if not self.window_mode:
+            self.default_bg = self.screen.copy()
+            self.window_mode = True
+
+    def update_window_mode_bg(self):
+        overlay = pygame.Surface(self.screen.get_size(), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+
+        scaled_bg = pygame.transform.scale(self.default_bg, self.screen.get_size())
+        self.screen.blit(scaled_bg, (0, 0))
+        self.screen.blit(overlay, (0, 0))
+
+    def render_info_window(self):
+        self.properties_window = pygame.Surface((280, 250))
+        self.properties_window.fill((35, 35, 35))
+        window_pos = ((self.screen_width-self.properties_window.get_width())/2,
+                      (self.screen_height-self.properties_window.get_height())/2)
+        mpos = (pygame.mouse.get_pos()[0] - window_pos[0], pygame.mouse.get_pos()[1] - window_pos[1])
+
+        cell_h_offset = 20
+        cell_v_offset = 70
+        row_offset = 30
+        info_r = 0
+        infos = self.selected_activator["infos"].copy()
+        pos_txt = self.font.render("pos" + ":", True, (255, 255, 255))
+        pos_val = self.font.render(str(infos["pos"]), True, (255, 255, 255))
+        self.properties_window.blit(pos_txt, (self.properties_window.get_width() - pos_val.get_width() - pos_txt.get_width() - 12, 10))
+        self.properties_window.blit(pos_val, (self.properties_window.get_width() - pos_val.get_width() - 10, 10))
+        del infos["pos"]
+        for info in infos:
+            info_name = self.font.render(info + ":", True, (255, 255, 255))
+            info_value = self.font.render(self.edited_value if self.edited_info == info else
+                                          str(self.selected_activator["infos"][info]), True, (255, 255, 255))
+            value_rect = Button(cell_h_offset + info_name.get_width() + 2,
+                                     cell_v_offset + 5 + row_offset * info_r,
+                                      max(info_value.get_width(), 9), info_value.get_height(), self.clicking)
+            if value_rect.pressed(mpos) and not self.edited_info:
+                self.edited_info = info
+                self.edited_value = str(self.selected_activator["infos"][info])
+                print('modifing: ' + self.edited_info)
+                print('value: ' + self.edited_value)
+            if self.edited_info:
+                value_rect.activated = False
+            value_rect.draw(self.properties_window, (0, 50, 200), mpos)
+            self.properties_window.blit(info_name, (
+            cell_h_offset , cell_v_offset + 5 + row_offset * info_r))
+            self.properties_window.blit(info_value, (cell_h_offset + info_name.get_width() + 2,
+                                            cell_v_offset + 5 + row_offset * info_r))
+            self.properties_window.blit(pygame.transform.scale(self.selected_activator["image"], (48, 48)), (5, 0))
+            info_r += 1
+
+    def save_edited_value(self):
+        with open("data/activators.json", "r") as file:
+            actions_data = json.load(file)
+            activators = {}
+            for activator in self.activators:
+                activators[activator.lower()] = activators[activator].copy()
+            actions_data[str(self.level)] = activators.copy()
+        with open("data/activators.json", "w") as f:
+            json.dump(actions_data, f)
+
     def get_categories(self):
         self.categories["Blocks"] = [b for b in list(load_tiles(self.get_environment(self.level)).keys()) if "decor" not in b]
         self.categories["Decor"] = [d for d in list(load_tiles(self.get_environment(self.level)).keys()) if "decor" in d]
@@ -215,6 +285,9 @@ class Editor:
     def get_activators(self):
         for a in ["Levers", "Teleporters", "Buttons"]:
             self.activators[a] = {pos : {"id" : self.tilemap.tilemap[pos]["id"], "pos": self.tilemap.tilemap[pos]["pos"]} for pos in self.tilemap.tilemap if a.lower()[:-1] in self.tilemap.tilemap[pos]["type"]}
+            for pos in self.tilemap.tilemap:
+                if a.lower()[:-1] in self.tilemap.tilemap[pos]["type"]:
+                    self.activators_types.add(self.tilemap.tilemap[pos]['type'])
             activators_actions = load_activators_actions()
             for activator in self.activators[a]:
                 id_l = self.activators[a][activator]["id"]
@@ -230,13 +303,13 @@ class Editor:
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            self.tilemap.render(self.display, offset=render_scroll)
-            self.tilemap.render_over(self.display, offset=render_scroll)
+            self.get_activators()
+
+            self.tilemap.render(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
+            self.tilemap.render_over(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
 
             current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
             current_tile_img.set_alpha(100)
-
-            self.get_activators()
 
             # Calculate mouse position (only for main display area)
             mpos = pygame.mouse.get_pos()
@@ -266,97 +339,123 @@ class Editor:
                 self.buttons_ids.add(button['id'])
 
             if mpos_in_mainarea:
-                if self.ongrid:
-                    self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
-                                                         tile_pos[1] * self.tilemap.tile_size - self.scroll[1]))
-                else:
-                    self.display.blit(current_tile_img, mpos)
+                if not self.window_mode:
+                    if not self.edit_properties_mode_on:
+                        if self.ongrid:
+                            self.display.blit(current_tile_img, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
+                                                                 tile_pos[1] * self.tilemap.tile_size - self.scroll[1]))
+                        else:
+                            self.display.blit(current_tile_img, mpos)
+                    else:
+                        tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
+                        if tile_loc in self.tilemap.tilemap:
+                            if self.tilemap.tilemap[tile_loc]["type"] in self.activators_types and not self.clicking:
+                                element = self.tilemap.tilemap[tile_loc]["type"]
+                                shining_image = self.assets[self.tile_list[self.tile_list.index(element)]][self.tilemap.tilemap[tile_loc]["variant"]].copy()
+                                shining_image.fill((255, 255, 255, 100), special_flags=pygame.BLEND_ADD)
+                                self.display.blit(shining_image, (tile_pos[0] * self.tilemap.tile_size - self.scroll[0],
+                                                                 tile_pos[1] * self.tilemap.tile_size - self.scroll[1]))
 
             if self.clicking and self.ongrid and mpos_in_mainarea:
-                if self.tile_list[self.tile_group] in (l[0] for l in self.levers):
-                    iD = int(input("Enter the lever id: "))
-                    while iD in self.levers_ids:
-                        print("id already used")
-                        iD = int(input("Enter the lever id: "))
-                    self.levers_ids.add(iD)
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos,
-                        'id': iD}
+                if not self.window_mode:
+                    if not self.edit_properties_mode_on:
+                        if self.tile_list[self.tile_group] in (l[0] for l in self.levers):
+                            iD = int(input("Enter the lever id: "))
+                            while iD in self.levers_ids:
+                                print("id already used")
+                                iD = int(input("Enter the lever id: "))
+                            self.levers_ids.add(iD)
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'id': iD}
 
-                elif self.tile_list[self.tile_group] in (d[0] for d in self.doors):
-                    iD = int(input("Enter the door id: "))
-                    while iD in self.doors_ids:
-                        print("id already used")
-                        iD = int(input("Enter the door id: "))
-                    self.doors_ids.add(iD)
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos,
-                        'id': iD}
+                        elif self.tile_list[self.tile_group] in (d[0] for d in self.doors):
+                            iD = int(input("Enter the door id: "))
+                            while iD in self.doors_ids:
+                                print("id already used")
+                                iD = int(input("Enter the door id: "))
+                            self.doors_ids.add(iD)
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'id': iD}
 
-                elif self.tile_list[self.tile_group] in (b[0] for b in self.buttons):
-                    iD = int(input("Enter the button id: "))
-                    while iD in self.buttons_ids:
-                        print("id already used")
-                        iD = int(input("Enter the button id: "))
-                    self.buttons_ids.add(iD)
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos,
-                        'id': iD}
+                        elif self.tile_list[self.tile_group] in (b[0] for b in self.buttons):
+                            iD = int(input("Enter the button id: "))
+                            while iD in self.buttons_ids:
+                                print("id already used")
+                                iD = int(input("Enter the button id: "))
+                            self.buttons_ids.add(iD)
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'id': iD}
 
-                elif self.tile_list[self.tile_group] in (tp[0] for tp in self.teleporters):
-                    iD = int(input("Enter the tp id: "))
-                    while iD in self.tps_ids:
-                        print("id already used")
-                        iD = int(input("Enter the tp id: "))
-                    self.tps_ids.add(iD)
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos,
-                        'id': iD}
+                        elif self.tile_list[self.tile_group] in (tp[0] for tp in self.teleporters):
+                            iD = int(input("Enter the tp id: "))
+                            while iD in self.tps_ids:
+                                print("id already used")
+                                iD = int(input("Enter the tp id: "))
+                            self.tps_ids.add(iD)
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'id': iD}
 
-                elif self.tile_list[self.tile_group] == "transition":
-                    direction = int(input("Enter the destination level: "))
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos,
-                        'destination': direction}
+                        elif self.tile_list[self.tile_group] == "transition":
+                            direction = int(input("Enter the destination level: "))
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'destination': direction}
 
-                else:
-                    self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                        'type': self.tile_list[self.tile_group],
-                        'variant': self.tile_variant,
-                        'pos': tile_pos}
+                        else:
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': self.tile_list[self.tile_group],
+                                'variant': self.tile_variant,
+                                'pos': tile_pos}
+                    else:
+                        tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
+                        if tile_loc in self.tilemap.tilemap:
+                            t = self.tilemap.tilemap[tile_loc]["type"]
+                            if t in self.activators_types:
+                                self.set_window_mode()
+                                self.showing_properties_window = True
+                                a_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
+                                self.selected_activator = {"image": self.assets[t][0], "infos":self.activators[a_type][tile_loc]}
+                                self.clicking = False
 
             if self.right_clicking and mpos_in_mainarea:
-                tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
-                if tile_loc in self.tilemap.tilemap:
-                    if self.tilemap.tilemap[tile_loc]['type'] in (l[0] for l in self.levers):
-                        self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
-                        self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in (tp[0] for tp in self.teleporters):
-                        self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    if self.tilemap.tilemap[tile_loc]['type'] in (b[0] for b in self.buttons):
-                        self.buttons_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
-                    del self.tilemap.tilemap[tile_loc]
-                for tile in self.tilemap.offgrid_tiles.copy():
-                    tile_img = self.assets[tile['type']][tile['variant']]
-                    tile_r = pygame.Rect(tile['pos'][0] - self.scroll[0],
-                                         tile['pos'][1] - self.scroll[1],
-                                         tile_img.get_width(),
-                                         tile_img.get_height())
-                    if tile_r.collidepoint(mpos):
-                        self.tilemap.offgrid_tiles.remove(tile)
+                if not self.window_mode:
+                    if not self.edit_properties_mode_on:
+                        tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
+                        if tile_loc in self.tilemap.tilemap:
+                            if self.tilemap.tilemap[tile_loc]['type'] in (l[0] for l in self.levers):
+                                self.levers_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                            if self.tilemap.tilemap[tile_loc]['type'] in (d[0] for d in self.doors):
+                                self.doors_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                            if self.tilemap.tilemap[tile_loc]['type'] in (tp[0] for tp in self.teleporters):
+                                self.tps_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                            if self.tilemap.tilemap[tile_loc]['type'] in (b[0] for b in self.buttons):
+                                self.buttons_ids.remove(self.tilemap.tilemap[tile_loc]["id"])
+                            del self.tilemap.tilemap[tile_loc]
+                        for tile in self.tilemap.offgrid_tiles.copy():
+                            tile_img = self.assets[tile['type']][tile['variant']]
+                            tile_r = pygame.Rect(tile['pos'][0] - self.scroll[0],
+                                                 tile['pos'][1] - self.scroll[1],
+                                                 tile_img.get_width(),
+                                                 tile_img.get_height())
+                            if tile_r.collidepoint(mpos):
+                                self.tilemap.offgrid_tiles.remove(tile)
 
-            self.display.blit(current_tile_img, (5, 5))
+            if not self.edit_properties_mode_on:
+                self.display.blit(current_tile_img, (5, 5))
 
             self.render_sidebar()
 
@@ -364,119 +463,143 @@ class Editor:
                 if event.type == pygame.QUIT:
                     pygame.quit()
                     sys.exit()
-                if event.type == pygame.MOUSEBUTTONDOWN:
-                    if event.button == 1:
-                        self.clicking = True
-                        if not self.ongrid:
-                            self.tilemap.offgrid_tiles.append({'type': self.tile_list[self.tile_group],
-                                                               'variant': self.tile_variant,
-                                                               'pos': (
-                                                               mpos[0] + self.scroll[0], mpos[1] + self.scroll[1])})
-                    if event.button == 3:
-                        self.right_clicking = True
-                    if not self.shift and self.tile_group:
-                        if event.button == 4:
-                            self.tile_variant = (self.tile_variant - 1) % len(
-                                self.assets[self.tile_list[self.tile_group]])
-                        if event.button == 5:
-                            self.tile_variant = (self.tile_variant + 1) % len(
-                                self.assets[self.tile_list[self.tile_group]])
+
+                if not self.window_mode:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            self.clicking = True
+                            if not self.ongrid:
+                                self.tilemap.offgrid_tiles.append({'type': self.tile_list[self.tile_group],
+                                                                   'variant': self.tile_variant,
+                                                                   'pos': (
+                                                                   mpos[0] + self.scroll[0], mpos[1] + self.scroll[1])})
+                        if event.button == 3:
+                            self.right_clicking = True
+                        if not self.shift and self.tile_group:
+                            if event.button == 4:
+                                self.tile_variant = (self.tile_variant - 1) % len(
+                                    self.assets[self.tile_list[self.tile_group]])
+                            if event.button == 5:
+                                self.tile_variant = (self.tile_variant + 1) % len(
+                                    self.assets[self.tile_list[self.tile_group]])
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_i and not self.holding_i:
+                            self.edit_properties_mode_on = not self.edit_properties_mode_on
+                            self.holding_i = True
+                        if event.key == pygame.K_q:
+                            self.movement[0] = True
+                        if event.key == pygame.K_RIGHT:
+                            if self.tilemap.tilemap != {}:
+                                self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                                self.level += 1
+                                try:
+                                    self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                    self.scroll = [0, 0]
+                                except FileNotFoundError:
+                                    f = open('data/maps/' + str(self.level) + '.json', 'w')
+                                    json.dump({'tilemap': {},
+                                               'tilesize': 16,
+                                               'offgrid': []}, f)
+                                    f.close()
+                                    self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                    self.scroll = [0, 0]
+                                else:
+                                    pass
+                                self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                                self.assets.update(load_doors('editor', self.get_environment(self.level)))
+                                self.assets.update(load_activators(self.get_environment(self.level)))
+                                self.tile_list = list(self.assets)
+                                self.levers_ids = set()
+                                self.doors_ids = set()
+                                self.buttons_ids = set()
+                                self.tps_ids = set()
+                                self.tile_group = 0
+                                self.tile_variant = 0
+                                self.get_categories()
+                        if event.key == pygame.K_LEFT:
+                            if self.level > 0:
+                                self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                                self.level -= 1
+                                try:
+                                    self.tilemap.load('data/maps/' + str(self.level) + '.json')
+                                    self.scroll = [0, 0]
+                                except FileNotFoundError:
+                                    pass
+                                self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
+                                self.assets.update(load_doors('editor', self.get_environment(self.level)))
+                                self.assets.update(load_activators(self.get_environment(self.level)))
+                                self.tile_list = list(self.assets)
+                                self.levers_ids = set()
+                                self.doors_ids = set()
+                                self.buttons_ids = set()
+                                self.tps_ids = set()
+                                self.tile_group = 0
+                                self.tile_variant = 0
+                                self.get_categories()
+                        if event.key == pygame.K_DOWN:
+                            self.zoom = self.zoom * 2
+                            self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
+                        if event.key == pygame.K_UP:
+                            self.zoom = self.zoom / 2
+                            self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
+
+                        if event.key == pygame.K_d:
+                            self.movement[1] = True
+                        if event.key == pygame.K_z:
+                            self.movement[2] = True
+                        if event.key == pygame.K_s:
+                            self.movement[3] = True
+                        if event.key == pygame.K_g:
+                            self.ongrid = not self.ongrid
+                        if event.key == pygame.K_t:
+                            self.tilemap.autotile()
+                        if event.key == pygame.K_LSHIFT:
+                            self.shift = True
+                        if event.key == pygame.K_o:
+                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            print("saved")
+                        if event.key == pygame.K_c:
+                            print((tile_pos[0] * 16, tile_pos[1] * 16))
+                    if event.type == pygame.KEYUP:
+                        if event.key == pygame.K_i:
+                            self.holding_i = False
+                        if event.key == pygame.K_q:
+                            self.movement[0] = False
+                        if event.key == pygame.K_d:
+                            self.movement[1] = False
+                        if event.key == pygame.K_z:
+                            self.movement[2] = False
+                        if event.key == pygame.K_s:
+                            self.movement[3] = False
+                        if event.key == pygame.K_LSHIFT:
+                            self.shift = False
+                else:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if event.button == 1:
+                            self.clicking = True
+                        if event.button == 3:
+                            self.right_clicking = True
+                    if event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_ESCAPE:
+                            if self.edited_info:
+                                self.edited_info = False
+                            else:
+                                self.window_mode = False
+                        if self.edited_info and 48 <= ord(self.edited_value[0] if len(
+                                self.edited_value) else '0') <= 57:
+                            if event.key == pygame.K_BACKSPACE:
+                                self.edited_value = self.edited_value[:-1]
+                            if 48 <= event.key <= 57:
+                                if len(self.edited_value) < 3:
+                                    self.edited_value += chr(event.key)
+                                else:
+                                    print("max id reached")
+
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.clicking = False
                     if event.button == 3:
                         self.right_clicking = False
-                if event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_i and not self.holding_i:
-                        self.edit_properties_mode_on = not self.edit_properties_mode_on
-                        self.holding_i = True
-                    if event.key == pygame.K_q:
-                        self.movement[0] = True
-                    if event.key == pygame.K_RIGHT:
-                        if self.tilemap.tilemap != {}:
-                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
-                            self.level += 1
-                            try:
-                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
-                                self.scroll = [0, 0]
-                            except FileNotFoundError:
-                                f = open('data/maps/' + str(self.level) + '.json', 'w')
-                                json.dump({'tilemap': {},
-                                           'tilesize': 16,
-                                           'offgrid': []}, f)
-                                f.close()
-                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
-                                self.scroll = [0, 0]
-                            else:
-                                pass
-                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
-                            self.assets.update(load_doors('editor', self.get_environment(self.level)))
-                            self.assets.update(load_activators(self.get_environment(self.level)))
-                            self.tile_list = list(self.assets)
-                            self.levers_ids = set()
-                            self.doors_ids = set()
-                            self.buttons_ids = set()
-                            self.tps_ids = set()
-                            self.tile_group = 0
-                            self.tile_variant = 0
-                            self.get_categories()
-                    if event.key == pygame.K_LEFT:
-                        if self.level > 0:
-                            self.tilemap.save('data/maps/' + str(self.level) + '.json')
-                            self.level -= 1
-                            try:
-                                self.tilemap.load('data/maps/' + str(self.level) + '.json')
-                                self.scroll = [0, 0]
-                            except FileNotFoundError:
-                                pass
-                            self.assets = self.base_assets | load_tiles(self.get_environment(self.level))
-                            self.assets.update(load_doors('editor', self.get_environment(self.level)))
-                            self.assets.update(load_activators(self.get_environment(self.level)))
-                            self.tile_list = list(self.assets)
-                            self.levers_ids = set()
-                            self.doors_ids = set()
-                            self.buttons_ids = set()
-                            self.tps_ids = set()
-                            self.tile_group = 0
-                            self.tile_variant = 0
-                            self.get_categories()
-                    if event.key == pygame.K_DOWN:
-                        self.zoom = self.zoom * 2
-                        self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
-                    if event.key == pygame.K_UP:
-                        self.zoom = self.zoom / 2
-                        self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
-
-                    if event.key == pygame.K_d:
-                        self.movement[1] = True
-                    if event.key == pygame.K_z:
-                        self.movement[2] = True
-                    if event.key == pygame.K_s:
-                        self.movement[3] = True
-                    if event.key == pygame.K_g:
-                        self.ongrid = not self.ongrid
-                    if event.key == pygame.K_t:
-                        self.tilemap.autotile()
-                    if event.key == pygame.K_LSHIFT:
-                        self.shift = True
-                    if event.key == pygame.K_o:
-                        self.tilemap.save('data/maps/' + str(self.level) + '.json')
-                        print("saved")
-                    if event.key == pygame.K_c:
-                        print((tile_pos[0] * 16, tile_pos[1] * 16))
-                if event.type == pygame.KEYUP:
-                    if event.key == pygame.K_i:
-                        self.holding_i = False
-                    if event.key == pygame.K_q:
-                        self.movement[0] = False
-                    if event.key == pygame.K_d:
-                        self.movement[1] = False
-                    if event.key == pygame.K_z:
-                        self.movement[2] = False
-                    if event.key == pygame.K_s:
-                        self.movement[3] = False
-                    if event.key == pygame.K_LSHIFT:
-                        self.shift = False
                 if event.type == pygame.VIDEORESIZE:
                     # Update screen dimensions
                     self.screen_width = max(event.w, 480 + SIDEBAR_WIDTH)  # Minimum width
@@ -488,12 +611,20 @@ class Editor:
             main_area_height = self.screen_height
 
             # Blit everything to screen
-            scaled_display = pygame.transform.scale(self.display, (main_area_width, main_area_height))
-            self.screen.blit(scaled_display, (0, 0))
-            self.screen.blit(self.sidebar, (main_area_width, 0))
-            if self.edit_properties_mode_on:
-                self.render_underbar()
-                self.screen.blit(self.underbar, (0, main_area_height - UNDERBAR_HEIGHT))
+            if not self.window_mode:
+                scaled_display = pygame.transform.scale(self.display, (main_area_width, main_area_height))
+                self.screen.blit(scaled_display, (0, 0))
+                self.screen.blit(self.sidebar, (main_area_width, 0))
+                if self.edit_properties_mode_on:
+                    self.render_underbar()
+                    self.screen.blit(self.underbar, (0, main_area_height - UNDERBAR_HEIGHT))
+            else:
+                self.update_window_mode_bg()
+                if self.showing_properties_window:
+                    self.render_info_window()
+                    self.screen.blit(self.properties_window, ((self.screen_width-self.properties_window.get_width())/2,
+                                                              (self.screen_height-self.properties_window.get_height())/2))
+
             pygame.display.update()
             self.clock.tick(60)
 

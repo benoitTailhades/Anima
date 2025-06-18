@@ -2,6 +2,8 @@ import pygame
 
 import json
 
+from pygame import BLEND_ADD, BLEND_MAX, BLEND_RGBA_MULT, BLEND_RGBA_SUB, BLEND_RGBA_ADD
+
 from scripts.utils import round_up
 
 AUTOTILE_MAP = {
@@ -171,8 +173,10 @@ class Tilemap:
             if str(rect.x//self.tile_size) + ";" + str(rect.y//self.tile_size) == tile:
                 return self.tilemap[tile]["variant"]
 
-    def render(self, surf, offset = (0, 0)):
+    def render(self, surf, offset = (0, 0), mask_opacity=255, exception=()):
         for tile in self.offgrid_tiles:
+            img = self.game.assets[tile['type']][tile['variant']].copy()
+            img.fill((255, 255, 255, 255 if tile['type'] in exception else mask_opacity), special_flags=BLEND_RGBA_MULT)
             surf.blit(self.game.assets[tile['type']][tile['variant']], (tile['pos'][0] - offset[0], tile['pos'][1] - offset[1] ))
 
         for x in range(offset[0]// self.tile_size, (offset[0] + surf.get_width()) // self.tile_size + 1):
@@ -181,10 +185,12 @@ class Tilemap:
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
                     if tile['type'] in {'vine_transp_back','dark_vine'}:
-                        surf.blit(self.game.assets[tile['type']][tile['variant']], (
+                        img = self.game.assets[tile['type']][tile['variant']].copy()
+                        img.fill((255, 255, 255, 255 if tile['type'] in exception else mask_opacity), special_flags=BLEND_RGBA_MULT)
+                        surf.blit(img, (
                         tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
 
-    def render_over(self, surf, offset = (0, 0)):
+    def render_over(self, surf, offset = (0, 0), mask_opacity=255, exception=()):
         # In order to make the render more optimized, we make blocks render only if they are visible on the screen
         for x in range(offset[0] // self.tile_size - 3, (offset[0] + surf.get_width()) // self.tile_size + 4):
             # There the coordinates are only in those seen on the screen
@@ -193,5 +199,8 @@ class Tilemap:
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
                     if tile['type'] not in {'vine_transp_back','dark_vine'}:
-                        surf.blit(self.game.assets[tile['type']][tile['variant']], (
+                        img = self.game.assets[tile['type']][tile['variant']].copy()
+                        img.fill((255, 255, 255, 255 if tile['type'] in exception else mask_opacity),
+                                 special_flags=BLEND_RGBA_MULT)
+                        surf.blit(img, (
                             tile['pos'][0] * self.tile_size - offset[0], tile['pos'][1] * self.tile_size - offset[1]))
