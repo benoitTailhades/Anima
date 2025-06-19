@@ -1,85 +1,102 @@
-{"0":
-  {
-    "levers": {
-      "0": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 0
-      }
-    }
-  },
-  "3":
-  {
-    "levers": {
-      "0": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 0
-      },
-      "1": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 1
-      },
-      "2": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 2
-      },
-      "3": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 3
-      },
-      "4": {
-        "type": "visual_and_door",
-        "visual_duration": 2,
-        "door_id": 4
-      }
+{
+    "0": {
+        "levers": {
+            "0": {
+                "pos": [
+                    97,
+                    -15
+                ],
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 0
+            }
+        },
+        "teleporters": {},
+        "buttons": {}
     },
-    "teleporters": {
-      "0":{
-        "type": "normal_tp",
-        "dest": [1264, 512],
-        "time": 2
-      },
-      "1":{
-        "type": "normal_tp",
-        "dest": [1984, 704],
-        "time": 2
-      },
-      "2":{
-        "type": "normal_tp",
-        "dest": [1984, 704],
-        "time": 2
-      },
-      "3":{
-        "type": "progressive_tp",
-        "dest": [1904, 112],
-        "time": 2
-      }
-    },
-    "buttons": {
-      "0": {
-        "type": "improve_tp_progress",
-        "amount": 1,
-        "tp_id": 3
-      },
-      "1": {
-        "type": "improve_tp_progress",
-        "amount": 1,
-        "tp_id": 3
-      },
-      "2": {
-        "type": "improve_tp_progress",
-        "amount": 1,
-        "tp_id": 3
-      },
-      "3": {
-        "type": "improve_tp_progress",
-        "amount": 1,
-        "tp_id": 3
-      }
+    "3": {
+        "levers": {
+            "0": {
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 0
+            },
+            "1": {
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 1
+            },
+            "2": {
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 2
+            },
+            "3": {
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 3
+            },
+            "4": {
+                "type": "visual_and_door",
+                "visual_duration": 2,
+                "door_id": 4
+            }
+        },
+        "teleporters": {
+            "0": {
+                "type": "normal_tp",
+                "dest": [
+                    1264,
+                    512
+                ],
+                "time": 2
+            },
+            "1": {
+                "type": "normal_tp",
+                "dest": [
+                    1984,
+                    704
+                ],
+                "time": 2
+            },
+            "2": {
+                "type": "normal_tp",
+                "dest": [
+                    1984,
+                    704
+                ],
+                "time": 2
+            },
+            "3": {
+                "type": "progressive_tp",
+                "dest": [
+                    1904,
+                    112
+                ],
+                "time": 2
+            }
+        },
+        "buttons": {
+            "0": {
+                "type": "improve_tp_progress",
+                "amount": 1,
+                "tp_id": 3
+            },
+            "1": {
+                "type": "improve_tp_progress",
+                "amount": 1,
+                "tp_id": 3
+            },
+            "2": {
+                "type": "improve_tp_progress",
+                "amount": 1,
+                "tp_id": 3
+            },
+            "3": {
+                "type": "improve_tp_progress",
+                "amount": 1,
+                "tp_id": 3
+            }
+        }
     }
-  }
 }

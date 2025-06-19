@@ -46,7 +46,7 @@ class Editor:
         self.teleporters = []
         self.categories = {}
         self.activators = {}
-        self.activators_types = set()
+        self.activators_types = {}
         for env in self.environments:
             self.doors += [(door, 0) for door in load_doors('editor', env) if "door" in door]
             self.levers += [(lever, 0) for lever in load_activators(env) if "lever" in lever]
@@ -64,6 +64,28 @@ class Editor:
         self.selected_activator_type = None
         self.edited_info = None
         self.edited_value = None
+
+        self.infos_per_type_per_category = {"Levers": {"visual_and_door":
+                                                         {"visual_duration" : int,
+                                                          "door_id": int},
+                                                       "test":
+                                                            {"info 1": int,
+                                                             "info 2": str}
+                                                       },
+                                   "Teleporters": {"normal_tp":
+                                                       {"dest" : str,
+                                                        "time":int},
+                                                   "progressive_tp":
+                                                       {"dest" : str,
+                                                        "time":int}
+                                                       },
+                                   "Buttons": {"improve_tp_progress":
+                                                 {"amount" : int,
+                                                  "tp_id": int}
+                                             }
+                                   }
+        self.types_per_categories = {t : set(self.infos_per_type_per_category[t].keys()) for t in self.infos_per_type_per_category}
+        print(self.types_per_categories)
 
         self.movement = [False, False, False, False]
 
@@ -83,6 +105,9 @@ class Editor:
         self.doors_ids = set()
         self.buttons_ids = set()
         self.tps_ids = set()
+        self.activators_ids = {"Levers": self.levers_ids,
+                               "Buttons": self.buttons_ids,
+                               "Teleporters": self.tps_ids}
 
         self.zoom = 1
         self.edit_properties_mode_on = False
@@ -265,15 +290,19 @@ class Editor:
             self.properties_window.blit(pygame.transform.scale(self.selected_activator["image"], (48, 48)), (5, 0))
             info_r += 1
 
-    def save_edited_value(self):
+    def save_edited_values(self):
         with open("data/activators.json", "r") as file:
             actions_data = json.load(file)
             activators = {}
-            for activator in self.activators:
-                activators[activator.lower()] = activators[activator].copy()
+            for activator_category in self.activators.copy():
+                activators[activator_category.lower()] = {}
+                for activator in self.activators[activator_category].copy():
+                    infos = self.activators[activator_category][activator].copy()
+                    del infos["id"]
+                    activators[activator_category.lower()][self.activators[activator_category][activator]["id"]] = infos
             actions_data[str(self.level)] = activators.copy()
         with open("data/activators.json", "w") as f:
-            json.dump(actions_data, f)
+            json.dump(actions_data, f, indent=4)
 
     def get_categories(self):
         self.categories["Blocks"] = [b for b in list(load_tiles(self.get_environment(self.level)).keys()) if "decor" not in b]
@@ -285,11 +314,14 @@ class Editor:
         self.current_category_name = list(self.categories.keys())[self.current_category]
 
     def get_activators(self):
+        self.activators_types["All"] = set()
         for a in ["Levers", "Teleporters", "Buttons"]:
+            self.activators_types[a] = set()
             self.activators[a] = {pos : {"id" : self.tilemap.tilemap[pos]["id"], "pos": self.tilemap.tilemap[pos]["pos"]} for pos in self.tilemap.tilemap if a.lower()[:-1] in self.tilemap.tilemap[pos]["type"]}
             for pos in self.tilemap.tilemap:
                 if a.lower()[:-1] in self.tilemap.tilemap[pos]["type"]:
-                    self.activators_types.add(self.tilemap.tilemap[pos]['type'])
+                    self.activators_types[a].add(self.tilemap.tilemap[pos]['type'])
+            self.activators_types["All"] = self.activators_types["All"] | self.activators_types[a]
             activators_actions = load_activators_actions()
             for activator in self.activators[a]:
                 id_l = self.activators[a][activator]["id"]
@@ -306,8 +338,8 @@ class Editor:
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
 
-            self.tilemap.render(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
-            self.tilemap.render_over(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types)
+            self.tilemap.render(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types[self.current_activator_category])
+            self.tilemap.render_over(self.display, offset=render_scroll, mask_opacity=80 if self.edit_properties_mode_on else 255, exception=self.activators_types[self.current_activator_category])
 
             current_tile_img = self.assets[self.tile_list[self.tile_group]][self.tile_variant].copy()
             current_tile_img.set_alpha(100)
@@ -339,6 +371,10 @@ class Editor:
             for button in self.tilemap.extract(self.buttons, keep=True):
                 self.buttons_ids.add(button['id'])
 
+            self.activators_ids = {"Levers": self.levers_ids,
+                                   "Buttons": self.buttons_ids,
+                                   "Teleporters": self.tps_ids}
+
             if mpos_in_mainarea:
                 if not self.window_mode:
                     if not self.edit_properties_mode_on:
@@ -350,7 +386,7 @@ class Editor:
                     else:
                         tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                         if tile_loc in self.tilemap.tilemap:
-                            if self.tilemap.tilemap[tile_loc]["type"] in self.activators_types and not self.clicking:
+                            if self.tilemap.tilemap[tile_loc]["type"] in self.activators_types[self.current_activator_category] and not self.clicking:
                                 element = self.tilemap.tilemap[tile_loc]["type"]
                                 shining_image = self.assets[self.tile_list[self.tile_list.index(element)]][self.tilemap.tilemap[tile_loc]["variant"]].copy()
                                 shining_image.fill((255, 255, 255, 100), special_flags=pygame.BLEND_ADD)
@@ -361,16 +397,14 @@ class Editor:
                 if not self.window_mode:
                     if not self.edit_properties_mode_on:
                         if self.tile_list[self.tile_group] in (l[0] for l in self.levers):
-                            iD = int(input("Enter the lever id: "))
-                            while iD in self.levers_ids:
-                                print("id already used")
-                                iD = int(input("Enter the lever id: "))
-                            self.levers_ids.add(iD)
-                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                                'type': self.tile_list[self.tile_group],
-                                'variant': self.tile_variant,
-                                'pos': tile_pos,
-                                'id': iD}
+                            t = self.tile_list[self.tile_group]
+                            self.set_window_mode()
+                            self.showing_properties_window = True
+                            self.selected_activator_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
+                            self.selected_activator = {"image": self.assets[t][0],
+                                                       "infos": {"id": "", "type": ""}}
+                            self.clicking = False
+                            self.selected_activator["infos"]["pos"] = tile_pos
 
                         elif self.tile_list[self.tile_group] in (d[0] for d in self.doors):
                             iD = int(input("Enter the door id: "))
@@ -425,7 +459,7 @@ class Editor:
                         tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                         if tile_loc in self.tilemap.tilemap:
                             t = self.tilemap.tilemap[tile_loc]["type"]
-                            if t in self.activators_types:
+                            if t in self.activators_types[self.current_activator_category]:
                                 self.set_window_mode()
                                 self.showing_properties_window = True
                                 self.selected_activator_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
@@ -560,6 +594,7 @@ class Editor:
                             self.shift = True
                         if event.key == pygame.K_o:
                             self.tilemap.save('data/maps/' + str(self.level) + '.json')
+                            self.save_edited_values()
                             print("saved")
                         if event.key == pygame.K_c:
                             print((tile_pos[0] * 16, tile_pos[1] * 16))
@@ -586,23 +621,50 @@ class Editor:
                         if event.key == pygame.K_ESCAPE:
                             if self.edited_info:
                                 self.edited_info = None
-                            else:
+                            elif (self.selected_activator["infos"]["type"] and
+                                  (self.selected_activator["infos"][info] for info in self.infos_per_type_per_category[self.selected_activator_type][self.selected_activator["infos"]["type"]])):
                                 self.window_mode = False
+                            else:
+                                print("All the infos have to be filled!")
                         if event.key == pygame.K_RETURN:
                             if self.edited_info:
-                                pos = str(self.selected_activator["infos"]["pos"])
-                                tile_loc = pos[1:-1].replace(', ', ';')
-                                self.selected_activator["infos"][self.edited_info] = self.edited_value
-                                self.activators[self.selected_activator_type][tile_loc][self.edited_info] = self.edited_value
-                                self.edited_value = None
-                                self.edited_info = None
+                                if self.edited_value:
+                                    if self.edited_info != "id" or self.edited_value not in self.activators_ids[self.selected_activator_type]:
+                                        tile_loc = str(self.selected_activator["infos"]["pos"][0]) + ";" \
+                                                             + str(self.selected_activator["infos"]["pos"][1])
+                                        self.selected_activator["infos"][self.edited_info] = self.edited_value
+
+                                        iD = int(self.selected_activator["infos"]["id"])
+                                        self.levers_ids.add(iD)
+                                        self.tilemap.tilemap[tile_loc] = \
+                                            {
+                                                'type': self.tile_list[self.tile_group],
+                                                'variant': self.tile_variant,
+                                                'pos': self.selected_activator["infos"]["pos"],
+                                                'id': iD
+                                            }
+
+                                        if tile_loc not in self.activators[self.selected_activator_type]:
+                                            self.activators[self.selected_activator_type][tile_loc] = {}
+
+                                        pos = str(self.selected_activator["infos"]["pos"])
+                                        tile_loc = pos[1:-1].replace(', ', ';')
+                                        self.activators[self.selected_activator_type][tile_loc][self.edited_info] = self.edited_value
+                                        self.tilemap.tilemap[tile_loc]["id"] = self.activators[self.selected_activator_type][tile_loc]["id"]
+                                        self.edited_value = None
+                                        self.edited_info = None
+                                    else:
+                                        print("id already used")
+                                else:
+                                    self.edited_info = None
+
                         if self.edited_info and 48 <= ord(self.edited_value[0] if len(
                                 self.edited_value) else '0') <= 57:
                             if event.key == pygame.K_BACKSPACE:
                                 self.edited_value = self.edited_value[:-1]
                             if 48 <= event.key <= 57:
                                 if len(self.edited_value) < 3:
-                                    self.edited_value += chr(event.key)
+                                    self.edited_value = str(int(self.edited_value + chr(event.key)))
                                 else:
                                     print("max id reached")
 
