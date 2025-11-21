@@ -405,6 +405,16 @@ class Game:
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
+                self.scroll[0] = self.player.pos[0]
+                self.scroll[1] = self.player.pos[1]
+
+                if self.level in self.scroll_limits:
+                    limits = self.scroll_limits[self.level]
+                    if "x" in limits:
+                        self.scroll[0] = max(limits["x"][0], min(self.scroll[0], limits["x"][1]))
+                    if "y" in limits:
+                        self.scroll[1] = max(limits["y"][0], min(self.scroll[1], limits["y"][1]))
+
     def update_spawn_point(self):#Spawn point is updated every time the player switches level
         if self.level in (0, 1, 2):
             self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
