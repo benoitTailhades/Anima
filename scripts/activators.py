@@ -67,9 +67,9 @@ def update_activators_actions(game, level):
 
                 if action["type"] == "visual_and_door":
                     for door in game.doors:
-                        if door.id == action["door_id"]:
+                        if door.id == int(action["door_id"]):
                             activator.toggle()
-                            move_visual(game, action["visual_duration"], door.pos)
+                            move_visual(game, int(action["visual_duration"]), door.pos)
                             activator.activated = False
                             door.open()
                     screen_shake(game, 10)
@@ -81,7 +81,7 @@ def update_activators_actions(game, level):
                             activator.toggle()
                             move_visual(game, 1, tp.pos)
                             activator.activated = False
-                            tp.state += action["amount"]
+                            tp.state += int(action["amount"])
                             if tp.state == 4:
                                 tp.activated = True
                             break

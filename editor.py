@@ -62,7 +62,7 @@ class Editor:
         self.current_activator_category = "All"
         self.selected_activator = None
         self.selected_activator_type = None
-        self.edited_info = None
+        self.edited_info = ""
         self.edited_value = None
 
         self.infos_per_type_per_category = {"Levers": {"visual_and_door":
@@ -85,7 +85,6 @@ class Editor:
                                              }
                                    }
         self.types_per_categories = {t : set(self.infos_per_type_per_category[t].keys()) for t in self.infos_per_type_per_category}
-        print(self.types_per_categories)
 
         self.movement = [False, False, False, False]
 
@@ -271,7 +270,7 @@ class Editor:
         for info in infos:
             info_name = self.font.render(info + ":", True, (255, 255, 255))
             info_value = self.font.render(self.edited_value if self.edited_info == info else
-                                          str(self.selected_activator["infos"][info]), True, (255, 255, 255))
+                                          str(self.selected_activator["infos"][info]), True, (255, 50, 50) if self.edited_info == info else (255, 255, 255))
             value_rect = Button(cell_h_offset + info_name.get_width() + 2,
                                      cell_v_offset + 5 + row_offset * info_r,
                                       max(info_value.get_width(), 9), info_value.get_height(), self.clicking)
@@ -282,12 +281,40 @@ class Editor:
                 print('value: ' + self.edited_value)
             if self.edited_info:
                 value_rect.activated = False
+
             value_rect.draw(self.properties_window, (0, 50, 200), mpos)
             self.properties_window.blit(info_name, (
             cell_h_offset , cell_v_offset + 5 + row_offset * info_r))
             self.properties_window.blit(info_value, (cell_h_offset + info_name.get_width() + 2,
                                             cell_v_offset + 5 + row_offset * info_r))
             self.properties_window.blit(pygame.transform.scale(self.selected_activator["image"], (48, 48)), (5, 0))
+            if self.edited_info == "type":
+                type_r = 0
+                available_types = self.types_per_categories[self.selected_activator_type].copy()
+                if self.edited_value:
+                    available_types.remove(self.edited_value)
+                for t in available_types:
+                    type_name = self.font.render(t, True, (255, 255, 255))
+                    type_rect = Button(62,
+                                       105 + type_name.get_height() * (type_r + 1),
+                                       type_name.get_width(),
+                                       type_name.get_height(),
+                                       self.clicking)
+                    type_rect.draw(self.properties_window, (0, 50, 200), mpos)
+                    self.properties_window.blit(type_name, (
+                        type_rect.x, type_rect.y))
+                    if type_rect.pressed(mpos):
+                        self.selected_activator["infos"] = {"id": self.selected_activator["infos"]["id"],
+                                                            "type":t,
+                                                            "pos": self.selected_activator["infos"]["pos"]}
+
+                        other_infos = self.infos_per_type_per_category[self.selected_activator_type][t]
+                        for i in other_infos:
+                            other_infos[i] = ""
+                        self.selected_activator["infos"].update(other_infos)
+                        self.edited_info = ""
+                        return
+                    type_r += 1
             info_r += 1
 
     def save_edited_values(self):
@@ -396,7 +423,7 @@ class Editor:
             if self.clicking and self.ongrid and mpos_in_mainarea:
                 if not self.window_mode:
                     if not self.edit_properties_mode_on:
-                        if self.tile_list[self.tile_group] in (l[0] for l in self.levers):
+                        if self.tile_list[self.tile_group] in self.activators_types["All"]:
                             t = self.tile_list[self.tile_group]
                             self.set_window_mode()
                             self.showing_properties_window = True
@@ -404,7 +431,7 @@ class Editor:
                             self.selected_activator = {"image": self.assets[t][0],
                                                        "infos": {"id": "", "type": ""}}
                             self.clicking = False
-                            self.selected_activator["infos"]["pos"] = tile_pos
+                            self.selected_activator["infos"]["pos"] = list(tile_pos)
 
                         elif self.tile_list[self.tile_group] in (d[0] for d in self.doors):
                             iD = int(input("Enter the door id: "))
@@ -412,30 +439,6 @@ class Editor:
                                 print("id already used")
                                 iD = int(input("Enter the door id: "))
                             self.doors_ids.add(iD)
-                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                                'type': self.tile_list[self.tile_group],
-                                'variant': self.tile_variant,
-                                'pos': tile_pos,
-                                'id': iD}
-
-                        elif self.tile_list[self.tile_group] in (b[0] for b in self.buttons):
-                            iD = int(input("Enter the button id: "))
-                            while iD in self.buttons_ids:
-                                print("id already used")
-                                iD = int(input("Enter the button id: "))
-                            self.buttons_ids.add(iD)
-                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                                'type': self.tile_list[self.tile_group],
-                                'variant': self.tile_variant,
-                                'pos': tile_pos,
-                                'id': iD}
-
-                        elif self.tile_list[self.tile_group] in (tp[0] for tp in self.teleporters):
-                            iD = int(input("Enter the tp id: "))
-                            while iD in self.tps_ids:
-                                print("id already used")
-                                iD = int(input("Enter the tp id: "))
-                            self.tps_ids.add(iD)
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                                 'type': self.tile_list[self.tile_group],
                                 'variant': self.tile_variant,
@@ -620,45 +623,59 @@ class Editor:
                     if event.type == pygame.KEYDOWN:
                         if event.key == pygame.K_ESCAPE:
                             if self.edited_info:
-                                self.edited_info = None
+                                self.edited_info = ""
                             elif (self.selected_activator["infos"]["type"] and
                                   (self.selected_activator["infos"][info] for info in self.infos_per_type_per_category[self.selected_activator_type][self.selected_activator["infos"]["type"]])):
                                 self.window_mode = False
+                                self.selected_activator = None
+                                self.selected_activator_type = None
                             else:
                                 print("All the infos have to be filled!")
                         if event.key == pygame.K_RETURN:
                             if self.edited_info:
-                                if self.edited_value:
-                                    if self.edited_info != "id" or self.edited_value not in self.activators_ids[self.selected_activator_type]:
+                                if self.edited_value and self.selected_activator["infos"][self.edited_info] != int(self.edited_value):
+                                    changing_id = self.edited_info == "id"
+                                    id_already_existing = int(self.edited_value) in self.activators_ids[self.selected_activator_type]
+                                    input_possible = True
+                                    if "_id" in self.edited_info:
+                                        intrested_activator = "Doors" if "door" in self.edited_info else "Teleporters"
+                                        ids = self.doors_ids if intrested_activator == "Doors" else self.tps_ids
+                                        input_possible = int(self.edited_value) in ids
+                                    if (not changing_id or not id_already_existing) and input_possible:
                                         tile_loc = str(self.selected_activator["infos"]["pos"][0]) + ";" \
                                                              + str(self.selected_activator["infos"]["pos"][1])
                                         self.selected_activator["infos"][self.edited_info] = self.edited_value
-
                                         iD = int(self.selected_activator["infos"]["id"])
-                                        self.levers_ids.add(iD)
-                                        self.tilemap.tilemap[tile_loc] = \
-                                            {
-                                                'type': self.tile_list[self.tile_group],
-                                                'variant': self.tile_variant,
-                                                'pos': self.selected_activator["infos"]["pos"],
-                                                'id': iD
-                                            }
+                                        self.activators_ids[self.selected_activator_type].add(iD)
+                                        if tile_loc in self.tilemap.tilemap and self.edited_info == "id" and self.edited_value != self.tilemap.tilemap[tile_loc]["id"]:
+                                            self.activators_ids[self.selected_activator_type].remove(self.tilemap.tilemap[tile_loc]["id"])
+                                        elif tile_loc not in self.tilemap.tilemap:
+                                            self.tilemap.tilemap[tile_loc] = \
+                                                {
+                                                    'type': self.tile_list[self.tile_group],
+                                                    'variant': self.tile_variant,
+                                                    'pos': self.selected_activator["infos"]["pos"],
+                                                    'id': iD
+                                                }
 
                                         if tile_loc not in self.activators[self.selected_activator_type]:
                                             self.activators[self.selected_activator_type][tile_loc] = {}
 
                                         pos = str(self.selected_activator["infos"]["pos"])
                                         tile_loc = pos[1:-1].replace(', ', ';')
-                                        self.activators[self.selected_activator_type][tile_loc][self.edited_info] = self.edited_value
+                                        self.activators[self.selected_activator_type][tile_loc] = self.selected_activator["infos"]
                                         self.tilemap.tilemap[tile_loc]["id"] = self.activators[self.selected_activator_type][tile_loc]["id"]
                                         self.edited_value = None
-                                        self.edited_info = None
-                                    else:
+                                        self.edited_info = ""
+                                    elif changing_id and id_already_existing:
                                         print("id already used")
-                                else:
-                                    self.edited_info = None
+                                    elif not input_possible:
+                                        print("There is no " + intrested_activator.lower()[:-1] + " with this id")
 
-                        if self.edited_info and 48 <= ord(self.edited_value[0] if len(
+                                else:
+                                    self.edited_info = ""
+
+                        if self.edited_info not in ["type", ""] and 48 <= ord(self.edited_value[0] if len(
                                 self.edited_value) else '0') <= 57:
                             if event.key == pygame.K_BACKSPACE:
                                 self.edited_value = self.edited_value[:-1]
