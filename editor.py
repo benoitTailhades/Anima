@@ -3,6 +3,7 @@ import sys
 import pygame
 
 import json
+import os
 
 from scripts.utils import load_images, load_tiles, load_doors, load_activators
 from scripts.tilemap import Tilemap
@@ -35,7 +36,7 @@ class Editor:
         }
 
         self.environments = {"green_cave": (0, 1, 2),
-                             "blue_cave": (3, 4)}
+                             "blue_cave": ()}
 
         self.level = 0
 
@@ -128,6 +129,15 @@ class Editor:
         for environment in self.environments:
             if level in self.environments[environment]:
                 return environment
+
+    def sizeofmaps (self) :
+        folder_path = 'data/maps/'
+        num_files = sum(
+            1 for entry in os.listdir(folder_path)
+            if os.path.isfile(os.path.join(folder_path, entry))
+        )
+        return num_files
+
 
     def render_sidebar(self):
         #LOGIC
@@ -413,7 +423,7 @@ class Editor:
                     else:
                         tile_loc = str(tile_pos[0]) + ";" + str(tile_pos[1])
                         if tile_loc in self.tilemap.tilemap:
-                            if self.tilemap.tilemap[tile_loc]["type"] in self.activators_types[self.current_activator_category] and not self.clicking:
+                            if self.tilemap.tilemap[tile_loc]["type"] in self.activators_types[self.current_activator_category] or self.tilemap.tilemap[tile_loc]["type"] == "transition"  and not self.clicking:
                                 element = self.tilemap.tilemap[tile_loc]["type"]
                                 shining_image = self.assets[self.tile_list[self.tile_list.index(element)]][self.tilemap.tilemap[tile_loc]["variant"]].copy()
                                 shining_image.fill((255, 255, 255, 100), special_flags=pygame.BLEND_ADD)
@@ -445,14 +455,6 @@ class Editor:
                                 'pos': tile_pos,
                                 'id': iD}
 
-                        elif self.tile_list[self.tile_group] == "transition":
-                            direction = int(input("Enter the destination level: "))
-                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
-                                'type': self.tile_list[self.tile_group],
-                                'variant': self.tile_variant,
-                                'pos': tile_pos,
-                                'destination': direction}
-
                         else:
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                                 'type': self.tile_list[self.tile_group],
@@ -466,8 +468,15 @@ class Editor:
                                 self.set_window_mode()
                                 self.showing_properties_window = True
                                 self.selected_activator_type = "Levers" if "lever" in t else "Buttons" if "button" in t else "Teleporters"
-                                self.selected_activator = {"image": self.assets[t][0], "infos":self.activators[self.selected_activator_type][tile_loc]}
+                                self.selected_activator = {"image": self.assets[t][0], "infos" : self.activators[self.selected_activator_type][tile_loc]}
                                 self.clicking = False
+                            elif t == "transition":
+                                new_dest = int(input("Enter the destination level: "))
+                                while new_dest > self.sizeofmaps():
+                                    print("Destination not available")
+                                    new_dest = int(input("Enter the destination level: "))
+
+                                self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])]['destination'] = new_dest
 
             if self.right_clicking and mpos_in_mainarea:
                 if not self.window_mode:
@@ -601,6 +610,18 @@ class Editor:
                             print("saved")
                         if event.key == pygame.K_c:
                             print((tile_pos[0] * 16, tile_pos[1] * 16))
+                        if event.key == pygame.K_t:
+                            dest = int(input("Enter the destination level: "))
+                            while dest > self.sizeofmaps():
+                                print("Destination not available")
+                                dest = int(input("Enter the destination level: "))
+
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': "transition",
+                                'variant': self.tile_variant,
+                                'pos': tile_pos,
+                                'destination': dest}
+
                     if event.type == pygame.KEYUP:
                         if event.key == pygame.K_i:
                             self.holding_i = False

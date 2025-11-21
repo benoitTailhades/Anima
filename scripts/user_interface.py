@@ -808,7 +808,6 @@ class Menu:
                                 self.game.level = 0
                                 self.game.load_level(0)
                                 self.game.player_hp = 100
-                                self.game.start_tutorial_sequence()
                                 return True
 
         return True

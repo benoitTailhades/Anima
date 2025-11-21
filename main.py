@@ -17,7 +17,7 @@ from scripts.user_interface import Menu, start_menu
 from scripts.saving import Save
 from scripts.doors import Door
 from scripts.display import *
-from scripts.text import *
+from scripts.text import load_game_texts, display_bottom_text, update_bottom_text
 from scripts.spark import Spark
 from scripts.sound import set_game_volume
 class Game:
@@ -173,20 +173,14 @@ class Game:
         self.screenshake = 0
 
         self.cutscene = False
-        self.floating_texts = {}
         self.game_texts = load_game_texts()
-        self.tutorial_active = False
-        self.tutorial_step = 0
-        self.tutorial_next_time = 0
-        self.tutorial_messages = []
-
+        self.bottom_text = None
 
         self.doors_rects = []
 
         self.damage_flash_active = False
         self.damage_flash_end_time = 0
         self.damage_flash_duration = 100
-        self.floating_text_shown = False
 
         self.darkness_level = 150
         self.light_radius = 100
@@ -400,8 +394,6 @@ class Game:
         self.transition = -30
         self.max_falling_depth = 50000000000000000 if self.level in (1,3) else 500
         update_light(self)
-        if map_id == 0 and not self.levels[map_id]["charged"]:
-            self.start_tutorial_sequence()
 
     def check_transition(self):#check if the player pos  are in a transition place.
         for transition in self.transitions:
@@ -412,38 +404,6 @@ class Game:
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
-
-    def start_tutorial_sequence(self):#start tutorial if the player is at level 0. It takes the .json text
-        self.tutorial_active = True
-        self.tutorial_step = 0
-        self.tutorial_next_time = time.time()
-
-        if str(self.level) == "0":
-            self.tutorial_messages = [
-                {"key": "tuto_movement", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
-                {"key": "tuto_space", "duration": 4.0, "delay": 1.0, "color": (220, 255, 255)},
-                {"key": "tuto_FG", "duration": 4.0, "delay": 1.0, "color": (255, 255, 255)},
-                {"key": "Interaction","duration":4.0,"delay":1.0,"color":(255,255,255)}
-            ]
-
-    def update_tutorial_sequence(self):#useful to display the texts boxes as wanted. Options to change colors or delay for example
-        if not self.tutorial_active or self.tutorial_step >= len(self.tutorial_messages):
-            self.tutorial_active = False
-            return
-
-        current_time = time.time()
-
-        if current_time >= self.tutorial_next_time:
-            message = self.tutorial_messages[self.tutorial_step]
-            display_text_above_player(self,
-                message["key"],
-                message["duration"],
-                message["color"],
-                -30
-            )
-
-            self.tutorial_next_time = current_time + message["duration"] + message["delay"]
-            self.tutorial_step += 1
 
     def update_spawn_point(self):#Spawn point is updated every time the player switches level
         if self.level in (0, 1, 2):
@@ -459,10 +419,6 @@ class Game:
 
             update_camera(self)
             render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
-
-            self.update_tutorial_sequence()
-            update_floating_texts(self, render_scroll)
-
 
             if self.transition < 0:
                 self.transition += 1
@@ -645,13 +601,12 @@ class Game:
                         self.levels[self.level]["charged"] = True
                         self.charged_levels.append(self.level)
 
+            interaction_found = False
             for inter in self.interactable:
                 if inter.can_interact(self.player.rect()):
-                    text_key = "Interaction"
-                    if not self.floating_text_shown:
-                        display_text_above_player(self, text_key, duration=0)
-                    else:
-                        self.floating_texts[text_key]['end_time'] = time.time()
+                    display_bottom_text(self, "Interaction", duration=0.1)
+                    interaction_found = True
+                    break
 
             self.tilemap.render_over(self.display, offset=render_scroll)
 
@@ -746,7 +701,7 @@ class Game:
                 self.display.blit(transition_surf, (0, 0))
 
             screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,random.random() * self.screenshake - self.screenshake / 2)
-            update_floating_texts(self, render_scroll)
+            update_bottom_text(self)
 
             if self.cutscene:
                 draw_cutscene_border(self.display)
