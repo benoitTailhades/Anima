@@ -11,11 +11,11 @@
                 "door_id": 0
             },
             "1": {
-                "type": "visual_and_door",
                 "pos": [
                     8,
                     3
                 ],
+                "type": "visual_and_door",
                 "visual_duration": "2",
                 "door_id": "0"
             }
@@ -26,86 +26,119 @@
     "3": {
         "levers": {
             "0": {
-                "type": "visual_and_door",
-                "visual_duration": 2,
-                "door_id": 0
+                "pos": [
+                    97,
+                    -15
+                ]
             },
             "1": {
-                "type": "visual_and_door",
-                "visual_duration": 2,
-                "door_id": 1
-            },
-            "2": {
-                "type": "visual_and_door",
-                "visual_duration": 2,
-                "door_id": 2
-            },
-            "3": {
-                "type": "visual_and_door",
-                "visual_duration": 2,
-                "door_id": 3
-            },
-            "4": {
-                "type": "visual_and_door",
-                "visual_duration": 2,
-                "door_id": 4
+                "pos": [
+                    8,
+                    3
+                ]
             }
         },
-        "teleporters": {
+        "teleporters": {},
+        "buttons": {}
+    },
+    "1": {
+        "levers": {},
+        "teleporters": {},
+        "buttons": {}
+    },
+    "2": {
+        "levers": {},
+        "teleporters": {},
+        "buttons": {}
+    },
+    "4": {
+        "levers": {
             "0": {
-                "type": "normal_tp",
-                "dest": [
-                    1264,
-                    512
-                ],
-                "time": 2
+                "pos": [
+                    97,
+                    -15
+                ]
             },
             "1": {
-                "type": "normal_tp",
-                "dest": [
-                    1984,
-                    704
-                ],
-                "time": 2
-            },
-            "2": {
-                "type": "normal_tp",
-                "dest": [
-                    1984,
-                    704
-                ],
-                "time": 2
-            },
-            "3": {
-                "type": "progressive_tp",
-                "dest": [
-                    1904,
-                    112
-                ],
-                "time": 2
+                "pos": [
+                    8,
+                    3
+                ]
             }
         },
-        "buttons": {
+        "teleporters": {},
+        "buttons": {}
+    },
+    "5": {
+        "levers": {
             "0": {
-                "type": "improve_tp_progress",
-                "amount": 1,
-                "tp_id": 3
+                "pos": [
+                    97,
+                    -15
+                ]
             },
             "1": {
-                "type": "improve_tp_progress",
-                "amount": 1,
-                "tp_id": 3
-            },
-            "2": {
-                "type": "improve_tp_progress",
-                "amount": 1,
-                "tp_id": 3
-            },
-            "3": {
-                "type": "improve_tp_progress",
-                "amount": 1,
-                "tp_id": 3
+                "pos": [
+                    8,
+                    3
+                ]
             }
-        }
+        },
+        "teleporters": {},
+        "buttons": {}
+    },
+    "6": {
+        "levers": {
+            "0": {
+                "pos": [
+                    97,
+                    -15
+                ]
+            },
+            "1": {
+                "pos": [
+                    8,
+                    3
+                ]
+            }
+        },
+        "teleporters": {},
+        "buttons": {}
+    },
+    "7": {
+        "levers": {
+            "0": {
+                "pos": [
+                    97,
+                    -15
+                ]
+            },
+            "1": {
+                "pos": [
+                    8,
+                    3
+                ]
+            }
+        },
+        "teleporters": {},
+        "buttons": {}
+    },
+    "8": {
+        "levers": {
+            "0": {
+                "pos": [
+                    97,
+                    -15
+                ]
+            },
+            "1": {
+                "pos": [
+                    8,
+                    3
+                ]
+            }
+        },
+        "teleporters": {},
+        "buttons": {}
     }
 }
