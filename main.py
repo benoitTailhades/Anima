@@ -375,10 +375,12 @@ class Game:
             self.levels[self.level]["doors"] = self.doors.copy()
 
         else:
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)]):
+            spawners = self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)])
+            for spawner in spawners:
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
-            self.player.pos = self.spawners[str(map_id)].copy()
+            if spawners:
+                self.player.pos = self.spawners[str(map_id)].copy()
             self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs)
             self.tilemap.extract(self.doors_id_pairs)
             self.transitions = self.tilemap.extract([("transition", 0)])
@@ -399,14 +401,14 @@ class Game:
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
-                if self.player.get_direction("x") != 0:
-                    self.spawners[str(self.level)] = [self.player.pos.copy()[0] - 16*(self.player.get_direction("x")), self.player.pos.copy()[1]]
                 self.level = transition["destination"]
                 self.in_boss_level = self.level in self.boss_levels
                 self.load_level(self.level)
 
+                self.player.pos = [transition["dest_pos"][0] * 16, transition["dest_pos"][1] * 16]
                 self.scroll[0] = self.player.pos[0]
                 self.scroll[1] = self.player.pos[1]
+
 
                 if self.level in self.scroll_limits:
                     limits = self.scroll_limits[self.level]

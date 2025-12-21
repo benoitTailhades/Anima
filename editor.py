@@ -96,7 +96,8 @@ class Editor:
                 "improve_tp_progress": {"amount": int, "tp_id": int},
             },
             "Transitions": {
-                "transition": {"destination": int}
+                "transition": {"destination": int,
+                               "dest_pos": list}
             },
         }
         self.types_per_categories = {t: set(self.infos_per_type_per_category[t].keys()) for t in
@@ -130,6 +131,11 @@ class Editor:
         self.window_mode = False
         self.showing_properties_window = False
         self.get_activators()
+
+        self.selecting_dest_pos = False
+        self.return_to_level = 0
+        self.waiting_for_click_release = False
+        self.transition_edit_pos = None
 
         self.clicking = False
         self.right_clicking = False
@@ -620,26 +626,70 @@ class Editor:
         cell_v_offset = 70
         row_offset = 30
         info_r = 0
+
+        # Make a copy so we don't modify the original selected_activator dictionary in the loop
         infos = self.selected_activator["infos"].copy()
+
+        # Render Position (Read only)
         pos_txt = self.font.render("pos" + ":", True, (255, 255, 255))
         pos_val = self.font.render(str(infos["pos"]), True, (255, 255, 255))
         self.properties_window.blit(pos_txt, (
             self.properties_window.get_width() - pos_val.get_width() - pos_txt.get_width() - 12, 10))
         self.properties_window.blit(pos_val, (self.properties_window.get_width() - pos_val.get_width() - 10, 10))
-        del infos["pos"]
+
+        if "pos" in infos: del infos["pos"]
+
         for info in infos:
             info_name = self.font.render(info + ":", True, (255, 255, 255))
-            info_value = self.font.render(self.edited_value if self.edited_info == info else
-                                          str(self.selected_activator["infos"][info]), True,
-                                          (255, 50, 50) if self.edited_info == info else (255, 255, 255))
+
+            # Determine text color (Red if editing)
+            txt_color = (255, 50, 50) if self.edited_info == info else (255, 255, 255)
+
+            # Display value
+            if self.edited_info == info:
+                val_str = self.edited_value
+            else:
+                val_str = str(self.selected_activator["infos"][info])
+
+            info_value = self.font.render(val_str, True, txt_color)
+
             value_rect = Button(cell_h_offset + info_name.get_width() + 2,
                                 cell_v_offset + 5 + row_offset * info_r,
                                 max(info_value.get_width(), 9), info_value.get_height(), self.clicking)
+
+            # --- LOGIC FOR CLICKING A FIELD ---
             if value_rect.pressed(mpos) and not self.edited_info:
-                self.edited_info = info
-                self.edited_value = str(self.selected_activator["infos"][info])
-                print('modifing: ' + self.edited_info)
-                print('value: ' + self.edited_value)
+
+                # SPECIAL HANDLING FOR DEST_POS
+                if info == "dest_pos":
+                    try:
+                        target_map_id = int(self.selected_activator["infos"]["destination"])
+                        if target_map_id in self.active_maps:
+                            self.return_to_level = self.level
+                            self.transition_edit_pos = self.selected_activator["infos"]["pos"]
+
+                            target_index = self.active_maps.index(target_map_id)
+                            self.change_level(target_index)
+
+                            self.selecting_dest_pos = True
+                            self.waiting_for_click_release = True
+                            self.window_mode = False
+                            self.showing_properties_window = False
+                            self.selected_activator = None
+
+                            return  # <--- CRITICAL FIX: STOP RENDERING IMMEDIATELY
+
+                        else:
+                            print(f"Map ID {target_map_id} not found in active maps.")
+                    except ValueError:
+                        print("Invalid destination ID set.")
+
+                # NORMAL TEXT EDITING FOR OTHER FIELDS
+                else:
+                    self.edited_info = info
+                    self.edited_value = str(self.selected_activator["infos"][info])
+                    print('modifing: ' + self.edited_info)
+
             if self.edited_info:
                 value_rect.activated = False
 
@@ -648,7 +698,12 @@ class Editor:
                 cell_h_offset, cell_v_offset + 5 + row_offset * info_r))
             self.properties_window.blit(info_value, (cell_h_offset + info_name.get_width() + 2,
                                                      cell_v_offset + 5 + row_offset * info_r))
-            self.properties_window.blit(pygame.transform.scale(self.selected_activator["image"], (48, 48)), (5, 0))
+
+            # Draw Icon (Only if we still have a selected activator)
+            if self.selected_activator:
+                self.properties_window.blit(pygame.transform.scale(self.selected_activator["image"], (48, 48)), (5, 0))
+
+            # Type selection logic
             if self.edited_info == "type":
                 type_r = 0
                 available_types = self.types_per_categories[self.selected_activator_type].copy()
@@ -676,6 +731,7 @@ class Editor:
                         self.edited_info = ""
                         return
                     type_r += 1
+
             info_r += 1
 
     def save_edited_values(self):
@@ -788,6 +844,8 @@ class Editor:
         while True:
             self.display.fill((0, 0, 0))
 
+            current_sidebar_width = 0 if self.selecting_dest_pos else SIDEBAR_WIDTH
+
             self.scroll[0] += (self.movement[1] - self.movement[0]) * 8
             self.scroll[1] += (self.movement[3] - self.movement[2]) * 8
             render_scroll = (int(self.scroll[0]), int(self.scroll[1]))
@@ -804,11 +862,11 @@ class Editor:
 
             # Calculate mouse position (only for main display area)
             mpos = pygame.mouse.get_pos()
-            main_area_width = self.screen_width - SIDEBAR_WIDTH
+            main_area_width = self.screen_width - current_sidebar_width
             main_area_height = self.screen_height - UNDERBAR_HEIGHT if self.edit_properties_mode_on else self.screen_height
             if mpos[0] < main_area_width and mpos[1] < main_area_height:  # Only if mouse is over main area
                 # Scale mouse position to account for display scaling
-                scale_x = 960 / (self.screen.get_size()[0] - SIDEBAR_WIDTH)
+                scale_x = 960 / (self.screen.get_size()[0] - current_sidebar_width)
                 scale_y = 576 / (self.screen.get_size()[1])
                 mpos_scaled = ((mpos[0] / RENDER_SCALE) * scale_x * self.zoom,
                                (mpos[1] / RENDER_SCALE) * scale_y * self.zoom)
@@ -820,6 +878,28 @@ class Editor:
                 mpos_scaled = (0, 0)
 
             mpos_in_mainarea = mpos[0] < main_area_width and mpos[1] < main_area_height
+
+            if self.selecting_dest_pos:
+                # 1. Draw Visuals
+                overlay_text = self.font.render("SELECT DESTINATION POS", True, (255, 50, 50))
+                self.display.blit(overlay_text, (self.display.get_width() // 2 - overlay_text.get_width() // 2, 10))
+                pygame.draw.rect(self.display, (255, 0, 0),
+                                 (tile_pos[0] * 16 - self.scroll[0], tile_pos[1] * 16 - self.scroll[1], 16, 16), 1)
+
+                # 2. Logic: Actual Selection (Only runs if lock is off)
+                if not self.waiting_for_click_release and self.clicking and mpos_in_mainarea:
+                    selected_pos = list(tile_pos)
+
+                    self.change_level(self.return_to_level)
+
+                    tile_loc = str(self.transition_edit_pos[0]) + ";" + str(self.transition_edit_pos[1])
+                    if tile_loc in self.tilemap.tilemap:
+                        self.tilemap.tilemap[tile_loc]["dest_pos"] = selected_pos
+                        print(f"Updated dest_pos to {selected_pos}")
+
+                    self.selecting_dest_pos = False
+                    self.clicking = False
+                    self.save_action()
 
             for lever in self.tilemap.extract(self.levers, keep=True):
                 self.levers_ids.add(lever['id'])
@@ -860,6 +940,26 @@ class Editor:
                                                                   tile_pos[1] * self.tilemap.tile_size - self.scroll[
                                                                       1]))
 
+            if self.selecting_dest_pos and self.clicking and not self.waiting_for_click_release and mpos_in_mainarea:
+                selected_pos = list(tile_pos)
+
+                # 1. Switch back to original level
+                self.change_level(self.return_to_level)
+
+                # 2. Update the specific transition tile
+                tile_loc = str(self.transition_edit_pos[0]) + ";" + str(self.transition_edit_pos[1])
+
+                if tile_loc in self.tilemap.tilemap:
+                    self.tilemap.tilemap[tile_loc]["dest_pos"] = selected_pos
+                    print(f"Updated dest_pos to {selected_pos}")
+                else:
+                    print("Error: Original transition tile not found.")
+
+                # 3. Reset State
+                self.selecting_dest_pos = False
+                self.clicking = False  # Prevent accidental placement on return
+                self.save_action()
+
             if self.clicking and self.ongrid and mpos_in_mainarea:
                 if not self.window_mode:
                     if not self.edit_properties_mode_on:
@@ -891,7 +991,8 @@ class Editor:
                                 'type': "transition",
                                 'variant': self.tile_variant,
                                 'pos': tile_pos,
-                                'destination': dest}
+                                'destination': dest,
+                                'dest_pos':[0, 0]}
                         else:
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                                 'type': self.tile_list[self.tile_group],
@@ -919,6 +1020,7 @@ class Editor:
                                     "infos": {
                                         "type": "transition",
                                         "destination": self.tilemap.tilemap[tile_loc].get('destination', 0),
+                                        "dest_pos": self.tilemap.tilemap[tile_loc].get('dest_pos', [0,0]),
                                         "pos": self.tilemap.tilemap[tile_loc]['pos']
                                     }
                                 }
@@ -950,7 +1052,8 @@ class Editor:
             if not self.edit_properties_mode_on:
                 self.display.blit(current_tile_img, (5, 5))
 
-            self.render_sidebar()
+            if not self.selecting_dest_pos:
+                self.render_sidebar()
 
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
@@ -960,7 +1063,7 @@ class Editor:
                 if event.type == pygame.MOUSEWHEEL:
                     mpos_wheel = pygame.mouse.get_pos()
                     # If mouse is over the sidebar (specifically the map nav area)
-                    if mpos_wheel[0] > self.screen_width - SIDEBAR_WIDTH:
+                    if mpos_wheel[0] > self.screen_width - current_sidebar_width:
                         self.map_list_scroll -= event.y * 20
                         # Clamp scrolling
                         self.map_list_scroll = max(0, self.map_list_scroll)
@@ -1000,10 +1103,9 @@ class Editor:
                         if event.key == pygame.K_q:
                             self.movement[0] = True
                         if event.key == pygame.K_RIGHT:
-                            self.change_level(self.level + 1)
+                            self.change_level((self.level + 1) % self.sizeofmaps())
                         if event.key == pygame.K_LEFT:
-                            if self.level > 0:
-                                self.change_level(self.level - 1)
+                            self.change_level((self.level - 1) % self.sizeofmaps())
                         if event.key == pygame.K_DOWN:
                             self.zoom = self.zoom * 2
                             self.display = pygame.Surface((480 * self.zoom, 288 * self.zoom))
@@ -1035,7 +1137,8 @@ class Editor:
                                 'type': "transition",
                                 'variant': self.tile_variant,
                                 'pos': tile_pos,
-                                'destination': dest}
+                                'destination': dest,
+                                'dest_pos' : [0,0]}
                             self.save_action()
 
                     if event.type == pygame.KEYUP:
@@ -1168,6 +1271,7 @@ class Editor:
                 if event.type == pygame.MOUSEBUTTONUP:
                     if event.button == 1:
                         self.clicking = False
+                        self.waiting_for_click_release = False
                     if event.button == 3:
                         self.right_clicking = False
                     if event.button in (1, 3) and self.temp_snapshot:
@@ -1183,7 +1287,7 @@ class Editor:
                     self.screen = pygame.display.set_mode((self.screen_width, self.screen_height), pygame.RESIZABLE)
 
             # Calculate main area dimensions for scaling
-            main_area_width = self.screen_width - SIDEBAR_WIDTH
+            main_area_width = self.screen_width - current_sidebar_width
             main_area_height = self.screen_height
 
             # Blit everything to screen
@@ -1191,7 +1295,7 @@ class Editor:
                 scaled_display = pygame.transform.scale(self.display, (main_area_width, main_area_height))
                 self.screen.blit(scaled_display, (0, 0))
                 self.screen.blit(self.sidebar, (main_area_width, 0))
-                if self.edit_properties_mode_on:
+                if self.edit_properties_mode_on and not self.selecting_dest_pos:
                     self.render_underbar()
                     self.screen.blit(self.underbar, (0, main_area_height - UNDERBAR_HEIGHT))
                 if self.selecting_environment_mode:
