@@ -198,7 +198,7 @@ class Tilemap:
                 loc = str(x) + ";" + str(y)
                 if loc in self.tilemap:
                     tile = self.tilemap[loc]
-                    if tile['type'] not in {'vine_transp_back','dark_vine'}:
+                    if tile['type'] not in {'vine_transp_back','dark_vine', 'spawners'}:
                         img = self.game.assets[tile['type']][tile['variant']].copy()
                         img.fill((255, 255, 255, 255 if tile['type'] in exception else mask_opacity),
                                  special_flags=BLEND_RGBA_MULT)

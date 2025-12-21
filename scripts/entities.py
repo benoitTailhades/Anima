@@ -329,7 +329,6 @@ class DistanceEnemy(Enemy):
             self.last_attack_time = 0
             self.first_attack_time = time.time()
 
-
 class Throwable(PhysicsEntity):
     def __init__(self, game, o_type, pos, size):
         # Initialize an object that can be picked up and thrown
@@ -398,7 +397,6 @@ class Throwable(PhysicsEntity):
     def rect(self):
         # Return collision rectangle
         return pygame.Rect(self.pos[0], self.pos[1], self.size[0], self.size[1])
-
 
 class DamageBlock:
     def __init__(self, game, pos, size):
