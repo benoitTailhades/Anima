@@ -82,9 +82,12 @@ class Editor:
                                                        },
                                    "Buttons": {"improve_tp_progress":
                                                  {"amount" : int,
-                                                  "tp_id": int}
-                                             }
-                                   }
+                                                  "tp_id": int},
+                                 },
+                                    "Transitions": {
+                                        "transition": {"destination": int}
+                                    },
+                       }
         self.types_per_categories = {t : set(self.infos_per_type_per_category[t].keys()) for t in self.infos_per_type_per_category}
 
         self.movement = [False, False, False, False]
@@ -471,12 +474,19 @@ class Editor:
                                 self.selected_activator = {"image": self.assets[t][0], "infos" : self.activators[self.selected_activator_type][tile_loc]}
                                 self.clicking = False
                             elif t == "transition":
-                                new_dest = int(input("Enter the destination level: "))
-                                while new_dest > self.sizeofmaps():
-                                    print("Destination not available")
-                                    new_dest = int(input("Enter the destination level: "))
-
-                                self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])]['destination'] = new_dest
+                                self.set_window_mode()
+                                self.showing_properties_window = True
+                                self.selected_activator_type = "Transitions"
+                                # We construct the info object manually for transitions since they aren't in self.activators
+                                self.selected_activator = {
+                                    "image": self.assets[t][0],
+                                    "infos": {
+                                        "type": "transition",
+                                        "destination": self.tilemap.tilemap[tile_loc].get('destination', 0),
+                                        "pos": self.tilemap.tilemap[tile_loc]['pos']
+                                    }
+                                }
+                                self.clicking = False
 
             if self.right_clicking and mpos_in_mainarea:
                 if not self.window_mode:
@@ -610,17 +620,14 @@ class Editor:
                             print("saved")
                         if event.key == pygame.K_c:
                             print((tile_pos[0] * 16, tile_pos[1] * 16))
-                        if event.key == pygame.K_t:
-                            dest = int(input("Enter the destination level: "))
-                            while dest > self.sizeofmaps():
-                                print("Destination not available")
-                                dest = int(input("Enter the destination level: "))
-
+                        if event.key == pygame.K_p:
+                            dest = 0  # Default value
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                                 'type': "transition",
                                 'variant': self.tile_variant,
                                 'pos': tile_pos,
                                 'destination': dest}
+
 
                     if event.type == pygame.KEYUP:
                         if event.key == pygame.K_i:
@@ -655,44 +662,82 @@ class Editor:
                         if event.key == pygame.K_RETURN:
                             if self.edited_info:
                                 if self.edited_value and self.selected_activator["infos"][self.edited_info] != int(self.edited_value):
-                                    changing_id = self.edited_info == "id"
-                                    id_already_existing = int(self.edited_value) in self.activators_ids[self.selected_activator_type]
+                                    # --- VALIDATION LOGIC ---
                                     input_possible = True
-                                    if "_id" in self.edited_info:
-                                        intrested_activator = "Doors" if "door" in self.edited_info else "Teleporters"
-                                        ids = self.doors_ids if intrested_activator == "Doors" else self.tps_ids
+                                    changing_id = self.edited_info == "id"
+                                    id_already_existing = False
+
+                                    # 1. Validation for Transitions (Check if map exists)
+                                    if self.selected_activator_type == "Transitions" and self.edited_info == "destination":
+                                        if int(self.edited_value) > self.sizeofmaps():
+                                            print(f"Destination map {self.edited_value} does not exist")
+                                            input_possible = False
+
+                                    # 2. Validation for Activators (Check specific ID targets)
+                                    elif "_id" in self.edited_info:
+                                        interested_activator = "Doors" if "door" in self.edited_info else "Teleporters"
+                                        ids = self.doors_ids if interested_activator == "Doors" else self.tps_ids
                                         input_possible = int(self.edited_value) in ids
+                                        if not input_possible:
+                                            print("There is no " + interested_activator.lower()[:-1] + " with this id")
+
+                                    # 3. Check for Duplicate IDs (Only for Activators)
+                                    if changing_id and self.selected_activator_type != "Transitions":
+                                        id_already_existing = int(self.edited_value) in self.activators_ids[
+                                            self.selected_activator_type]
+
+                                    # --- SAVE LOGIC ---
                                     if (not changing_id or not id_already_existing) and input_possible:
-                                        tile_loc = str(self.selected_activator["infos"]["pos"][0]) + ";" \
-                                                             + str(self.selected_activator["infos"]["pos"][1])
-                                        self.selected_activator["infos"][self.edited_info] = self.edited_value
-                                        iD = int(self.selected_activator["infos"]["id"])
-                                        self.activators_ids[self.selected_activator_type].add(iD)
-                                        if tile_loc in self.tilemap.tilemap and self.edited_info == "id" and self.edited_value != self.tilemap.tilemap[tile_loc]["id"]:
-                                            self.activators_ids[self.selected_activator_type].remove(self.tilemap.tilemap[tile_loc]["id"])
-                                        elif tile_loc not in self.tilemap.tilemap:
-                                            self.tilemap.tilemap[tile_loc] = \
-                                                {
+                                        # Update the temporary selected_activator dict
+                                        new_val = int(
+                                            self.edited_value) if self.edited_value.isdigit() else self.edited_value
+                                        self.selected_activator["infos"][self.edited_info] = new_val
+
+                                        tile_loc = str(self.selected_activator["infos"]["pos"][0]) + ";" + \
+                                                   str(self.selected_activator["infos"]["pos"][1])
+
+                                        # A. Save Logic for Transitions
+                                        if self.selected_activator_type == "Transitions":
+                                            if tile_loc in self.tilemap.tilemap:
+                                                self.tilemap.tilemap[tile_loc][self.edited_info] = new_val
+                                            self.edited_value = None
+                                            self.edited_info = ""
+
+                                        # B. Save Logic for Activators (Levers, Buttons, Teleporters)
+                                        else:
+                                            iD = int(self.selected_activator["infos"]["id"])
+                                            self.activators_ids[self.selected_activator_type].add(iD)
+
+                                            # Handle changing the main ID of an object
+                                            if tile_loc in self.tilemap.tilemap and self.edited_info == "id" and \
+                                                    self.edited_value != str(self.tilemap.tilemap[tile_loc]["id"]):
+                                                self.activators_ids[self.selected_activator_type].remove(
+                                                    self.tilemap.tilemap[tile_loc]["id"])
+
+                                            # Create tile entry if it somehow doesn't exist (e.g. newly placed)
+                                            elif tile_loc not in self.tilemap.tilemap:
+                                                self.tilemap.tilemap[tile_loc] = {
                                                     'type': self.tile_list[self.tile_group],
                                                     'variant': self.tile_variant,
                                                     'pos': self.selected_activator["infos"]["pos"],
                                                     'id': iD
                                                 }
 
-                                        if tile_loc not in self.activators[self.selected_activator_type]:
-                                            self.activators[self.selected_activator_type][tile_loc] = {}
+                                            # Ensure activator entry exists
+                                            if tile_loc not in self.activators[self.selected_activator_type]:
+                                                self.activators[self.selected_activator_type][tile_loc] = {}
 
-                                        pos = str(self.selected_activator["infos"]["pos"])
-                                        tile_loc = pos[1:-1].replace(', ', ';')
-                                        self.activators[self.selected_activator_type][tile_loc] = self.selected_activator["infos"]
-                                        self.tilemap.tilemap[tile_loc]["id"] = self.activators[self.selected_activator_type][tile_loc]["id"]
-                                        self.edited_value = None
-                                        self.edited_info = ""
+                                            # Save data
+                                            self.activators[self.selected_activator_type][tile_loc] = \
+                                            self.selected_activator["infos"]
+                                            self.tilemap.tilemap[tile_loc]["id"] = \
+                                            self.activators[self.selected_activator_type][tile_loc]["id"]
+
+                                            self.edited_value = None
+                                            self.edited_info = ""
+
                                     elif changing_id and id_already_existing:
                                         print("id already used")
-                                    elif not input_possible:
-                                        print("There is no " + intrested_activator.lower()[:-1] + " with this id")
-
                                 else:
                                     self.edited_info = ""
 
