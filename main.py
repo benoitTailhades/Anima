@@ -345,7 +345,7 @@ class Game:
 
         # If level is already visited, load from memory
         else:
-            spawners = self.tilemap.extract([('spawners', 0)])
+            spawners = self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)])
             for spawner in spawners:
                 if spawner['variant'] == 0:
                     self.spawner_pos[str(map_id)] = spawner["pos"]
