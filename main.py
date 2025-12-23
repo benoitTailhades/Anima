@@ -313,7 +313,6 @@ class Game:
     def main_game_logic(self):
         """Standard gameplay loop logic moved from run() for better state management."""
         if not self.game_initialized:
-            self.load_level(self.level)
             self.game_initialized = True
 
         self.screenshake = max(0, self.screenshake - 1)
@@ -389,6 +388,14 @@ class Game:
             o.update(self.tilemap, (0, 0))
             o.render(self.display, offset=render_scroll)
 
+        # --- Interaction Check ---
+        interaction_found = False
+        for inter in self.interactable:
+            if inter.can_interact(self.player.rect()):
+                display_bottom_text(self, "Interaction", duration=0.1)
+                interaction_found = True
+                break
+
         self.tilemap.render_over(self.display, offset=render_scroll)
         display_level_fg(self, self.level)
         apply_lighting(self, render_scroll)
@@ -442,6 +449,19 @@ class Game:
             draw_cutscene_border(self.display)
         else:
             draw_health_bar(self)
+
+        # --- State Persistence Update ---
+        self.levels[self.level]["enemies"] = self.enemies.copy()
+        self.levels[self.level]["activators"] = self.activators.copy()
+        self.levels[self.level]["doors"] = self.doors.copy()
+
+        if self.transition:
+            transition_surf = pygame.Surface(self.display.get_size())
+            pygame.draw.circle(transition_surf, (255, 255, 255),
+                               (self.display.get_width() // 2, self.display.get_height() // 2),
+                               (30 - abs(self.transition)) * 8)
+            transition_surf.set_colorkey((255, 255, 255))
+            self.display.blit(transition_surf, (0, 0))
 
         screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
                               random.random() * self.screenshake - self.screenshake / 2)
