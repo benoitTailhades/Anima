@@ -151,7 +151,7 @@ class Game:
         self.spawner_pos = {}
 
         # Player stats
-        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (19, 35))
+        self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (16, 16))
         self.player_hp = 100
         self.player_dmg = 50
         self.player_attack_time = 0.03
@@ -301,7 +301,6 @@ class Game:
             self.enemies = []
 
             # Extract spawners
-            # Note: Removed checks for variants 2 and 4 (bosses)
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 3)]):
                 if spawner['variant'] == 0:  # Player Spawn
                     self.spawners[str(map_id)] = spawner["pos"].copy()

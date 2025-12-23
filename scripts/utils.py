@@ -52,22 +52,7 @@ def load_entities(e_info):#load every info on every entities
     return tiles
 
 def load_player():
-    return {'player/idle': Animation(load_images('entities/player/idle'), img_dur=12),
-            'player/run/right': Animation(load_images('entities/player/run/right'), img_dur=3),
-            'player/run/left': Animation(load_images('entities/player/run/left'), img_dur=3),
-            'player/jump/right': Animation(load_images('entities/player/jump/right'), img_dur=3, loop=False),
-            'player/jump/left': Animation(load_images('entities/player/jump/left'), img_dur=3, loop=False),
-            'player/jump/top': Animation(load_images('entities/player/jump/top'), img_dur=3, loop=False),
-            'player/falling/right': Animation(load_images('entities/player/falling/right'), img_dur=3, loop=True),
-            'player/falling/left': Animation(load_images('entities/player/falling/left'), img_dur=3, loop=True),
-            'player/falling/vertical': Animation(load_images('entities/player/falling/vertical'), img_dur=3, loop=True),
-            'player/dash/right': Animation(load_images('entities/player/dash/right'), img_dur=3, loop=False),
-            'player/dash/left': Animation(load_images('entities/player/dash/left'), img_dur=3, loop=False),
-            'player/dash/top': Animation(load_images('entities/player/dash/top'), img_dur=3, loop=False),
-            'player/wall_slide/right': Animation(load_images('entities/player/wall_slide/right'), img_dur=3,loop=False),
-            'player/wall_slide/left': Animation(load_images('entities/player/wall_slide/left'), img_dur=3, loop=False),
-            'player/attack/right': Animation(load_images('entities/player/attack/right'), img_dur=2, loop=False),
-            'player/attack/left': Animation(load_images('entities/player/attack/left'), img_dur=2, loop=False)}
+    return {'player/idle': Animation(load_images('entities/player/idle', (16,16)), img_dur=12)}
 
 def load_doors(d_info, env=None):
     tiles = {}

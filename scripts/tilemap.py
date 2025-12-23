@@ -55,10 +55,10 @@ class Tilemap:
 
     def neighbor_offset(self, size):
         offset = []
-        tiles_x = round_up(size[0]/self.tile_size)
-        tiles_y = round_up(size[1]/self.tile_size)
-        for x in range(-1, tiles_x + 1):
-            for y in range(0, tiles_y):
+        tiles_x = round_up(size[0]/self.tile_size) + 1
+        tiles_y = round_up(size[1]/self.tile_size) + 1
+        for x in range(-1, tiles_x):
+            for y in range(-1, tiles_y):
                 offset.append((x, y))
         return offset
 
@@ -81,7 +81,7 @@ class Tilemap:
 
     def tiles_around(self, pos, size):
         tiles = []
-        tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
+        tile_loc = (int((pos[0]+size[0]/2) // self.tile_size), int((pos[1]+size[0]/2) // self.tile_size))
         for offset in self.neighbor_offset(size):
             check_loc = str(tile_loc[0] + offset[0]) + ';' + str(tile_loc[1] + offset[1])
             if self.show_collisions:
@@ -96,7 +96,7 @@ class Tilemap:
 
     def tiles_under(self, pos, size):
         u_tiles = []
-        u_tile_loc = (int(pos[0] // self.tile_size), int(pos[1] // self.tile_size))
+        u_tile_loc = (int((pos[0]+size[0]/2) // self.tile_size), int((pos[1]+size[0]/2) // self.tile_size))
         for offset in self.under_offset(size):
             check_loc = str(u_tile_loc[0] + offset[0]) + ';' + str(u_tile_loc[1] + offset[1])
             if self.show_collisions:

@@ -25,6 +25,7 @@ class PhysicsPlayer:
         self.size = size
         self.velocity = [0, 0]  # [vel_x, vel_y]
         self.acceleration = [0.0, 0.0]
+        self.show_hitbox = False
 
         # Constants for movement
         self.SPEED = 2.5
@@ -74,6 +75,8 @@ class PhysicsPlayer:
         self.tilemap = tilemap
         self.ghost_images = []
 
+        self.jumping = False
+
         self.facing = ""
         self.action = "idle"
         self.animation = self.game.assets['player/' + "idle"].copy()
@@ -91,6 +94,8 @@ class PhysicsPlayer:
         self.run_sound_timer = 0
         self.run_sound_interval = 15  # Intervalle entre les répétitions du son de course
         self.last_action = "idle"  # Pour détecter les changements d'action
+
+        self.rotation_angle = 0
 
     def init_sound_system(self):
         """Initialise le système de son avec tous les fichiers nécessaires"""
@@ -190,6 +195,27 @@ class PhysicsPlayer:
                 self.is_stunned = False
                 self.knockback_dir = [0, 0]
 
+        if self.is_on_floor():
+            self.jumping = False
+
+        if self.jumping:
+            # Spin speed (Adjust "8" to make it faster/slower)
+            rotation_speed = 8
+
+            # Spin based on direction (Clockwise if facing right, CCW if left)
+            # We use last_direction so you keep spinning even if you stop pressing keys in mid-air
+            if self.last_direction == 1:
+                self.rotation_angle -= rotation_speed  # Negative is clockwise in Pygame
+            else:
+                self.rotation_angle += rotation_speed
+
+            # Keep angle within 0-360 for cleanliness (optional)
+            self.rotation_angle %= 360
+        else:
+            # Snap back to 0 when on the ground
+            # You can also use a 'lerp' here if you want a smooth landing animation
+            self.rotation_angle = 0
+
         if not self.noclip:
             if self.dict_kb["key_noclip"] == 1 and self.allowNoClip:
                 self.noclip = True
@@ -247,7 +273,7 @@ class PhysicsPlayer:
     def set_action(self, action):
         if action != self.action :
             self.action = action
-            self.animation = self.game.assets['player/' + self.action].copy()
+            #self.animation = self.game.assets['player/' + self.action].copy()
 
     def apply_animations(self):
         """
@@ -424,6 +450,8 @@ class PhysicsPlayer:
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False
 
+        self.jumping = True
+
     def jump_logic_helper(self):
         """Avoid code redundancy"""
         self.velocity[1] = self.JUMP_VELOCITY
@@ -470,6 +498,7 @@ class PhysicsPlayer:
     def collision_check(self, axe):
         """Checks for collision using tilemap"""
         entity_rect = self.rect()
+
         tilemap = self.tilemap
         b_r = set()
         b_l = set()
@@ -477,7 +506,6 @@ class PhysicsPlayer:
         # Handle Vertical Collision First
         if axe == "y":
             backup_velo = self.velocity[1]
-            entity_rect.y += self.velocity[1]
 
             self.can_walljump["buffer"] = False
             self.can_walljump["timer"] = max(0, self.can_walljump["timer"] - 1)
@@ -507,7 +535,6 @@ class PhysicsPlayer:
             entity_rect.y -= backup_velo
 
         if axe == "x":
-            entity_rect.x += self.velocity[0]  # Predict horizontal movement
             if self.can_walljump["available"]:
                 self.can_walljump["cooldown"] = max(self.can_walljump["cooldown"]-1,0)
             for rect in tilemap.physics_rects_around(self.pos, self.size) + self.game.doors_rects:
@@ -525,9 +552,9 @@ class PhysicsPlayer:
                         self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
-                if entity_rect.x - 17 < rect.x < entity_rect.x:
+                if entity_rect.x - 16 < rect.x < entity_rect.x:
                     b_l.add(True)
-                if entity_rect.x + 32 > rect.x > entity_rect.x:
+                if entity_rect.x + 16 > rect.x > entity_rect.x:
                     b_r.add(True)
 
             self.get_block_on["left"] = bool(b_l)
@@ -591,7 +618,8 @@ class PhysicsPlayer:
         ghost = {
             "pos": self.pos.copy(),  # Assuming self.pos is a list or has a copy method
             "img": self.animation.img().copy(),  # Create a copy of the current image
-            "lifetime": 20  # How long the ghost remains visible (in frames)
+            "lifetime": 20,  # How long the ghost remains visible (in frames)
+            "angle": self.rotation_angle
         }
 
         # Add to list of ghost images
@@ -608,19 +636,58 @@ class PhysicsPlayer:
             if ghost["lifetime"] <= 0:
                 self.ghost_images.remove(ghost)
 
-    def render(self, surf, offset = (0, 0)):
-        r = pygame.Rect(self.pos[0] - offset[0], self.pos[1] - offset[1], self.size[0], self.size[1])
-        #pygame.draw.rect(surf, (255, 230, 255), r)
-
+    def render(self, surf, offset=(0, 0)):
+        # 1. Draw Ghosts
         for ghost in self.ghost_images[:]:
-            # Calculate transparency based on remaining lifetime
             alpha = int(255 * (ghost["lifetime"] / 20) ** 2)
-            # Create a copy with transparency
             ghost_surf = ghost["img"].copy()
-            ghost_surf.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGBA_MAX)
-            ghost_surf.fill((109, 156, 159, 70),  special_flags=pygame.BLEND_RGBA_MIN)
-            ghost_surf.set_alpha(alpha)
-            # Draw ghost
-            surf.blit(ghost_surf, (ghost["pos"][0] - offset[0] - 11, ghost["pos"][1] - offset[1] - 5))
 
-        surf.blit(self.animation.img(), (self.pos[0] - offset[0] - 11, self.pos[1] - offset[1] - 5))
+            # Apply transparency
+            ghost_surf.fill((255, 255, 255, 0), special_flags=pygame.BLEND_RGBA_MAX)
+            ghost_surf.fill((109, 156, 159, 70), special_flags=pygame.BLEND_RGBA_MIN)
+            ghost_surf.set_alpha(alpha)
+
+            # Rotate Ghost
+            if ghost["angle"] != 0:
+                ghost_surf = pygame.transform.rotate(ghost_surf, ghost["angle"])
+
+            # Calculate Ghost Center
+            # Note: We use the ghost's original position + half size to find the center
+            ghost_center_x = ghost["pos"][0] - offset[0] + self.size[0] // 2
+            ghost_center_y = ghost["pos"][1] - offset[1] + self.size[1] // 2
+
+            # Get the new rect centered on that point
+            ghost_rect = ghost_surf.get_rect(center=(ghost_center_x, ghost_center_y))
+
+            # Apply your manual offsets (-11, -5) if they were for visual alignment
+            # (You might need to tweak these depending on your sprite art)
+            ghost_rect.x -= 11
+            ghost_rect.y -= 5
+
+            surf.blit(ghost_surf, ghost_rect)
+
+        # 2. Draw Player
+        img = self.animation.img().convert_alpha()
+
+        if self.rotation_angle != 0:
+            # Rotate the image
+            rotated_img = pygame.transform.rotate(img, self.rotation_angle)
+
+            # Calculate the center of the hitbox relative to the screen
+            center_x = self.pos[0] - offset[0] + self.size[0] // 2
+            center_y = self.pos[1] - offset[1] + self.size[1] // 2
+
+            # Get a new rectangle for the rotated image, centered on the hitbox center
+            new_rect = rotated_img.get_rect(center=(center_x, center_y))
+
+            # Blit at the calculated coordinates
+            surf.blit(rotated_img, new_rect)
+        else:
+            # Standard drawing if no rotation
+            surf.blit(img, (self.pos[0] - offset[0], self.pos[1] - offset[1]))
+
+        if self.show_hitbox:
+            debug_rect = self.rect().copy()
+            debug_rect.x -= offset[0]
+            debug_rect.y -= offset[1]
+            pygame.draw.rect(surf, (255, 0, 0), debug_rect, 1)
