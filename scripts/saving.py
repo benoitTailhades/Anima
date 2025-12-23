@@ -28,7 +28,7 @@ class Save:
         # Base structure
         save_data = {
             "player": {
-                "position": self.game.player.pos,
+                "position": self.game.spawn_point["pos"],
                 "hp": self.game.player_hp,
                 "spawn_point": self.game.spawn_point,
             },

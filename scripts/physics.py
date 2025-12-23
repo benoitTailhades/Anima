@@ -200,7 +200,7 @@ class PhysicsPlayer:
 
         if self.jumping:
             # Spin speed (Adjust "8" to make it faster/slower)
-            rotation_speed = 8
+            rotation_speed = 6.5
 
             # Spin based on direction (Clockwise if facing right, CCW if left)
             # We use last_direction so you keep spinning even if you stop pressing keys in mid-air
@@ -552,9 +552,9 @@ class PhysicsPlayer:
                         self.dash_cooldown = 5
                     self.pos[0] = entity_rect.x
                     self.stop_dash_momentum["x"] = True
-                if entity_rect.x - 16 < rect.x < entity_rect.x:
+                if entity_rect.x - self.size[0] < rect.x < entity_rect.x:
                     b_l.add(True)
-                if entity_rect.x + 16 > rect.x > entity_rect.x:
+                if entity_rect.x + self.size[0] > rect.x > entity_rect.x:
                     b_r.add(True)
 
             self.get_block_on["left"] = bool(b_l)

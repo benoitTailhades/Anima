@@ -137,6 +137,7 @@ class Game:
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
+        self.default_level = self.level
         self.levels = {i: {"charged": False} for i in range(len(os.listdir("data/maps")))}
 
         self.activators = []
@@ -335,9 +336,16 @@ class Game:
 
         # Update spawn point logic
         if self.level in (0, 1, 2):
-            self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
+            try:
+                self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
+            except KeyError:
+                print("No spawner pos found")
         elif self.level in (3, 4, 5):
-            self.spawn_point = {"pos": self.spawner_pos['3'], "level": 3}
+            try:
+                self.spawn_point = {"pos": self.spawner_pos['3'], "level": 3}
+            except KeyError:
+                print("No spawner pos found")
+
 
         self.player.disablePlayerInput = self.cutscene or self.moving_visual or self.teleporting
         self.player.can_walljump["allowed"] = True

@@ -929,7 +929,7 @@ class Menu:
                             else:
                                 # START NEW GAME
                                 self.game.level = 0
-                                self.game.load_level(0)
+                                self.game.load_level(self.game.default_level)
                                 self.game.player_hp = 100
                                 # Crucial: Tell the game which slot is currently active for future saves
                                 self.game.current_slot = slot_id
