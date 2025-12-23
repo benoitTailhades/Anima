@@ -19,7 +19,7 @@ from scripts.doors import Door
 from scripts.display import *
 from scripts.text import load_game_texts, display_bottom_text, update_bottom_text
 from scripts.spark import Spark
-from scripts.sound import set_game_volume
+from scripts.sound import set_game_volume, change_music
 
 
 class Game:
@@ -120,16 +120,13 @@ class Game:
 
         # --- Audio System ---
         self.sound_running = False
+        self.volume = 0.5
+        self.current_music_path = None
         try:
             if not pygame.mixer.get_init():
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-                time.sleep(0.1)
 
-            sound_path = "assets/sounds/maintheme.wav"
-            self.volume = 0.5
-            self.background_music = pygame.mixer.Sound(sound_path)
-            self.background_music.set_volume(self.volume)
-            self.background_music.play(loops=-1)
+            # We don't play music here anymore; let the state machine in run() handle it
             self.sound_running = True
         except Exception as e:
             print(f"Error initializing sound: {e}")
@@ -488,16 +485,21 @@ class Game:
         """Traffic controller for game states."""
         while True:
             if self.state == "START_SCREEN":
+                change_music(self,
+                             "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
                 start_menu()  # Runs blocking video menu
                 self.state = "PROFILE_SELECT"
 
             elif self.state == "PROFILE_SELECT":
+                change_music(self,
+                             "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
                 if self.menu.profile_selection_menu():
                     self.state = "PLAYING"
                 else:
                     self.state = "START_SCREEN"  # Go back to intro if "BACK" pressed
 
             elif self.state == "PLAYING":
+                change_music(self, "assets/sounds/"+f"map_{str(self.level)}"+".wav")
                 self.main_game_logic()
 
 

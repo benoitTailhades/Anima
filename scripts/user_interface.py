@@ -3,7 +3,7 @@ import sys
 import numpy as np
 import cv2
 import os
-from scripts.sound import run_sound, set_game_volume
+from scripts.sound import set_game_volume
 from scripts.utils import load_images, load_image
 from scripts.text import load_game_font
 from scripts.saving import save_game, load_game
@@ -978,11 +978,6 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
                 running = False
             elif event.type == py.KEYDOWN and event.key == py.K_SPACE:
                 running = False
-
-        if not sound_running:
-            run_sound(
-                "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
-            sound_running = True
 
         py.display.flip()
         py.time.wait(50)
