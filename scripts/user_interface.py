@@ -703,15 +703,12 @@ class Menu:
 
         return False
 
-    def start_menu_newgame(self):#This menu ONLY appear when there is, at least one save detected. It displays -> "Resume": Load the game from the last save(just comparing dates), "Load": displays all the saves then load the game from the chosen save, "New game": Pretty obvious
-        has_saves = len(self.game.save_system.list_saves()) > 0
-
-        if not has_saves:
-            return False
-
+    def start_menu_newgame(self):
+        # We always want to show this menu now, regardless of if saves exist
         self.original_size = self.screen.get_size()
         self.fullscreen = False
 
+        # Use your existing background image
         background = py.image.load("assets/images/image_bg_resume.png").convert()
 
         running = True
@@ -721,59 +718,64 @@ class Menu:
             self.screen.blit(scaled_background, (0, 0))
 
             overlay = py.Surface(current_size, py.SRCALPHA)
-            overlay.fill((0, 0, 0, 100))
+            overlay.fill((0, 0, 0, 150))  # Slightly darker for readability
             self.screen.blit(overlay, (0, 0))
 
-            button_width = min(250, current_size[0] * 0.4)
-            button_height = 60
-            button_spacing = 30
+            # Header
+            title = self.button_font.render("SELECT A SAVE SLOT", True, self.COLORS["white"])
+            self.screen.blit(title, ((current_size[0] - title.get_width()) // 2, 50))
 
-            total_buttons_height = (button_height * 3) + (button_spacing * 2)
+            # Fetch current saves to check which slots are taken
+            saves = self.game.save_system.list_saves()
+            used_slots = {save["slot"]: save for save in saves}
 
-            start_y = (current_size[1] - total_buttons_height) // 2
-            buttons = {}
+            # Layout for 4 slots (2x2 Grid)
+            slot_width = 350
+            slot_height = 100
+            padding = 40
 
-            resume_rect = py.Rect(
-                (current_size[0] - button_width) // 2,
-                start_y,
-                button_width,
-                button_height
-            )
-            buttons["RESUME"] = resume_rect
-
-            load_rect = py.Rect(
-                (current_size[0] - button_width) // 2,
-                start_y + button_height + button_spacing,
-                button_width,
-                button_height
-            )
-            buttons["LOAD"] = load_rect
-
-            new_game_rect = py.Rect(
-                (current_size[0] - button_width) // 2,
-                start_y + (button_height + button_spacing) * 2,
-                button_width,
-                button_height
-            )
-            buttons["NEW GAME"] = new_game_rect
+            # Calculate grid start positions to center the 2x2 grid
+            total_grid_w = (slot_width * 2) + padding
+            total_grid_h = (slot_height * 2) + padding
+            start_x = (current_size[0] - total_grid_w) // 2
+            start_y = (current_size[1] - total_grid_h) // 2
 
             mouse_pos = py.mouse.get_pos()
-            for text, rect in buttons.items():
-                button_text = self.button_font.render(text, True, self.COLORS["white"])
-                text_x = rect.x + (rect.width - button_text.get_width()) // 2
-                text_y = rect.y + (rect.height - button_text.get_height()) // 2
-                self.screen.blit(button_text, (text_x, text_y))
+            slot_rects = {}
 
-                if rect.collidepoint(mouse_pos):
-                    if text_x > self.hover_image.get_width() + 5:
-                        image_x = text_x - self.hover_image.get_width() - 5
-                        image_y = rect.y + (rect.height - self.hover_image.get_height()) // 2
-                        self.screen.blit(self.hover_image, (image_x, image_y))
+            for i in range(4):
+                slot_id = i + 1
+                col = i % 2
+                row = i // 2
 
-                    if text_x + button_text.get_width() + self.hover2_image.get_width() + 5 < current_size[0]:
-                        image_x2 = text_x + button_text.get_width() + 5
-                        image_y2 = rect.y + (rect.height - self.hover2_image.get_height()) // 2
-                        self.screen.blit(self.hover2_image, (image_x2, image_y2))
+                rect = py.Rect(
+                    start_x + (col * (slot_width + padding)),
+                    start_y + (row * (slot_height + padding)),
+                    slot_width,
+                    slot_height
+                )
+                slot_rects[slot_id] = rect
+
+                # Draw Slot Box
+                is_hovered = rect.collidepoint(mouse_pos)
+                box_color = (100, 100, 140, 180) if is_hovered else (60, 60, 60, 150)
+
+                s = py.Surface((slot_width, slot_height), py.SRCALPHA)
+                py.draw.rect(s, box_color, (0, 0, slot_width, slot_height), border_radius=10)
+                self.screen.blit(s, (rect.x, rect.y))
+
+                # Draw Slot Content
+                if slot_id in used_slots:
+                    save_data = used_slots[slot_id]
+                    txt = self.control_font.render(f"Slot {slot_id}: {save_data['date']}", True, (255, 255, 255))
+                    sub_txt = self.control_font.render(
+                        f"HP: {save_data['player_hp']} | Lvl: {save_data.get('level', '?')}", True, (200, 200, 200))
+                    self.screen.blit(txt, (rect.x + 15, rect.y + 20))
+                    self.screen.blit(sub_txt, (rect.x + 15, rect.y + 55))
+                else:
+                    txt = self.button_font.render(f"Slot {slot_id}: EMPTY", True, (150, 150, 150))
+                    self.screen.blit(txt, (
+                    rect.x + (slot_width - txt.get_width()) // 2, rect.y + (slot_height - txt.get_height()) // 2))
 
             py.display.flip()
 
@@ -781,36 +783,165 @@ class Menu:
                 if event.type == py.QUIT:
                     py.quit()
                     sys.exit()
-                elif event.type == py.KEYDOWN:
-                    if event.key == py.K_F11:
-                        self.fullscreen = not self.fullscreen
-                        if self.fullscreen:
-                            self.screen = py.display.set_mode((0, 0), py.FULLSCREEN)
-                        else:
-                            self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
-                elif event.type == py.VIDEORESIZE:
-                    if not self.fullscreen:
-                        self.original_size = (event.w, event.h)
-                        self.screen = py.display.set_mode(self.original_size, py.RESIZABLE)
                 elif event.type == py.MOUSEBUTTONDOWN:
-                    for text, rect in buttons.items():
+                    for slot_id, rect in slot_rects.items():
                         if rect.collidepoint(event.pos):
-                            if text == "RESUME":
-                                latest_save = self.game.save_system.get_latest_save()
-                                if latest_save:
-                                    load_game(self.game, latest_save)
-                                return True
-                            elif text == "LOAD":
-                                load_result = self.load_menu()
-                                if load_result:
+                            if slot_id in used_slots:
+                                # LOAD EXISTING SAVE
+                                if load_game(self.game, slot_id):
                                     return True
-                            elif text == "NEW GAME":
+                            else:
+                                # START NEW SAVE IN THIS SLOT
                                 self.game.level = 0
                                 self.game.load_level(0)
                                 self.game.player_hp = 100
+                                # Optional: Immediately create an initial save file for this slot
+                                # save_game(self.game, slot_id)
                                 return True
-
         return True
+
+    def profile_selection_menu(self):
+        """
+        Displays a Hollow Knight-style 4-slot selection menu.
+        Handles loading existing saves or starting new games.
+        Returns True if a game starts/loads, False if BACK is pressed.
+        """
+        # 1. Setup background (darken current screen)
+        current_screen = self.screen.copy()
+        overlay = py.Surface(self.screen.get_size(), py.SRCALPHA)
+        overlay.fill((0, 0, 0, 230))  # Very dark overlay like the reference image
+
+        # 2. Fetch Save Data
+        saves = self.game.save_system.list_saves()
+        used_slots = {save["slot"]: save for save in saves}
+
+        # 3. Layout Configuration
+        screen_w, screen_h = self.screen.get_size()
+        center_x = screen_w // 2
+
+        slot_width = 700  # Wide slots
+        slot_height = 90  # Height between dividers
+        start_y = 180  # Where the first slot begins
+
+        # Fonts (You might want a larger/more ornate font for the slot numbers)
+        number_font = load_game_font(size=48)
+        text_font = load_game_font(size=30)
+        detail_font = load_game_font(size=22)
+        number_font.set_bold(True)
+
+        running = True
+        while running:
+            # Draw base layers
+            self.screen.blit(current_screen, (0, 0))
+            self.screen.blit(overlay, (0, 0))
+            mouse_pos = py.mouse.get_pos()
+
+            # --- DRAW TITLE ---
+            # Draw ornate separators above/below title (Placeholders for images)
+            py.draw.line(self.screen, self.COLORS["white"], (center_x - 150, 60), (center_x + 150, 60), 2)
+            title = self.button_font.render("SELECT PROFILE", True, self.COLORS["white"])
+            self.screen.blit(title, (center_x - title.get_width() // 2, 80))
+            py.draw.line(self.screen, self.COLORS["white"], (center_x - 150, 120), (center_x + 150, 120), 2)
+
+            # --- DRAW SLOTS ---
+            slot_rects = {}
+            current_y = start_y
+
+            for i in range(1, 4):  # Slots 1 to 3
+                # Define the hit area for the slot
+                slot_rect = py.Rect(center_x - slot_width // 2, current_y, slot_width, slot_height)
+                slot_rects[i] = slot_rect
+                is_hovered = slot_rect.collidepoint(mouse_pos)
+
+                # Determine colors based on hover state
+                line_color = self.COLORS["white"] if is_hovered else self.COLORS["dark_gray"]
+                text_color = self.COLORS["white"] if is_hovered else self.COLORS["light_gray"]
+
+                # Draw top divider line for this slot (REPLACE WITH ORNATE IMAGE)
+                py.draw.line(self.screen, line_color, (slot_rect.left, slot_rect.top), (slot_rect.right, slot_rect.top),
+                             3 if is_hovered else 2)
+
+                # If it's the last slot, draw the bottom connecting line too
+                if i == 4:
+                    py.draw.line(self.screen, line_color, (slot_rect.left, slot_rect.bottom),
+                                 (slot_rect.right, slot_rect.bottom), 3 if is_hovered else 2)
+
+                # Draw Side Arrows if hovered (like reference image)
+                if is_hovered:
+                    # Placeholder left arrow
+                    py.draw.polygon(self.screen, self.COLORS["white"], [(slot_rect.left - 20, slot_rect.centery),
+                                                                        (slot_rect.left - 5, slot_rect.centery - 10),
+                                                                        (slot_rect.left - 5, slot_rect.centery + 10)])
+                    # Placeholder right arrow
+                    py.draw.polygon(self.screen, self.COLORS["white"], [(slot_rect.right + 20, slot_rect.centery),
+                                                                        (slot_rect.right + 5, slot_rect.centery - 10),
+                                                                        (slot_rect.right + 5, slot_rect.centery + 10)])
+
+                # --- Draw Slot Content ---
+                # 1. The Number
+                num_txt = number_font.render(f"{i}.", True, text_color)
+                self.screen.blit(num_txt, (slot_rect.left + 30, slot_rect.centery - num_txt.get_height() // 2))
+
+                text_start_x = slot_rect.left + 120
+
+                if i in used_slots:
+                    # OCCUPIED SLOT
+                    save_data = used_slots[i]
+                    # Main Text (e.g., Location or Date)
+                    main_txt = text_font.render(f"{save_data['date']}", True, text_color)
+                    self.screen.blit(main_txt, (text_start_x, slot_rect.centery - 20))
+
+                    # Sub Text (e.g., Stats)
+                    sub_txt = detail_font.render(f"HP: {save_data['player_hp']} | Enemies: {save_data['enemy_count']}",
+                                                 True, self.COLORS["dark_gray"])
+                    self.screen.blit(sub_txt, (text_start_x, slot_rect.centery + 10))
+                else:
+                    # EMPTY SLOT
+                    ng_txt = text_font.render("NEW GAME", True, text_color)
+                    self.screen.blit(ng_txt, (text_start_x, slot_rect.centery - ng_txt.get_height() // 2))
+
+                # Move Y down for the next slot
+                current_y += slot_height
+
+            # --- DRAW BACK BUTTON ---
+            back_rect = py.Rect(center_x - 60, screen_h - 80, 120, 40)
+            is_back_hovered = back_rect.collidepoint(mouse_pos)
+            back_color = self.COLORS["white"] if is_back_hovered else self.COLORS["light_gray"]
+            back_txt = self.control_font.render("BACK", True, back_color)
+            self.screen.blit(back_txt, (
+                back_rect.centerx - back_txt.get_width() // 2, back_rect.centery - back_txt.get_height() // 2))
+
+            py.display.flip()
+
+            # --- EVENT HANDLING ---
+            for event in py.event.get():
+                if event.type == py.QUIT:
+                    py.quit()
+                    sys.exit()
+                elif event.type == py.MOUSEBUTTONDOWN:
+                    # Check slot clicks
+                    for slot_id, rect in slot_rects.items():
+                        if rect.collidepoint(event.pos):
+                            if slot_id in used_slots:
+                                # LOAD EXISTING GAME
+                                if load_game(self.game, slot_id):
+                                    return True  # Game loaded successfully
+                            else:
+                                # START NEW GAME
+                                self.game.level = 0
+                                self.game.load_level(0)
+                                self.game.player_hp = 100
+                                # Crucial: Tell the game which slot is currently active for future saves
+                                self.game.current_slot = slot_id
+                                # Optional: Autosave immediately so the slot isn't empty next time
+                                # save_game(self.game, slot_id)
+                                return True  # New game started
+
+                    # Check Back button click
+                    if back_rect.collidepoint(event.pos):
+                        running = False  # Exit menu, return to title screen video
+
+        return False  # Back was pressed
 
 def start_menu():#Display a simple welcome screen that diseappear when clicked.
     py.init()
@@ -856,5 +987,3 @@ def start_menu():#Display a simple welcome screen that diseappear when clicked.
         py.display.flip()
         py.time.wait(50)
 
-    cap.release()
-    py.quit()

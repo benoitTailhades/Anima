@@ -424,7 +424,7 @@ class PhysicsPlayer:
                 self.velocity[0] = self.get_direction("x") * self.DASH_SPEED * self.tech_momentum_mult
                 self.velocity[1] /= self.tech_momentum_mult
 
-        elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and \
+        '''elif self.dict_kb["key_jump"] == 1 and self.can_walljump["available"] == True and not self.holding_jump and \
                 self.can_walljump["blocks_around"] and self.can_walljump["cooldown"] < 1 and self.can_walljump[
             "allowed"]:  # Walljump
             self.jump_logic_helper()
@@ -445,7 +445,7 @@ class PhysicsPlayer:
                     self.force_movement["l"] = [False, 0]
 
 
-            self.can_walljump["available"] = False
+            self.can_walljump["available"] = False'''
 
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False
