@@ -7,6 +7,7 @@ import random
 import time
 
 # --- Game Script Imports ---
+# These modules handle specific game logic like physics, entities, and UI.
 from scripts.entities import *
 from scripts.utils import *
 from scripts.tilemap import Tilemap
@@ -23,20 +24,31 @@ from scripts.sound import set_game_volume, change_music
 
 
 class Game:
+    """
+    The primary Engine class for 'Anima'.
+
+    This class manages the core game loop, state transitions (menus to gameplay),
+    asset loading, level streaming, and the rendering pipeline (lighting, particles, UI).
+    """
+
     def __init__(self):
         """
-        Initialize the main game object and load assets.
-        No blocking menu calls are made here to ensure proper object construction.
+        Initializes the Pygame context, display settings, and global game variables.
+        Loads all base assets and prepares the internal state for the first level.
         """
         pygame.init()
 
+        # --- Window Setup ---
         pygame.display.set_caption("Anima")
+        # The actual window size
         self.screen = pygame.display.set_mode((960, 576), pygame.RESIZABLE)
-        self.display = pygame.Surface((480, 288))  # Render surface (pixel art scale)
+        # The internal rendering surface (half size for a pixel-art aesthetic)
+        self.display = pygame.Surface((480, 288))
         self.clock = pygame.time.Clock()
 
         # --- State Management ---
-        self.state = "START_SCREEN"  # States: START_SCREEN, PROFILE_SELECT, PLAYING
+        # Controls which 'loop' the game is currently running
+        self.state = "START_SCREEN"
         self.game_initialized = False
 
         # --- Icon Setup ---
@@ -50,7 +62,8 @@ class Game:
         self.fullscreen = False
         self.tile_size = 16
 
-        # --- Entity Definitions ---
+        # --- Entity Configuration ---
+        # Defines animation durations, sizes, and looping behavior for every entity type
         self.e_info = {
             "picko": {"left/right": ["run"], "size": (16, 16),
                       "img_dur": {"idle": 12, "run": 8, "attack": 3, "death": 3, "hit": 5},
@@ -66,6 +79,7 @@ class Game:
                           "loop": {"intact": False, "breaking": False}},
         }
 
+        # --- Door Configuration ---
         self.d_info = {
             "vines_door_h": {"size": (64, 16), "img_dur": 5},
             "vines_door_v": {"size": (16, 64), "img_dur": 5},
@@ -78,7 +92,8 @@ class Game:
         self.environments = {"green_cave": (0, 1, 2), "blue_cave": (3, 4, 5)}
         self.spawners = {}
 
-        # Camera/Scroll limits per level
+        # --- Camera Constraints ---
+        # Defines min/max X and Y coordinates the camera can scroll to per level
         self.scroll_limits = {
             0: {"x": (-272, 1680), "y": (-1000, 100)},
             1: {"x": (-48, 16), "y": (-1000, 400)},
@@ -99,6 +114,7 @@ class Game:
             'missile': load_image('projectiles/missile.png', (16, 16)),
         }
 
+        # Dynamically load assets from folders using helper functions
         self.assets.update(load_activators())
         self.assets.update(load_doors(self.d_info))
         self.assets.update(load_tiles())
@@ -107,6 +123,7 @@ class Game:
         self.assets.update(load_backgrounds(self.b_info))
 
         # --- Map Object Caching ---
+        # Pre-loads and pairs interactive objects for efficient lookup during level loading
         self.doors_id_pairs = []
         self.levers_id_pairs = []
         self.buttons_id_pairs = []
@@ -125,19 +142,18 @@ class Game:
         try:
             if not pygame.mixer.get_init():
                 pygame.mixer.init(frequency=44100, size=-16, channels=2, buffer=2048)
-
-            # We don't play music here anymore; let the state machine in run() handle it
             self.sound_running = True
         except Exception as e:
             print(f"Error initializing sound: {e}")
 
-        # --- Input & State ---
+        # --- Input & Level Tracking ---
         self.dict_kb = {"key_right": 0, "key_left": 0, "key_up": 0, "key_down": 0,
                         "key_jump": 0, "key_dash": 0, "key_noclip": 0, "key_attack": 0}
 
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
         self.default_level = self.level
+        # Track whether level data (enemies, objects) has been generated/modified
         self.levels = {i: {"charged": False} for i in range(len(os.listdir("data/maps")))}
 
         self.activators = []
@@ -145,7 +161,11 @@ class Game:
         self.activators_actions = load_activators_actions()
         self.spawner_pos = {}
 
-        # Player stats
+        self.checkpoints = []
+        self.current_checkpoint = None
+        self.sections = {0: (0, 1, 2)}
+
+        # --- Player Stats & Combat ---
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (16, 16))
         self.player_hp = 100
         self.player_dmg = 50
@@ -165,13 +185,14 @@ class Game:
         self.bottom_text = None
         self.doors_rects = []
 
-        # Lighting System
+        # --- Lighting System ---
         self.darkness_level = 150
         self.light_radius = 100
         self.light_soft_edge = 350
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
 
+        # Define light behaviors for different game objects
         self.light_properties = {
             "player": {"radius": 100, "intensity": 250, "edge_softness": 255, "color": (255, 255, 255),
                        "flicker": False},
@@ -188,7 +209,7 @@ class Game:
         create_light_mask(self.light_radius)
         self.player_light = self.light_properties["player"]
 
-        # Interactions & VFX
+        # --- Interactions & VFX ---
         self.moving_visual = False
         self.player_grabbing = False
         self.damage_flash_active = False
@@ -198,7 +219,7 @@ class Game:
         self.sparks = []
         self.charged_levels = []
 
-        # Menu & System
+        # --- Menu & System Configuration ---
         self.selected_language = "English"
         self.menu = Menu(self)
         self.keyboard_layout = "azerty"
@@ -206,12 +227,27 @@ class Game:
         self.current_slot = None  # Tracking the active save slot
 
     def get_environment(self, level):
+        """
+        Retrieves the environment string (e.g., 'green_cave') for a given level ID.
+
+        Args:
+            level (int): The ID of the current level.
+
+        Returns:
+            str: The name of the environment category.
+        """
         for environment in self.environments:
             if level in self.environments[environment]:
                 return environment
         return "green_cave"
 
     def get_key_map(self):
+        """
+        Maps physical keys to game actions based on the current keyboard layout setting.
+
+        Returns:
+            dict: A mapping of pygame key constants to internal action strings.
+        """
         layout = self.keyboard_layout.lower()
         if layout == "azerty":
             return {pygame.K_z: "key_up", pygame.K_s: "key_down", pygame.K_q: "key_left",
@@ -222,10 +258,19 @@ class Game:
                 pygame.K_n: "key_noclip"}
 
     def load_level(self, map_id):
+        """
+        Loads level data from a JSON file, extracts entities, and sets up level-specific logic.
+
+        Args:
+            map_id (int): The index of the level to load.
+        """
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
         self.display = pygame.Surface((480, 288))
         self.light_emitting_tiles = []
         self.light_emitting_objects = []
+
+        # --- Checkpoints & Traps ---
+        self.checkpoints = self.tilemap.extract([("checkpoint", 0)])
 
         self.spikes = []
         spike_types = []
@@ -235,6 +280,7 @@ class Game:
         for spike in self.tilemap.extract(spike_types, keep=True):
             self.spikes.append(DamageBlock(self, spike["pos"], self.assets[spike["type"]][spike["variant"]]))
 
+        # --- Objects & Particles ---
         self.throwable = []
         for o in self.tilemap.extract([('throwable', 0)]):
             self.throwable.append(Throwable(self, "blue_rock", o['pos'], (16, 16)))
@@ -249,7 +295,9 @@ class Game:
             register_light_emitting_tile(self, (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8), "glowing_mushroom")
             self.crystal_spawners.append(pygame.Rect(4 + mushroom['pos'][0], 4 + mushroom['pos'][1], 23, 13))
 
+        # --- State Persistence (First Time Load vs Reload) ---
         if not self.levels[map_id]["charged"]:
+            # Initial setup for enemies and interactive objects
             self.enemies = []
             for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 3)]):
                 if spawner['variant'] == 0:
@@ -284,6 +332,7 @@ class Game:
             self.transitions = self.tilemap.extract([("transition", 0)])
             self.scroll = [self.player.pos[0], self.player.pos[1]]
         else:
+            # Reload existing state from memory if level was already visited
             spawners = self.tilemap.extract(
                 [('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)])
             for spawner in spawners:
@@ -300,22 +349,26 @@ class Game:
             self.activators = self.levels[map_id]["activators"].copy()
             self.doors = self.levels[map_id]["doors"].copy()
 
+        # Reset VFX and interaction pools
         self.interactable = self.throwable.copy() + self.activators.copy()
         self.cutscene = False
         self.particles = []
         self.sparks = []
         self.transition = -30
-        self.max_falling_depth = 50000000000000000 if self.level in (1, 3) else 500
+        self.max_falling_depth = 500
         update_light(self)
 
     def main_game_logic(self):
-        """Standard gameplay loop logic moved from run() for better state management."""
+        """
+        The core gameplay loop. Handles physics, collision, rendering order,
+        entity updates, and UI blitting. This is called once per frame while state is 'PLAYING'.
+        """
         if not self.game_initialized:
             self.game_initialized = True
 
         self.screenshake = max(0, self.screenshake - 1)
 
-        # --- Transitions & Camera ---
+        # --- Transition & Level Switching ---
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
@@ -323,43 +376,43 @@ class Game:
                 self.load_level(self.level)
                 self.player.pos = [transition["dest_pos"][0] * 16, transition["dest_pos"][1] * 16]
                 self.scroll = [self.player.pos[0], self.player.pos[1]]
-                # Trigger Auto-Save on transition if desired
-                # save_game(self, self.current_slot)
 
         update_camera(self)
         render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
         if self.transition < 0: self.transition += 1
 
-        self.light_emitting_objects = [obj for obj in self.light_emitting_objects if
-                                       obj in self.enemies or obj in self.throwable]
+        # --- Teleportation & Checkpoints ---
         if self.teleporting: update_teleporter(self, self.tp_id)
 
-        # Update spawn point logic
-        if self.level in (0, 1, 2):
-            try:
-                self.spawn_point = {"pos": self.spawner_pos['0'], "level": 0}
-            except KeyError:
-                print("No spawner pos found")
-        elif self.level in (3, 4, 5):
-            try:
-                self.spawn_point = {"pos": self.spawner_pos['3'], "level": 3}
-            except KeyError:
-                print("No spawner pos found")
+        for checkpoint in self.checkpoints:
+            pos = checkpoint["pos"]
+            if pos[0] <= self.player.pos[0] <= pos[0] + 16:
+                self.current_checkpoint = checkpoint
 
+        # Define respawn point based on current section or checkpoint
+        if self.current_checkpoint == None:
+            for section in self.sections.keys():
+                if self.level in self.sections[section]:
+                    try:
+                        self.spawn_point = {"pos": self.spawner_pos[str(section)], "level": section}
+                    except KeyError:
+                        pass
+        else:
+            self.spawn_point = {"pos": self.current_checkpoint["pos"], "level": self.level}
 
         self.player.disablePlayerInput = self.cutscene or self.moving_visual or self.teleporting
-        self.player.can_walljump["allowed"] = True
 
-        # --- Rendering ---
+        # --- Rendering Sequence ---
+        # 1. Background
         display_level_bg(self, self.level)
 
-        # Particles
+        # 2. Ambient Particles (Leaves)
         for rect in self.leaf_spawners:
             if random.random() * 49999 < rect.width * rect.height:
                 pos = (rect.x + random.random() * rect.width, rect.y + random.random() * rect.height)
                 self.particles.append(Particle(self, 'leaf', pos, velocity=[-0.1, 0.3], frame=random.randint(0, 20)))
 
-        # Projectiles
+        # 3. Projectiles
         for projectile in self.projectiles[:]:
             projectile['pos'][0] += projectile['direction'][0]
             projectile['pos'][1] += projectile['direction'][1]
@@ -367,6 +420,8 @@ class Game:
             img = self.assets[projectile['type']].convert_alpha()
             self.display.blit(img, (projectile['pos'][0] - img.get_width() / 2 - render_scroll[0],
                                     projectile['pos'][1] - img.get_height() / 2 - render_scroll[1]))
+
+            # Remove projectiles on wall collision or timeout
             if self.tilemap.solid_check(projectile['pos']) or projectile['timer'] > 360:
                 self.projectiles.remove(projectile)
             elif self.player.rect().collidepoint(projectile['pos']):
@@ -375,6 +430,7 @@ class Game:
                 self.damage_flash_end_time = pygame.time.get_ticks() + self.damage_flash_duration
                 self.projectiles.remove(projectile)
 
+        # 4. Tilemap & Entities
         self.tilemap.render(self.display, offset=render_scroll)
 
         for activator in self.activators: activator.render(self.display, offset=render_scroll)
@@ -385,36 +441,30 @@ class Game:
                 enemy.set_action("death")
                 if enemy.animation.done: self.enemies.remove(enemy)
 
-        # Throwable & Physics
+        # 5. Player & Physics
         attacking_update(self)
         self.player.physics_process(self.tilemap, self.dict_kb)
         self.player.render(self.display, offset=render_scroll)
+
         for o in self.throwable:
             o.update(self.tilemap, (0, 0))
             o.render(self.display, offset=render_scroll)
 
-        # --- Interaction Check ---
-        interaction_found = False
-        for inter in self.interactable:
-            if inter.can_interact(self.player.rect()):
-                display_bottom_text(self, "Interaction", duration=0.1)
-                interaction_found = True
-                break
-
+        # 6. Foreground & Lighting
         self.tilemap.render_over(self.display, offset=render_scroll)
         display_level_fg(self, self.level)
         apply_lighting(self, render_scroll)
 
+        # Doors (Colliders updated for physics)
+        ds = []
         for door in self.doors:
             door.update()
             door.render(self.display, offset=render_scroll)
+            if not door.opened:
+                ds.append(door.rect())
+        self.doors_rects = ds
 
-        # Death & VFX
-        if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
-            player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
-            for key in self.dict_kb.keys(): self.dict_kb[key] = 0
-            self.player_hp = 100
-
+        # 7. VFX (Sparks/Particles)
         for spark in self.sparks[:]:
             if spark.update(): self.sparks.remove(spark)
             spark.render(self.display, offset=render_scroll)
@@ -422,6 +472,12 @@ class Game:
         for particle in self.particles[:]:
             if particle.update(): self.particles.remove(particle)
             particle.render(self.display, offset=render_scroll)
+
+        # --- Death Handling ---
+        if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
+            player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
+            for key in self.dict_kb.keys(): self.dict_kb[key] = 0
+            self.player_hp = 100
 
         # --- Input Handling ---
         for event in pygame.event.get():
@@ -433,6 +489,7 @@ class Game:
                     self.menu.menu_display()
                     for key in self.dict_kb.keys(): self.dict_kb[key] = 0
                 if event.key == pygame.K_e:
+                    # Interact with items or levers
                     update_throwable_objects_action(self)
                     if not self.player_grabbing: update_activators_actions(self, self.level)
                 if event.key == pygame.K_F11: toggle_fullscreen(self)
@@ -443,23 +500,25 @@ class Game:
                 if event.key == pygame.K_f:
                     self.dict_kb["key_attack"] = 0
                     self.holding_attack = False
+            # Generic keyboard state mapping
             if event.type in (pygame.KEYDOWN, pygame.KEYUP):
                 state = 1 if event.type == pygame.KEYDOWN else 0
                 key_map = self.get_key_map()
                 if event.key in key_map: self.dict_kb[key_map[event.key]] = state
 
-        # Final UI Blits
+        # --- Final UI Blits ---
         update_bottom_text(self)
         if self.cutscene:
             draw_cutscene_border(self.display)
         else:
             draw_health_bar(self)
 
-        # --- State Persistence Update ---
+        # Persist enemy and object state for the level
         self.levels[self.level]["enemies"] = self.enemies.copy()
         self.levels[self.level]["activators"] = self.activators.copy()
         self.levels[self.level]["doors"] = self.doors.copy()
 
+        # Handle Circle Transition Effect
         if self.transition:
             transition_surf = pygame.Surface(self.display.get_size())
             pygame.draw.circle(transition_surf, (255, 255, 255),
@@ -468,11 +527,12 @@ class Game:
             transition_surf.set_colorkey((255, 255, 255))
             self.display.blit(transition_surf, (0, 0))
 
+        # Scaling internal display to window size with screenshake
         screenshake_offset = (random.random() * self.screenshake - self.screenshake / 2,
                               random.random() * self.screenshake - self.screenshake / 2)
         self.screen.blit(pygame.transform.scale(self.display, self.screen.get_size()), screenshake_offset)
 
-        # Red Vignette on Damage
+        # Damage Vignette Effect
         if self.damage_flash_active:
             if pygame.time.get_ticks() < self.damage_flash_end_time:
                 screen_shake(self, 16)
@@ -490,26 +550,33 @@ class Game:
         self.clock.tick(60)
 
     def run(self):
-        """Traffic controller for game states."""
+        """
+        The main program entry point.
+        This function implements a state machine to switch between the Intro, Profile Menu, and Gameplay.
+        """
         while True:
             if self.state == "START_SCREEN":
                 change_music(self,
                              "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
-                start_menu()  # Runs blocking video menu
+                # start_menu is a blocking call (usually handles its own internal loop)
+                start_menu()
                 self.state = "PROFILE_SELECT"
 
             elif self.state == "PROFILE_SELECT":
                 change_music(self,
                              "assets/sounds/GV2space-ambient-music-interstellar-space-journey-8wlwxmjrzj8_MDWW6nat.wav")
+                # If a profile is chosen, start the game; otherwise return to intro
                 if self.menu.profile_selection_menu():
                     self.state = "PLAYING"
                 else:
-                    self.state = "START_SCREEN"  # Go back to intro if "BACK" pressed
+                    self.state = "START_SCREEN"
 
             elif self.state == "PLAYING":
-                change_music(self, "assets/sounds/"+f"map_{str(self.level)}"+".wav")
+                # Dynamic music based on level ID
+                change_music(self, "assets/sounds/" + f"map_{str(self.level)}" + ".wav")
                 self.main_game_logic()
 
 
 if __name__ == "__main__":
+    # Instantiate the game and start the loop
     Game().run()

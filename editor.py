@@ -6,7 +6,7 @@ import shutil
 import copy
 
 # Assuming these exist in your project structure
-from scripts.utils import load_images, load_tiles, load_doors, load_activators
+from scripts.utils import load_image, load_images, load_tiles, load_doors, load_activators
 from scripts.tilemap import Tilemap
 from scripts.button import Button
 from scripts.activators import load_activators_actions
@@ -34,6 +34,7 @@ class Editor:
             'spawners': load_images('spawners'),
             'transition': load_images('transition'),
             'throwable': load_images('entities/elements/blue_rock/intact'),
+            'checkpoint': load_images('checkpoint')
         }
 
         self.environments = self.load_environments()
@@ -993,6 +994,8 @@ class Editor:
                                 'pos': tile_pos,
                                 'destination': dest,
                                 'dest_pos':[0, 0]}
+                        elif self.tile_list[self.tile_group] == "spawners" and self.tilemap.extract([("spawners", 0)], keep=True):
+                            print("Player spawner already placed in this map")
                         else:
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
                                 'type': self.tile_list[self.tile_group],
@@ -1139,6 +1142,14 @@ class Editor:
                                 'pos': tile_pos,
                                 'destination': dest,
                                 'dest_pos' : [0,0]}
+                            self.save_action()
+                        # Shortcut for placing checkpoints
+                        if event.key == pygame.K_j:
+                            self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
+                                'type': "checkpoint",
+                                'variant': 0,
+                                'pos': tile_pos
+                            }
                             self.save_action()
 
                     if event.type == pygame.KEYUP:
