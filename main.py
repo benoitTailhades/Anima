@@ -21,6 +21,7 @@ from scripts.display import *
 from scripts.text import load_game_texts, display_bottom_text, update_bottom_text
 from scripts.spark import Spark
 from scripts.sound import set_game_volume, change_music
+from scripts.modes import *
 
 
 class Game:
@@ -226,6 +227,9 @@ class Game:
         self.save_system = Save(self)
         self.current_slot = None  # Tracking the active save slot
 
+        # --- Modes configuration ---
+        self.current_mode = "Default"
+
     def get_environment(self, level):
         """
         Retrieves the environment string (e.g., 'green_cave') for a given level ID.
@@ -367,6 +371,7 @@ class Game:
             self.game_initialized = True
 
         self.screenshake = max(0, self.screenshake - 1)
+
 
         # --- Transition & Level Switching ---
         for transition in self.transitions:

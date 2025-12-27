@@ -54,7 +54,10 @@ class PhysicsPlayer:
         self.holding_jump = False
         self.can_walljump = {"available": False, "wall": -1, "buffer": False, "timer": 0, "blocks_around": False,
                              "cooldown": 0, "allowed": True}
-        self.force_movement = {"r":[False,0],"l":[False,0]}
+        self.force_movement_direction = {"r":[False,0],"l":[False,0]}
+        self.force_movement = ""
+        
+        
         self.prevent_walking = False
         # available used to know if you can walljump, wall to know where the wall is located,
         # buffer to deal with logic conflicts in collision_check, timer for walljump coyote time
@@ -163,6 +166,7 @@ class PhysicsPlayer:
         """Input : tilemap (map), dict_kb (dict)
         output : sends new coords for the PC to move to in accordance with player input and stage data (tilemap)"""
         self.dict_kb = dict_kb
+        self.force_player_movement_direction()
         self.force_player_movement()
 
         if self.disablePlayerInput:
@@ -250,18 +254,23 @@ class PhysicsPlayer:
             if self.dict_kb["key_noclip"] == 1:
                 self.noclip = False
 
-    def force_player_movement(self):
+    def force_player_movement_direction(self):
         """forces some keys to be pressed"""
-        if self.force_movement["r"][0] or self.force_movement["l"][0]:
-            if self.force_movement["l"][0]:
+        if self.force_movement_direction["r"][0] or self.force_movement_direction["l"][0]:
+            if self.force_movement_direction["l"][0]:
                 self.walk(-1,1.5)
             else:
                 self.walk(1,1.5)
-            if (self.force_movement["l"][1] < 1 and self.force_movement["l"][0]) or (self.force_movement["r"][0] and self.force_movement["r"][1] < 1) or self.is_on_floor():
-                self.force_movement = {"r":[False,0],"l":[False,0]}
-            else:
-                self.force_movement["l"][1] -= 1
-                self.force_movement["r"][1] -= 1
+            if (-1 < self.force_movement_direction["l"][1] < 1 and self.force_movement_direction["l"][0]) or (self.force_movement_direction["r"][0] and -1 < self.force_movement_direction["r"][1] < 1) or self.is_on_floor():
+                self.force_movement_direction = {"r":[False,0],"l":[False,0]}
+            elif self.force_movement_direction["l"][1] != -1 or self.force_movement_direction["r"][1] != -1:
+                self.force_movement_direction["l"][1] -= 1
+                self.force_movement_direction["r"][1] -= 1
+
+    def force_player_movement(self):
+        if self.force_movement != "":
+            self.dict_kb["key_right"] = self.force_movement == "r"
+            self.dict_kb["key_left"] = self.force_movement == "l"
 
     def walk(self,direction,mult=1):
         """Changes x velocity depending on current speed and direction. To make walking faster in specific calls, use the mult parameter"""
@@ -344,9 +353,9 @@ class PhysicsPlayer:
                 animation_applied = True
             # Falling
             else:
-                if (self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1) or self.force_movement["r"][0]) and not self.force_movement["l"][0]:
+                if (self.get_direction("x") == 1 or (self.action == 'falling/right' and self.get_direction("x") != -1) or self.force_movement_direction["r"][0]) and not self.force_movement_direction["l"][0]:
                     self.set_action('falling/right')
-                elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1) or self.force_movement["l"][0]:
+                elif self.get_direction("x") == -1 or (self.action == 'falling/left' and self.get_direction("x") != 1) or self.force_movement_direction["l"][0]:
                     self.set_action('falling/left')
                 elif self.get_direction("x") == 0:
                     self.set_action('falling/vertical')
@@ -415,6 +424,7 @@ class PhysicsPlayer:
             self.jump_logic_helper()
 
             # Jouer le son de saut
+            self.jumping = True
             self.play_sound('jump', True)
 
             # Tech
@@ -438,11 +448,11 @@ class PhysicsPlayer:
             else:  # Jumping away from the wall
                 self.velocity[0] = 0
                 if self.can_walljump["wall"] == 1:
-                    self.force_movement["l"] = [True, 22]
-                    self.force_movement["r"] = [False, 0]
+                    self.force_movement_direction["l"] = [True, 22]
+                    self.force_movement_direction["r"] = [False, 0]
                 else:
-                    self.force_movement["r"] = [True, 22]
-                    self.force_movement["l"] = [False, 0]
+                    self.force_movement_direction["r"] = [True, 22]
+                    self.force_movement_direction["l"] = [False, 0]
 
 
             self.can_walljump["available"] = False'''
@@ -450,7 +460,7 @@ class PhysicsPlayer:
         if self.dict_kb["key_jump"] == 0:
             self.holding_jump = False
 
-        self.jumping = True
+
 
     def jump_logic_helper(self):
         """Avoid code redundancy"""

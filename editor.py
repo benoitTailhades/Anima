@@ -1151,6 +1151,7 @@ class Editor:
                                 'pos': tile_pos
                             }
                             self.save_action()
+                        # Shortcut for placing portals
 
                     if event.type == pygame.KEYUP:
                         if event.key == pygame.K_i:
