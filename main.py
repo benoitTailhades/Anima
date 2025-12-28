@@ -96,7 +96,7 @@ class Game:
         # --- Camera Constraints ---
         # Defines min/max X and Y coordinates the camera can scroll to per level
         self.scroll_limits = {
-            0: {"x": (-272, 1680), "y": (-1000, 100)},
+            0: {"x": (48, 1680), "y": (-112, 10000)},
             1: {"x": (-48, 16), "y": (-1000, 400)},
             2: {"x": (-48, 280), "y": (-192, -80)},
             3: {"x": (16, 190400), "y": (0, 20000000)},
@@ -228,7 +228,16 @@ class Game:
         self.current_slot = None  # Tracking the active save slot
 
         # --- Modes configuration ---
-        self.current_mode = "Default"
+        self.current_mode = "default"
+
+        # --- Hitboxes
+        self.show_spikes_hitboxes = False
+
+    def toggle_hitboxes(self):
+        self.player.show_hitbox = not self.player.show_hitbox
+        self.show_spikes_hitboxes = not self.show_spikes_hitboxes
+        #self.tilemap.show_collisions = not self.tilemap.show_collisions
+
 
     def get_environment(self, level):
         """
@@ -261,7 +270,7 @@ class Game:
                 pygame.K_d: "key_right", pygame.K_g: "key_dash", pygame.K_SPACE: "key_jump",
                 pygame.K_n: "key_noclip"}
 
-    def load_level(self, map_id):
+    def load_level(self, map_id, transition_effect=True):
         """
         Loads level data from a JSON file, extracts entities, and sets up level-specific logic.
 
@@ -358,8 +367,8 @@ class Game:
         self.cutscene = False
         self.particles = []
         self.sparks = []
-        self.transition = -30
-        self.max_falling_depth = 500
+        self.transition = -30 if transition_effect else 0
+        self.max_falling_depth = 50000000000
         update_light(self)
 
     def main_game_logic(self):
@@ -446,6 +455,10 @@ class Game:
                 enemy.set_action("death")
                 if enemy.animation.done: self.enemies.remove(enemy)
 
+        for spike_hitbox in self.spikes:
+            if self.player.rect().colliderect(spike_hitbox.rect()) and not self.player.noclip:
+                deal_dmg(self, spike_hitbox, "player", 200, 0.5)
+
         # 5. Player & Physics
         attacking_update(self)
         self.player.physics_process(self.tilemap, self.dict_kb)
@@ -457,6 +470,9 @@ class Game:
 
         # 6. Foreground & Lighting
         self.tilemap.render_over(self.display, offset=render_scroll)
+        if self.show_spikes_hitboxes:
+            for spike_hitbox in self.spikes:
+                spike_hitbox.render(self.display, offset=render_scroll)
         display_level_fg(self, self.level)
         apply_lighting(self, render_scroll)
 
@@ -480,7 +496,7 @@ class Game:
 
         # --- Death Handling ---
         if self.player.pos[1] > self.max_falling_depth or self.player_hp <= 0:
-            player_death(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
+            kill_player(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"])
             for key in self.dict_kb.keys(): self.dict_kb[key] = 0
             self.player_hp = 100
 
@@ -501,6 +517,10 @@ class Game:
                 if event.key == pygame.K_f and not self.holding_attack:
                     self.dict_kb["key_attack"] = 1
                     self.holding_attack = True
+                if event.key == pygame.K_h:
+                    self.toggle_hitboxes()
+                if event.key == pygame.K_r:
+                    kill_player(self, self.screen, self.spawn_point["pos"], self.spawn_point["level"], animation=False)
             if event.type == pygame.KEYUP:
                 if event.key == pygame.K_f:
                     self.dict_kb["key_attack"] = 0

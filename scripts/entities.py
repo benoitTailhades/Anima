@@ -488,13 +488,14 @@ def death_animation(screen):
         clock.tick(30)
 
 
-def player_death(game, screen, spawn_pos, spawn_level):
+def kill_player(game, screen, spawn_pos, spawn_level, animation=True):
     # Handle player death, respawn them at the proper position
     game.cutscene = False
 
-    death_animation(screen)
+    if animation:
+        death_animation(screen)
     game.level = spawn_level
-    game.load_level(spawn_level)
+    game.load_level(spawn_level, transition_effect=animation)
     update_light(game)
     game.player.pos[0] = spawn_pos[0]
     game.player.pos[1] = spawn_pos[1]

@@ -202,7 +202,7 @@ class PhysicsPlayer:
         if self.is_on_floor():
             self.jumping = False
 
-        if self.jumping:
+        if not self.is_on_floor() and self.can_walljump["available"] == False:
             # Spin speed (Adjust "8" to make it faster/slower)
             rotation_speed = 6.5
 
@@ -461,7 +461,6 @@ class PhysicsPlayer:
             self.holding_jump = False
 
 
-
     def jump_logic_helper(self):
         """Avoid code redundancy"""
         self.velocity[1] = self.JUMP_VELOCITY
@@ -626,7 +625,7 @@ class PhysicsPlayer:
         """Creates ghost images that fade out over time."""
         # Store current position and image with a timer
         ghost = {
-            "pos": self.pos.copy(),  # Assuming self.pos is a list or has a copy method
+            "pos": [self.rect().centerx, self.rect().centery],  # Assuming self.pos is a list or has a copy method
             "img": self.animation.img().copy(),  # Create a copy of the current image
             "lifetime": 20,  # How long the ghost remains visible (in frames)
             "angle": self.rotation_angle

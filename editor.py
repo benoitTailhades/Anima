@@ -994,7 +994,8 @@ class Editor:
                                 'pos': tile_pos,
                                 'destination': dest,
                                 'dest_pos':[0, 0]}
-                        elif self.tile_list[self.tile_group] == "spawners" and self.tilemap.extract([("spawners", 0)], keep=True):
+                        elif self.tile_list[self.tile_group] == "spawners" and self.tile_variant == 0 and self.tilemap.extract([("spawners", 0)], keep=True):
+
                             print("Player spawner already placed in this map")
                         else:
                             self.tilemap.tilemap[str(tile_pos[0]) + ";" + str(tile_pos[1])] = {
