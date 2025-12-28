@@ -15,7 +15,7 @@ from scripts.physics import PhysicsPlayer
 from scripts.particle import Particle
 from scripts.activators import *
 from scripts.user_interface import Menu, start_menu
-from scripts.saving import Save
+from scripts.saving import Save, save_game
 from scripts.doors import Door
 from scripts.display import *
 from scripts.text import load_game_texts, display_bottom_text, update_bottom_text
@@ -154,8 +154,7 @@ class Game:
         self.tilemap = Tilemap(self, self.tile_size)
         self.level = 0
         self.default_level = self.level
-        # Track whether level data (enemies, objects) has been generated/modified
-        self.levels = {i: {"charged": False} for i in range(len(os.listdir("data/maps")))}
+
 
         self.activators = []
         self.projectiles = []
@@ -165,6 +164,9 @@ class Game:
         self.checkpoints = []
         self.current_checkpoint = None
         self.sections = {0: (0, 1, 2)}
+
+        self.levels = {i:{} for i in range(len(os.listdir("data/maps")))}
+
 
         # --- Player Stats & Combat ---
         self.player = PhysicsPlayer(self, self.tilemap, (100, 0), (16, 16))
@@ -218,7 +220,6 @@ class Game:
         self.damage_flash_duration = 100
         self.particles = []
         self.sparks = []
-        self.charged_levels = []
 
         # --- Menu & System Configuration ---
         self.selected_language = "English"
@@ -276,6 +277,7 @@ class Game:
 
         Args:
             map_id (int): The index of the level to load.
+            :param transition_effect:
         """
         self.tilemap.load("data/maps/" + str(map_id) + ".json")
         self.display = pygame.Surface((480, 288))
@@ -308,59 +310,36 @@ class Game:
             register_light_emitting_tile(self, (mushroom['pos'][0] + 8, mushroom['pos'][1] + 8), "glowing_mushroom")
             self.crystal_spawners.append(pygame.Rect(4 + mushroom['pos'][0], 4 + mushroom['pos'][1], 23, 13))
 
-        # --- State Persistence (First Time Load vs Reload) ---
-        if not self.levels[map_id]["charged"]:
-            # Initial setup for enemies and interactive objects
-            self.enemies = []
-            for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 3)]):
-                if spawner['variant'] == 0:
-                    self.spawners[str(map_id)] = spawner["pos"].copy()
-                    self.spawner_pos[str(map_id)] = spawner["pos"]
-                    self.player.pos = spawner["pos"].copy()
-                elif spawner['variant'] == 1:
-                    self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
-                                              {"attack_distance": 20, "attack_dmg": 10, "attack_time": 1.5}))
-                elif spawner['variant'] == 3:
-                    self.enemies.append(DistanceEnemy(self, "glorbo", spawner['pos'], (16, 16), 100,
-                                                      {"attack_distance": 100, "attack_dmg": 10, "attack_time": 1.5}))
+        # Initial setup for enemies and interactive objects
+        self.enemies = []
+        for spawner in self.tilemap.extract([('spawners', 0), ('spawners', 1), ('spawners', 3)]):
+            if spawner['variant'] == 0:
+                self.spawners[str(map_id)] = spawner["pos"].copy()
+                self.spawner_pos[str(map_id)] = spawner["pos"]
+                self.player.pos = spawner["pos"].copy()
+            elif spawner['variant'] == 1:
+                self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
+                                          {"attack_distance": 20, "attack_dmg": 10, "attack_time": 1.5}))
+            elif spawner['variant'] == 3:
+                self.enemies.append(DistanceEnemy(self, "glorbo", spawner['pos'], (16, 16), 100,
+                                                  {"attack_distance": 100, "attack_dmg": 10, "attack_time": 1.5}))
 
-            self.activators = []
-            for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs + self.tp_id_pairs):
-                a = Activator(self, activator['pos'], activator['type'], i=activator["id"])
-                a.state = activator["variant"]
-                self.activators.append(a)
+        self.activators = []
+        for activator in self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs + self.tp_id_pairs):
+            a = Activator(self, activator['pos'], activator['type'], i=activator["id"])
+            a.state = activator["variant"]
+            self.activators.append(a)
 
-            self.doors = []
-            for door in self.tilemap.extract(self.doors_id_pairs):
-                door_type = door["type"]
-                speed = 0.01 if door_type == 'breakable_stalactite' else 1
-                door_id = None if door_type == 'breakable_stalactite' else door["id"]
-                self.doors.append(
-                    Door(self.d_info[door_type]["size"], door["pos"], door_type, door_id, False, speed, self))
+        self.doors = []
+        for door in self.tilemap.extract(self.doors_id_pairs):
+            door_type = door["type"]
+            speed = 0.01 if door_type == 'breakable_stalactite' else 1
+            door_id = None if door_type == 'breakable_stalactite' else door["id"]
+            self.doors.append(
+                Door(self.d_info[door_type]["size"], door["pos"], door_type, door_id, False, speed, self))
 
-            self.levels[map_id]["charged"] = True
-            if map_id not in self.charged_levels:
-                self.charged_levels.append(map_id)
-
-            self.transitions = self.tilemap.extract([("transition", 0)])
-            self.scroll = [self.player.pos[0], self.player.pos[1]]
-        else:
-            # Reload existing state from memory if level was already visited
-            spawners = self.tilemap.extract(
-                [('spawners', 0), ('spawners', 1), ('spawners', 2), ('spawners', 3), ('spawners', 4)])
-            for spawner in spawners:
-                if spawner['variant'] == 0:
-                    self.spawner_pos[str(map_id)] = spawner["pos"]
-            if spawners:
-                self.player.pos = self.spawners[str(map_id)].copy()
-
-            self.tilemap.extract(self.levers_id_pairs + self.buttons_id_pairs)
-            self.tilemap.extract(self.doors_id_pairs)
-            self.transitions = self.tilemap.extract([("transition", 0)])
-
-            self.enemies = self.levels[map_id]["enemies"].copy()
-            self.activators = self.levels[map_id]["activators"].copy()
-            self.doors = self.levels[map_id]["doors"].copy()
+        self.transitions = self.tilemap.extract([("transition", 0)])
+        self.scroll = [self.player.pos[0], self.player.pos[1]]
 
         # Reset VFX and interaction pools
         self.interactable = self.throwable.copy() + self.activators.copy()
@@ -402,6 +381,7 @@ class Game:
             pos = checkpoint["pos"]
             if pos[0] <= self.player.pos[0] <= pos[0] + 16:
                 self.current_checkpoint = checkpoint
+                save_game(self, self.current_slot)
 
         # Define respawn point based on current section or checkpoint
         if self.current_checkpoint == None:
