@@ -10,7 +10,7 @@ from scripts.saving import save_game, load_game
 
 class Menu:
 
-    def __init__(self, game):#Basic definnitions: Keyboard layout,languages, volume, screen resolutions,buttons configurations
+    def __init__(self, game): #Basic definitions: Keyboard layout,languages, volume, screen resolutions,buttons configurations
         self.game = game
         self.screen = game.screen
         self.original_background = None
@@ -41,6 +41,13 @@ class Menu:
         self.hover2_image = py.transform.flip(load_image("Opera_senza_titolo.png"), True, False)
 
         self.button_font.set_bold(True)
+
+        self.thumbs = {}
+        for i in range(3):
+            try:
+                self.thumbs[i] = py.image.load(f"saves/slot_{i}_thumb.png")
+            except FileNotFoundError:
+                self.thumbs[i] = None
 
         self.COLORS = {
             "white": (255, 255, 255),
@@ -390,6 +397,25 @@ class Menu:
             50
         ))
 
+    def delete_save_data(self, slot_id):
+        """Deletes the JSON file and the associated thumbnail."""
+        import os
+
+        # 1. Path to your save files (Adjust based on your SaveSystem)
+        save_path = f"saves/save_{slot_id}.json"
+        thumb_path = f"saves/slot_{slot_id}_thumb.png"
+
+        try:
+            if os.path.exists(save_path):
+                os.remove(save_path)
+            if os.path.exists(thumb_path):
+                os.remove(thumb_path)
+                # Also clear from memory so it doesn't show up again
+                self.thumbs[slot_id] = None
+            print(f"Slot {slot_id} deleted successfully.")
+        except Exception as e:
+            print(f"Error deleting save: {e}")
+
     def menu_display(self):#when called: Display the main menu with it's buttons, monitor keyboard and mouse input (keyboard means escape key but it looks cooler), and thirdly displaythe background and optio npanel if needed
         self.capture_background()
 
@@ -475,14 +501,15 @@ class Menu:
         # 2. Fetch Save Data
         saves = self.game.save_system.list_saves()
         used_slots = {save["slot"]: save for save in saves}
+        print(used_slots)
 
         # 3. Layout Configuration
         screen_w, screen_h = self.screen.get_size()
         center_x = screen_w // 2
 
-        slot_width = 700  # Wide slots
-        slot_height = 90  # Height between dividers
-        start_y = 180  # Where the first slot begins
+        slot_width = 800  # Wide slots
+        slot_height = 110  # Height between dividers
+        start_y = 160  # Where the first slot begins
 
         # Fonts (You might want a larger/more ornate font for the slot numbers)
         number_font = load_game_font(size=48)
@@ -490,6 +517,7 @@ class Menu:
         detail_font = load_game_font(size=22)
         number_font.set_bold(True)
 
+        confirm_delete_id = None  # Tracks which slot is being asked for deletion
         running = True
         while running:
             # Draw base layers
@@ -501,64 +529,108 @@ class Menu:
             # Draw ornate separators above/below title (Placeholders for images)
             py.draw.line(self.screen, self.COLORS["white"], (center_x - 150, 60), (center_x + 150, 60), 2)
             title = self.button_font.render("SELECT PROFILE", True, self.COLORS["white"])
-            self.screen.blit(title, (center_x - title.get_width() // 2, 80))
+            self.screen.blit(title, (center_x - title.get_width() // 2, 70))
             py.draw.line(self.screen, self.COLORS["white"], (center_x - 150, 120), (center_x + 150, 120), 2)
 
             # --- DRAW SLOTS ---
             slot_rects = {}
+            delete_rects = {}  # Stores locations of the 'X' buttons
             current_y = start_y
 
-            for i in range(1, 4):  # Slots 1 to 3
-                # Define the hit area for the slot
+            for i in range(1, 4):  # Adjusted to 1-4 for Hollow Knight style
                 slot_rect = py.Rect(center_x - slot_width // 2, current_y, slot_width, slot_height)
                 slot_rects[i] = slot_rect
                 is_hovered = slot_rect.collidepoint(mouse_pos)
 
-                # Determine colors based on hover state
-                line_color = self.COLORS["white"] if is_hovered else self.COLORS["dark_gray"]
-                text_color = self.COLORS["white"] if is_hovered else self.COLORS["light_gray"]
+                line_color = self.COLORS["white"] if is_hovered else (100, 100, 100)
+                text_color = self.COLORS["white"] if is_hovered else (200, 200, 200)
 
-                # Draw top divider line for this slot (REPLACE WITH ORNATE IMAGE)
+                # Top Line
                 py.draw.line(self.screen, line_color, (slot_rect.left, slot_rect.top), (slot_rect.right, slot_rect.top),
-                             3 if is_hovered else 2)
-
-                # If it's the last slot, draw the bottom connecting line too
-                if i == 4:
-                    py.draw.line(self.screen, line_color, (slot_rect.left, slot_rect.bottom),
-                                 (slot_rect.right, slot_rect.bottom), 3 if is_hovered else 2)
-
-                # Draw Side Arrows if hovered (like reference image)
-                if is_hovered:
-                    # Placeholder left arrow
-                    py.draw.polygon(self.screen, self.COLORS["white"], [(slot_rect.left - 20, slot_rect.centery),
-                                                                        (slot_rect.left - 5, slot_rect.centery - 10),
-                                                                        (slot_rect.left - 5, slot_rect.centery + 10)])
-                    # Placeholder right arrow
-                    py.draw.polygon(self.screen, self.COLORS["white"], [(slot_rect.right + 20, slot_rect.centery),
-                                                                        (slot_rect.right + 5, slot_rect.centery - 10),
-                                                                        (slot_rect.right + 5, slot_rect.centery + 10)])
+                             2)
 
                 # --- Draw Slot Content ---
-                # 1. The Number
+                # 1. Slot Number
                 num_txt = number_font.render(f"{i}.", True, text_color)
-                self.screen.blit(num_txt, (slot_rect.left + 30, slot_rect.centery - num_txt.get_height() // 2))
+                self.screen.blit(num_txt, (slot_rect.left + 20, slot_rect.centery - num_txt.get_height() // 2))
 
-                text_start_x = slot_rect.left + 120
+                # 2. IMAGE PREVIEW (The Box)
+                # This creates a dark frame where the screenshot will live
+                img_rect = py.Rect(slot_rect.left + 80, slot_rect.top + 10, 160, 90)
+                py.draw.rect(self.screen, (30, 30, 30), img_rect)  # Background box
+                py.draw.rect(self.screen, line_color, img_rect, 1)  # Border
 
                 if i in used_slots:
-                    # OCCUPIED SLOT
                     save_data = used_slots[i]
-                    # Main Text (e.g., Location or Date)
-                    main_txt = text_font.render(f"{save_data['date']}", True, text_color)
-                    self.screen.blit(main_txt, (text_start_x, slot_rect.centery - 20))
+
+                    # --- PREVIEW IMAGE LOGIC ---
+                    if self.thumbs[i]:
+                        img = py.transform.scale(self.thumbs[i], img_rect.size)
+                        img.set_alpha(128)
+                        self.screen.blit(img, img_rect.topleft)
+
+
+                    # 3. Level Name (Large Text)
+                    lvl_name = save_data.get('level_name', 'Unknown Region').upper()
+                    lvl_txt = text_font.render(lvl_name, True, text_color)
+                    self.screen.blit(lvl_txt, (img_rect.right + 30, slot_rect.top + 20))
+
+                    # 4. Playtime and Date (Smaller Details)
+                    # Convert seconds to HH:MM:SS format
+                    '''play_seconds = save_data.get('playtime', 0)
+                    time_str = str(datetime.timedelta(seconds=int(play_seconds)))
+
+                    # Draw Sub-details
+                    details = f"TIME: {time_str}    |    SAVED: {save_data['date']}"
+                    detail_txt = detail_font.render(details, True, (150, 150, 150))
+                    self.screen.blit(detail_txt, (img_rect.right + 30, slot_rect.top + 60))
+                    '''
+
+                    # Position it on the far right of the slot
+                    del_x_rect = py.Rect(slot_rect.right - 50, slot_rect.centery - 15, 30, 30)
+                    delete_rects[i] = del_x_rect
+
+                    is_del_hovered = del_x_rect.collidepoint(mouse_pos)
+                    del_color = (255, 50, 50) if is_del_hovered else (150, 50, 50)
+
+                    # Draw a simple 'X'
+                    py.draw.line(self.screen, del_color, (del_x_rect.left, del_x_rect.top),
+                                 (del_x_rect.right, del_x_rect.bottom), 3)
+                    py.draw.line(self.screen, del_color, (del_x_rect.right, del_x_rect.top),
+                                 (del_x_rect.left, del_x_rect.bottom), 3)
 
                 else:
                     # EMPTY SLOT
-                    ng_txt = text_font.render("NEW GAME", True, text_color)
-                    self.screen.blit(ng_txt, (text_start_x, slot_rect.centery - ng_txt.get_height() // 2))
+                    ng_txt = text_font.render("NEW GAME", True, (100, 100, 100) if not is_hovered else (255, 255, 255))
+                    self.screen.blit(ng_txt, (img_rect.right + 30, slot_rect.centery - ng_txt.get_height() // 2))
 
-                # Move Y down for the next slot
+
                 current_y += slot_height
+
+            # --- CONFIRMATION OVERLAY ---
+            if confirm_delete_id is not None:
+                # Draw a small popup box in the center
+                popup_rect = py.Rect(center_x - 200, screen_h // 2 - 100, 400, 200)
+                py.draw.rect(self.screen, (20, 20, 20), popup_rect)
+                py.draw.rect(self.screen, self.COLORS["white"], popup_rect, 2)
+
+                msg = text_font.render(f"DELETE PROFILE {confirm_delete_id}?", True, self.COLORS["white"])
+                self.screen.blit(msg, (center_x - msg.get_width() // 2, popup_rect.top + 40))
+
+                # Buttons for Yes / No
+                yes_btn = py.Rect(center_x - 120, popup_rect.bottom - 60, 100, 40)
+                no_btn = py.Rect(center_x + 20, popup_rect.bottom - 60, 100, 40)
+
+                # Draw buttons (Hover logic omitted for brevity, but same as others)
+                py.draw.rect(self.screen, (100, 0, 0), yes_btn)
+                py.draw.rect(self.screen, (50, 50, 50), no_btn)
+                yes_txt = text_font.render("YES", True, (255, 255, 255))
+                no_txt = text_font.render("NO", True, (255, 255, 255))
+
+                self.screen.blit(yes_txt,
+                                 (yes_btn.centerx - yes_txt.get_width()/2, yes_btn.centery - 15))
+                self.screen.blit(no_txt,
+                                 (no_btn.centerx - no_txt.get_width()/2, no_btn.centery - 15))
 
             # --- DRAW BACK BUTTON ---
             back_rect = py.Rect(center_x - 60, screen_h - 80, 120, 40)
@@ -577,22 +649,43 @@ class Menu:
                     sys.exit()
                 elif event.type == py.MOUSEBUTTONDOWN:
                     # Check slot clicks
-                    for slot_id, rect in slot_rects.items():
-                        if rect.collidepoint(event.pos):
-                            if slot_id in used_slots:
-                                # LOAD EXISTING GAME
-                                if load_game(self.game, slot_id):
-                                    return True  # Game loaded successfully
-                            else:
-                                # START NEW GAME
-                                self.game.level = 0
-                                self.game.load_level(self.game.default_level)
-                                self.game.player_hp = 100
-                                # Crucial: Tell the game which slot is currently active for future saves
-                                self.game.current_slot = slot_id
-                                # Optional: Autosave immediately so the slot isn't empty next time
-                                # save_game(self.game, slot_id)
-                                return True  # New game started
+                    # 1. Handle Confirmation Popup First
+                    if confirm_delete_id is not None:
+                        if yes_btn.collidepoint(event.pos):
+                            # CALL DELETE LOGIC
+                            self.delete_save_data(confirm_delete_id)
+                            # Refresh data
+                            saves = self.game.save_system.list_saves()
+                            used_slots = {save["slot"]: save for save in saves}
+                            confirm_delete_id = None
+                        elif no_btn.collidepoint(event.pos):
+                            confirm_delete_id = None
+                        continue  # Skip other clicks while popup is active
+
+                    # 2. Check Delete Icon Clicks
+                    for slot_id, d_rect in delete_rects.items():
+                        if d_rect.collidepoint(event.pos):
+                            confirm_delete_id = slot_id
+                            break
+
+                    # 3. Check Slot Clicks (Only if not clicking delete)
+                    if confirm_delete_id is None:
+                        for slot_id, rect in slot_rects.items():
+                            if rect.collidepoint(event.pos):
+                                if slot_id in used_slots:
+                                    # LOAD EXISTING GAME
+                                    if load_game(self.game, slot_id):
+                                        return True  # Game loaded successfully
+                                else:
+                                    # START NEW GAME
+                                    self.game.level = 0
+                                    self.game.load_level(self.game.default_level)
+                                    self.game.player_hp = 100
+                                    # Crucial: Tell the game which slot is currently active for future saves
+                                    self.game.current_slot = slot_id
+                                    # Optional: Autosave immediately so the slot isn't empty next time
+                                    # save_game(self.game, slot_id)
+                                    return True  # New game started
 
                     # Check Back button click
                     if back_rect.collidepoint(event.pos):

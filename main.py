@@ -379,20 +379,21 @@ class Game:
 
         for checkpoint in self.checkpoints:
             pos = checkpoint["pos"]
-            if pos[0] <= self.player.pos[0] <= pos[0] + 16:
+            if pos[0] <= self.player.pos[0] <= pos[0] + 16 and self.current_checkpoint != checkpoint:
                 self.current_checkpoint = checkpoint
+                self.spawn_point = {"pos": self.current_checkpoint["pos"], "level": self.level}
                 save_game(self, self.current_slot)
 
+
         # Define respawn point based on current section or checkpoint
-        if self.current_checkpoint == None:
+        if self.current_checkpoint is None:
             for section in self.sections.keys():
                 if self.level in self.sections[section]:
                     try:
                         self.spawn_point = {"pos": self.spawner_pos[str(section)], "level": section}
                     except KeyError:
                         pass
-        else:
-            self.spawn_point = {"pos": self.current_checkpoint["pos"], "level": self.level}
+
 
         self.player.disablePlayerInput = self.cutscene or self.moving_visual or self.teleporting
 
@@ -516,7 +517,8 @@ class Game:
         if self.cutscene:
             draw_cutscene_border(self.display)
         else:
-            draw_health_bar(self)
+            #draw_health_bar(self)
+            pass
 
         # Persist enemy and object state for the level
         self.levels[self.level]["enemies"] = self.enemies.copy()

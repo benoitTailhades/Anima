@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import pygame as py
 
 # Removed Boss import to match the new main script
 from scripts.entities import DistanceEnemy, Enemy, Throwable
@@ -28,7 +29,7 @@ class Save:
         # Base structure
         save_data = {
             "player": {
-                "position": self.game.spawn_point["pos"],
+                "position": self.game.spawn_point["pos"].copy(),
                 "spawn_point": self.game.spawn_point,
             },
             "level": self.game.level,
@@ -39,6 +40,7 @@ class Save:
             },
             "timestamp": time.time(),
         }
+        py.image.save(self.game.screen, f"saves/slot_{slot}_thumb.png")
 
         # --- Save Persistent Level Data ---
         # We only save data for levels that the player has visited ("charged")
@@ -72,6 +74,7 @@ class Save:
             # --- Restore Core Game State ---
             level = save_data.get("level", 0)
             self.game.level = level
+            self.game.current_slot = slot
 
 
             # --- Restore Settings ---
