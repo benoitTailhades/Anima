@@ -234,11 +234,12 @@ class Game:
         # --- Hitboxes
         self.show_spikes_hitboxes = False
 
+        self.playtime = 0
+        self.menu_time = 0
     def toggle_hitboxes(self):
         self.player.show_hitbox = not self.player.show_hitbox
         self.show_spikes_hitboxes = not self.show_spikes_hitboxes
         #self.tilemap.show_collisions = not self.tilemap.show_collisions
-
 
     def get_environment(self, level):
         """
@@ -317,6 +318,7 @@ class Game:
                 self.spawners[str(map_id)] = spawner["pos"].copy()
                 self.spawner_pos[str(map_id)] = spawner["pos"]
                 self.player.pos = spawner["pos"].copy()
+                self.spawn_point = {"pos": spawner["pos"].copy(), "level": map_id}
             elif spawner['variant'] == 1:
                 self.enemies.append(Enemy(self, "picko", spawner['pos'], (16, 16), 100,
                                           {"attack_distance": 20, "attack_dmg": 10, "attack_time": 1.5}))
@@ -355,24 +357,28 @@ class Game:
         The core gameplay loop. Handles physics, collision, rendering order,
         entity updates, and UI blitting. This is called once per frame while state is 'PLAYING'.
         """
+        update_camera(self)
+        render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
+
+        display_level_bg(self, self.level)
+        self.tilemap.render(self.display, offset=render_scroll)
+        self.tilemap.render_over(self.display, offset=render_scroll)
+
         if not self.game_initialized:
-            self.game_initialized = True
-
+            self.start_time = time.time()
         self.screenshake = max(0, self.screenshake - 1)
-
 
         # --- Transition & Level Switching ---
         for transition in self.transitions:
             if (transition['pos'][0] + 16 > self.player.rect().centerx >= transition['pos'][0] and
                     self.player.rect().bottom >= transition['pos'][1] >= self.player.rect().top):
                 self.level = transition["destination"]
-                self.load_level(self.level)
+                self.load_level(self.level, transition_effect=False)
                 self.player.pos = [transition["dest_pos"][0] * 16, transition["dest_pos"][1] * 16]
                 self.scroll = [self.player.pos[0], self.player.pos[1]]
 
-        update_camera(self)
-        render_scroll = (round(self.scroll[0]), round(self.scroll[1]))
         if self.transition < 0: self.transition += 1
+
 
         # --- Teleportation & Checkpoints ---
         if self.teleporting: update_teleporter(self, self.tp_id)
@@ -381,6 +387,8 @@ class Game:
             pos = checkpoint["pos"]
             if pos[0] <= self.player.pos[0] <= pos[0] + 16 and self.current_checkpoint != checkpoint:
                 self.current_checkpoint = checkpoint
+                if self.spawn_point["pos"] == self.current_checkpoint["pos"] :
+                    continue
                 self.spawn_point = {"pos": self.current_checkpoint["pos"], "level": self.level}
                 save_game(self, self.current_slot)
 
@@ -399,7 +407,6 @@ class Game:
 
         # --- Rendering Sequence ---
         # 1. Background
-        display_level_bg(self, self.level)
 
         # 2. Ambient Particles (Leaves)
         for rect in self.leaf_spawners:
@@ -426,7 +433,6 @@ class Game:
                 self.projectiles.remove(projectile)
 
         # 4. Tilemap & Entities
-        self.tilemap.render(self.display, offset=render_scroll)
 
         for activator in self.activators: activator.render(self.display, offset=render_scroll)
         for enemy in self.enemies.copy():
@@ -450,7 +456,6 @@ class Game:
             o.render(self.display, offset=render_scroll)
 
         # 6. Foreground & Lighting
-        self.tilemap.render_over(self.display, offset=render_scroll)
         if self.show_spikes_hitboxes:
             for spike_hitbox in self.spikes:
                 spike_hitbox.render(self.display, offset=render_scroll)
@@ -554,6 +559,12 @@ class Game:
                 self.damage_flash_active = False
 
         pygame.display.update()
+
+        if not self.game_initialized:
+            self.game_initialized = True
+            if not os.path.exists(f"saves/save_{self.current_slot}.json"):
+                save_game(self, self.current_slot)
+
         self.clock.tick(60)
 
     def run(self):

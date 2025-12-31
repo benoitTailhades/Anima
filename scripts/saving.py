@@ -21,6 +21,35 @@ class Save:
         if not os.path.exists(self.save_folder):
             os.makedirs(self.save_folder)
 
+    def update_playtime(self, slot=1):
+        save_path = os.path.join(self.save_folder, f"save_{slot}.json")
+
+        if not os.path.exists(save_path):
+            print(f"No save found in {save_path}")
+            return False
+
+        try:
+            with open(save_path, 'r') as save_file:
+                save_data = json.load(save_file)
+            print("With menu time", time.time() - self.game.start_time + self.game.playtime)
+            print("Without menu time: ", time.time() - self.game.start_time + self.game.playtime - self.game.menu_time)
+            save_data["playtime"] = time.time() - self.game.start_time + self.game.playtime - self.game.menu_time
+
+        except Exception as e:
+            print(f"Error while loading the save: {e}")
+            import traceback
+            traceback.print_exc()
+            return False
+
+        try:
+            with open(save_path, 'w') as save_file:
+                json.dump(save_data, save_file, indent=4)
+            print(f"Game saved successfully to {save_path}")
+            return True
+        except Exception as e:
+            print(f"Error saving game: {e}")
+            return False
+
     def save_game(self, slot=1):
         """
         Serializes current game state to a JSON file.
@@ -39,7 +68,9 @@ class Save:
                 "language": self.game.selected_language
             },
             "timestamp": time.time(),
+            "playtime": time.time() - self.game.start_time + self.game.playtime - self.game.menu_time,
         }
+
         py.image.save(self.game.screen, f"saves/slot_{slot}_thumb.png")
 
         # --- Save Persistent Level Data ---
@@ -90,7 +121,7 @@ class Save:
             if "player" in save_data and "position" in save_data["player"]:
                 self.game.scroll = list(save_data["player"]["position"])
             # Load the actual map tiles and background
-            self.game.load_level(level)
+            self.game.load_level(level, transition_effect=False)
 
             # Override player stats with saved stats
             if "player" in save_data:
@@ -98,6 +129,8 @@ class Save:
                     self.game.player.pos = save_data["player"]["position"]
                 if "spawn_point" in save_data["player"]:
                     self.game.spawn_point = save_data["player"]["spawn_point"]
+
+            self.game.playtime = save_data["playtime"]
 
             print(f"Game loaded successfully from {save_path}")
             return True
@@ -127,7 +160,8 @@ class Save:
                         "slot": slot,
                         "date": save_date,
                         "level": level,
-                        "keyboard_layout": save_data.get("settings", {}).get("keyboard_layout", "unknown")
+                        "keyboard_layout": save_data.get("settings", {}).get("keyboard_layout", "unknown"),
+                        "playtime": save_data.get("playtime", 0)
                     }
 
                     saves.append(save_info)

@@ -1,8 +1,11 @@
+import time
+
 import pygame as py
 import sys
 import numpy as np
 import cv2
 import os
+import datetime
 from scripts.sound import set_game_volume
 from scripts.utils import load_images, load_image
 from scripts.text import load_game_font
@@ -310,6 +313,8 @@ class Menu:
                     self.options_visible = True
                     return True
                 elif text == "QUIT":
+                    self.game.menu_time += time.time() - self.menu_time_start
+                    self.game.save_system.update_playtime(self.game.current_slot)
                     py.quit()
                     sys.exit()
                 elif text == "BACK":
@@ -416,9 +421,9 @@ class Menu:
         except Exception as e:
             print(f"Error deleting save: {e}")
 
-    def menu_display(self):#when called: Display the main menu with it's buttons, monitor keyboard and mouse input (keyboard means escape key but it looks cooler), and thirdly displaythe background and optio npanel if needed
+    def menu_display(self): #when called: Display the main menu with it's buttons, monitor keyboard and mouse input (keyboard means escape key but it looks cooler), and thirdly displaythe background and optio npanel if needed
         self.capture_background()
-
+        self.menu_time_start = time.time()
         running = True
         while running:
             current_screen_size = self.screen.get_size()
@@ -486,10 +491,12 @@ class Menu:
 
                 elif event.type == py.MOUSEMOTION and self.dragging_volume and not self.dropdown_expanded:
                     self._handle_volume_drag(event.pos[0])
+        if not running:
+            self.game.menu_time += time.time() - self.menu_time_start
 
     def profile_selection_menu(self):
         """
-        Displays a Hollow Knight-style 4-slot selection menu.
+        Displays a 3-slot selection menu.
         Handles loading existing saves or starting new games.
         Returns True if a game starts/loads, False if BACK is pressed.
         """
@@ -501,7 +508,6 @@ class Menu:
         # 2. Fetch Save Data
         saves = self.game.save_system.list_saves()
         used_slots = {save["slot"]: save for save in saves}
-        print(used_slots)
 
         # 3. Layout Configuration
         screen_w, screen_h = self.screen.get_size()
@@ -577,14 +583,14 @@ class Menu:
 
                     # 4. Playtime and Date (Smaller Details)
                     # Convert seconds to HH:MM:SS format
-                    '''play_seconds = save_data.get('playtime', 0)
+                    play_seconds = save_data.get('playtime', 0)
                     time_str = str(datetime.timedelta(seconds=int(play_seconds)))
 
                     # Draw Sub-details
                     details = f"TIME: {time_str}    |    SAVED: {save_data['date']}"
                     detail_txt = detail_font.render(details, True, (150, 150, 150))
                     self.screen.blit(detail_txt, (img_rect.right + 30, slot_rect.top + 60))
-                    '''
+
 
                     # Position it on the far right of the slot
                     del_x_rect = py.Rect(slot_rect.right - 50, slot_rect.centery - 15, 30, 30)
@@ -679,7 +685,7 @@ class Menu:
                                 else:
                                     # START NEW GAME
                                     self.game.level = 0
-                                    self.game.load_level(self.game.default_level)
+                                    self.game.load_level(self.game.default_level, transition_effect=False)
                                     self.game.player_hp = 100
                                     # Crucial: Tell the game which slot is currently active for future saves
                                     self.game.current_slot = slot_id
